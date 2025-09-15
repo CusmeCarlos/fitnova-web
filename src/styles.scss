@@ -1,4 +1,224 @@
-/* You can add global styles to this file, and also import other style files */
+/* src/styles.scss */
+/* 🎨 ESTILOS GLOBALES FITNOVA - VERSIÓN SIMPLE FUNCIONAL */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+// ✅ RESET Y BASE STYLES
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  html, body {
+    height: 100%;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: #fafafa;
+    color: rgba(0, 0, 0, 0.87);
+    line-height: 1.6;
+  }
+  
+  body {
+    margin: 0;
+    overflow-x: hidden;
+  }
+  
+  // ✅ CLASES UTILITARIAS
+  .full-width {
+    width: 100% !important;
+  }
+  
+  .full-height {
+    height: 100% !important;
+  }
+  
+  .text-center {
+    text-align: center !important;
+  }
+  
+  .text-right {
+    text-align: right !important;
+  }
+  
+  .mt-1 { margin-top: 0.5rem !important; }
+  .mt-2 { margin-top: 1rem !important; }
+  .mt-3 { margin-top: 1.5rem !important; }
+  .mb-1 { margin-bottom: 0.5rem !important; }
+  .mb-2 { margin-bottom: 1rem !important; }
+  .mb-3 { margin-bottom: 1.5rem !important; }
+  
+  .p-1 { padding: 0.5rem !important; }
+  .p-2 { padding: 1rem !important; }
+  .p-3 { padding: 1.5rem !important; }
+  
+  // ✅ SCROLLBAR PERSONALIZADA
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+  
+  // ✅ ANIMATIONS GLOBALES
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideInLeft {
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+  
+  .slide-in-left {
+    animation: slideInLeft 0.6s ease-out;
+  }
+  
+  .pulse {
+    animation: pulse 2s infinite;
+  }
+  
+  // ✅ RESPONSIVE BREAKPOINTS
+  $mobile: 480px;
+  $tablet: 768px;
+  $desktop: 1024px;
+  $large: 1200px;
+  
+  @mixin mobile {
+    @media (max-width: #{$mobile}) {
+      @content;
+    }
+  }
+  
+  @mixin tablet {
+    @media (max-width: #{$tablet}) {
+      @content;
+    }
+  }
+  
+  @mixin desktop {
+    @media (min-width: #{$desktop}) {
+      @content;
+    }
+  }
+  
+  // ✅ SNACKBAR CUSTOMIZATION SIN DEPENDENCY DE MATERIAL THEMING
+  .success-snackbar {
+    background-color: #4caf50 !important;
+    color: white !important;
+  }
+  
+  .error-snackbar {
+    background-color: #f44336 !important;
+    color: white !important;
+  }
+  
+  .warning-snackbar {
+    background-color: #ff9800 !important;
+    color: white !important;
+  }
+  
+  .info-snackbar {
+    background-color: #2196f3 !important;
+    color: white !important;
+  }
+  
+  // ✅ LOADING STATES
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  
+  // ✅ FITNOVA BRANDING COLORS
+  :root {
+    --fitnova-primary: #2196f3;
+    --fitnova-secondary: #21cbf3;
+    --fitnova-accent: #00bcd4;
+    --fitnova-warn: #f44336;
+    --fitnova-success: #4caf50;
+    --fitnova-warning: #ff9800;
+    --fitnova-info: #2196f3;
+    
+    --fitnova-gradient-primary: linear-gradient(45deg, #2196f3, #21cbf3);
+    --fitnova-gradient-success: linear-gradient(45deg, #4caf50, #8bc34a);
+    --fitnova-gradient-warning: linear-gradient(45deg, #ff9800, #ffc107);
+  }
+  
+  // ✅ MATERIAL OVERRIDES SIN THEMING IMPORTS
+  .mat-mdc-card {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+    border-radius: 12px !important;
+  }
+  
+  .mat-mdc-raised-button {
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+  }
+  
+  .mat-mdc-form-field {
+    width: 100%;
+  }
+  
+  // ✅ CUSTOM BUTTON STYLES
+  .fitnova-primary-button {
+    background: linear-gradient(45deg, #2196f3, #21cbf3) !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    
+    &:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4) !important;
+    }
+    
+    &:active {
+      transform: translateY(0) !important;
+    }
+  }

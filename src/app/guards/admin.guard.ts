@@ -1,27 +1,38 @@
 // src/app/guards/admin.guard.ts
 // 👑 GUARD PARA ADMINISTRADORES
 
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { Router, UrlTree } from '@angular/router';
+import { Observable, map, take } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 
-export const adminGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
-  const router = inject(Router);
+@Injectable({
+  providedIn: 'root'
+})
+export class AdminGuard {
+  
+  constructor(
+    private auth: AuthService,
+    private router: Router
+  ) {}
 
-  if (authService.isAuthenticated()) {
-    if (authService.isAdmin()) {
-      return true;
-    } else {
-      console.log('🚫 Acceso denegado - Requiere rol de administrador');
-      router.navigate(['/forbidden']);
-      return false;
-    }
-  } else {
-    console.log('🚫 Acceso denegado - No autenticado');
-    router.navigate(['/auth/login'], { 
-      queryParams: { returnUrl: state.url } 
-    });
-    return false;
+  canActivate(): Observable<boolean | UrlTree> {
+    return this.auth.user$.pipe(
+      take(1),
+      map(user => {
+        if (!user) {
+          console.log('❌ AdminGuard: No autenticado');
+          return this.router.createUrlTree(['/auth/login']);
+        }
+        
+        if (user.role === 'admin') {
+          console.log('✅ AdminGuard: Acceso de admin permitido');
+          return true;
+        } else {
+          console.log('🚫 AdminGuard: Solo administradores. Rol actual:', user.role);
+          return this.router.createUrlTree(['/shared/forbidden']);
+        }
+      })
+    );
   }
-};
+}

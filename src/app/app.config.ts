@@ -1,14 +1,48 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+// =====================================
+// src/app/app.config.ts
+// ⚙️ CONFIGURACIÓN PRINCIPAL DE LA APP
+
+import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+
+// ✅ FIREBASE IMPORTS
+import { AngularFireModule } from '@angular/fire/compat';
+import { AngularFireAuthModule } from '@angular/fire/compat/auth';
+import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
+import { AngularFireStorageModule } from '@angular/fire/compat/storage';
+import { AngularFireFunctionsModule } from '@angular/fire/compat/functions';
+
+// ✅ MATERIAL DESIGN
+import { MAT_DATE_LOCALE, DateAdapter, MAT_DATE_FORMATS } from '@angular/material/core';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { routes } from './app.routes';
-import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
-import { getAuth, provideAuth } from '@angular/fire/auth';
-import { getFirestore, provideFirestore } from '@angular/fire/firestore';
-import { getFunctions, provideFunctions } from '@angular/fire/functions';
-import { getMessaging, provideMessaging } from '@angular/fire/messaging';
-import { getStorage, provideStorage } from '@angular/fire/storage';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideZoneChangeDetection({ eventCoalescing: true }), provideRouter(routes), provideFirebaseApp(() => initializeApp({ projectId: "fitnova-app", appId: "1:553990987723:web:c6adf166677069789aa04e", storageBucket: "fitnova-app.firebasestorage.app", apiKey: "AIzaSyBt14_G3joQabbwK15lDgYFn7jjVklAAO0", authDomain: "fitnova-app.firebaseapp.com", messagingSenderId: "553990987723", measurementId: "G-85QSFTH679" })), provideAuth(() => getAuth()), provideFirestore(() => getFirestore()), provideFunctions(() => getFunctions()), provideMessaging(() => getMessaging()), provideStorage(() => getStorage())]
+  providers: [
+    // ✅ ROUTING
+    provideRouter(routes),
+    
+    // ✅ ANIMATIONS PARA MATERIAL
+    provideAnimationsAsync(),
+    
+    // ✅ HTTP CLIENT
+    provideHttpClient(withInterceptorsFromDi()),
+    
+    // ✅ FIREBASE CONFIGURATION
+    importProvidersFrom(
+      AngularFireModule.initializeApp(environment.firebase),
+      AngularFireAuthModule,
+      AngularFirestoreModule,
+      AngularFireStorageModule, 
+      AngularFireFunctionsModule,
+      MatSnackBarModule
+    ),
+    
+    // ✅ CONFIGURACIONES REGIONALES
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }
+  ]
 };

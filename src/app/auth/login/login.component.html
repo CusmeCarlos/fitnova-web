@@ -1,1 +1,147 @@
-<p>login works!</p>
+<!-- src/app/auth/login/login.component.html -->
+<!-- 🔐 LOGIN WEB - MATERIAL DESIGN - BASADO EN MÓVIL FUNCIONAL -->
+
+<div class="login-container">
+    <!-- ✅ HEADER CON BRANDING FITNOVA -->
+    <div class="login-header">
+      <div class="brand">
+        <mat-icon class="brand-icon">fitness_center</mat-icon>
+        <h1 class="brand-title">FitNova</h1>
+        <p class="brand-subtitle">Plataforma Web para Entrenadores</p>
+      </div>
+    </div>
+  
+    <!-- ✅ FORMULARIO DE LOGIN -->
+    <mat-card class="login-card">
+      <mat-card-header>
+        <mat-card-title>Iniciar Sesión</mat-card-title>
+        <mat-card-subtitle>Acceso para entrenadores y administradores</mat-card-subtitle>
+      </mat-card-header>
+  
+      <mat-card-content>
+        <!-- ✅ FORMULARIO REACTIVO -->
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="login-form">
+          
+          <!-- ✅ CAMPO EMAIL -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Correo Electrónico</mat-label>
+            <input 
+              matInput 
+              type="email" 
+              formControlName="email"
+              placeholder="ejemplo&#64;fitnova.com"
+              autocomplete="email">
+            <mat-icon matSuffix>email</mat-icon>
+            
+            <!-- ✅ ERRORES DE VALIDACIÓN -->
+            <mat-error *ngIf="email?.invalid && email?.touched">
+              {{ getEmailErrorMessage() }}
+            </mat-error>
+          </mat-form-field>
+  
+          <!-- ✅ CAMPO PASSWORD -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Contraseña</mat-label>
+            <input 
+              matInput 
+              [type]="hidePassword ? 'password' : 'text'"
+              formControlName="password"
+              placeholder="Mínimo 6 caracteres"
+              autocomplete="current-password">
+            
+            <!-- ✅ TOGGLE VISIBILIDAD PASSWORD -->
+            <button 
+              mat-icon-button 
+              matSuffix 
+              type="button"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="'Hide password'"
+              [attr.aria-pressed]="hidePassword">
+              <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+            </button>
+  
+            <!-- ✅ ERRORES DE VALIDACIÓN -->
+            <mat-error *ngIf="password?.invalid && password?.touched">
+              {{ getPasswordErrorMessage() }}
+            </mat-error>
+          </mat-form-field>
+  
+          <!-- ✅ BOTÓN LOGIN -->
+          <button 
+            mat-raised-button 
+            color="primary" 
+            type="submit"
+            class="login-button full-width"
+            [disabled]="isLoading">
+            
+            <span *ngIf="!isLoading">Iniciar Sesión</span>
+            <span *ngIf="isLoading" class="loading-content">
+              <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
+              Iniciando sesión...
+            </span>
+          </button>
+  
+          <!-- ✅ LINK FORGOT PASSWORD -->
+          <button 
+            mat-button 
+            type="button"
+            class="forgot-password-btn"
+            (click)="onForgotPassword()"
+            [disabled]="isLoading || !email?.value">
+            ¿Olvidaste tu contraseña?
+          </button>
+  
+        </form>
+  
+        <mat-divider class="divider"></mat-divider>
+  
+        <!-- ✅ CREDENCIALES DE TESTING (igual que móvil) -->
+        <div class="testing-section">
+          <p class="testing-title">Credenciales de Prueba:</p>
+          
+          <div class="test-credentials">
+            <!-- ✅ TRAINER CREDENTIALS -->
+            <button 
+              mat-stroked-button 
+              color="accent"
+              type="button"
+              (click)="loadTestCredentials('trainer')"
+              [disabled]="isLoading"
+              class="test-btn">
+              <mat-icon>person</mat-icon>
+              Entrenador
+            </button>
+  
+            <!-- ✅ ADMIN CREDENTIALS -->
+            <button 
+              mat-stroked-button 
+              color="warn"
+              type="button"
+              (click)="loadTestCredentials('admin')"
+              [disabled]="isLoading"
+              class="test-btn">
+              <mat-icon>admin_panel_settings</mat-icon>
+              Admin
+            </button>
+          </div>
+  
+          <!-- ✅ INFO DE CREDENCIALES - CORREGIDO @ -->
+          <div class="credentials-info">
+            <p><strong>Entrenador:</strong> trainer&#64;fitnova.com / trainer123</p>
+            <p><strong>Administrador:</strong> admin&#64;fitnova.com / admin123</p>
+          </div>
+        </div>
+  
+      </mat-card-content>
+    </mat-card>
+  
+    <!-- ✅ FOOTER CON INFO -->
+    <div class="login-footer">
+      <p class="footer-text">
+        <mat-icon class="footer-icon">security</mat-icon>
+        Conexión segura con Firebase Auth
+      </p>
+      <p class="footer-version">FitNova v2.0 - Plataforma Web</p>
+    </div>
+  
+  </div>

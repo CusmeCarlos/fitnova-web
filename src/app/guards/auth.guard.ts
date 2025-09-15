@@ -1,20 +1,33 @@
-// 🔐 GUARD DE AUTENTICACIÓN
+// src/app/guards/auth.guard.ts  
+// 🛡️ GUARD DE AUTENTICACIÓN ADAPTADO
 
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { Router, UrlTree } from '@angular/router';
+import { Observable, map, take } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 
-export const authGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
-  const router = inject(Router);
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthGuard {
+  
+  constructor(
+    private auth: AuthService,
+    private router: Router
+  ) {}
 
-  if (authService.isAuthenticated()) {
-    return true;
-  } else {
-    console.log('🚫 Acceso denegado - No autenticado');
-    router.navigate(['/auth/login'], { 
-      queryParams: { returnUrl: state.url } 
-    });
-    return false;
+  canActivate(): Observable<boolean | UrlTree> {
+    return this.auth.user$.pipe(
+      take(1),
+      map(user => {
+        if (user) {
+          console.log('✅ AuthGuard: Usuario autenticado');
+          return true;
+        } else {
+          console.log('❌ AuthGuard: Usuario no autenticado, redirigiendo...');
+          return this.router.createUrlTree(['/auth/login']);
+        }
+      })
+    );
   }
-};
+}
