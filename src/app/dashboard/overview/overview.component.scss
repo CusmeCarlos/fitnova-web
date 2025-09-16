@@ -1,0 +1,778 @@
+/* src/app/dashboard/overview/overview.component.scss */
+/* 📊 DASHBOARD GLOBAL STYLES - SUPERVISIÓN DE TODOS LOS USUARIOS */
+
+.dashboard-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #fafafa;
+    min-height: calc(100vh - 64px);
+    
+    @media (max-width: 768px) {
+      padding: 1rem;
+    }
+  }
+  
+  // ================================================================================
+  // 🎨 HEADER GLOBAL
+  // ================================================================================
+  
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  
+    .welcome-section {
+      .dashboard-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1976d2;
+        margin: 0 0 0.5rem 0;
+        
+        mat-icon {
+          font-size: 2.5rem;
+          width: 2.5rem;
+          height: 2.5rem;
+        }
+        
+        @media (max-width: 768px) {
+          font-size: 2rem;
+          
+          mat-icon {
+            font-size: 2rem;
+            width: 2rem;
+            height: 2rem;
+          }
+        }
+      }
+      
+      .welcome-message {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 1.2rem;
+        color: #666;
+        margin: 0 0 0.5rem 0;
+        
+        strong {
+          color: #1976d2;
+        }
+        
+        mat-chip {
+          font-size: 0.8rem;
+          height: 24px;
+        }
+      }
+      
+      .last-updated {
+        font-size: 0.9rem;
+        color: #999;
+        margin: 0;
+      }
+    }
+  
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+      
+      .spinning {
+        animation: spin 1s linear infinite;
+      }
+      
+      button {
+        --mdc-icon-button-icon-color: #1976d2;
+        
+        &:hover {
+          background-color: rgba(25, 118, 210, 0.1);
+        }
+        
+        &.logout-btn {
+          --mdc-icon-button-icon-color: #f44336;
+          
+          &:hover {
+            background-color: rgba(244, 67, 54, 0.1);
+          }
+        }
+      }
+    }
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  // ================================================================================
+  // ⏳ LOADING STATE
+  // ================================================================================
+  
+  .loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    
+    .loading-content {
+      text-align: center;
+      color: #666;
+      
+      mat-spinner {
+        margin-bottom: 1rem;
+      }
+      
+      p {
+        font-size: 1rem;
+        font-weight: 500;
+        margin: 0;
+      }
+    }
+  }
+  
+  // ================================================================================
+  // 📊 MÉTRICAS GLOBALES
+  // ================================================================================
+  
+  .global-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  
+    .metric-card {
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+      border: none;
+      
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      }
+  
+      .mat-mdc-card-content {
+        padding: 2rem;
+      }
+  
+      .metric-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+  
+        mat-icon {
+          font-size: 2rem;
+          width: 2rem;
+          height: 2rem;
+          color: #666;
+        }
+  
+        .metric-label {
+          font-size: 1rem;
+          font-weight: 600;
+          color: #666;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+  
+      .metric-value {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        line-height: 1;
+      }
+  
+      .metric-subtitle {
+        font-size: 0.9rem;
+        color: #999;
+        font-weight: 500;
+        
+        .active-today {
+          color: #4caf50;
+          font-weight: 600;
+        }
+      }
+  
+      // ✅ COLORES ESPECÍFICOS POR TIPO
+      &.users-card {
+        .metric-header mat-icon {
+          color: #2196f3;
+        }
+        .metric-value {
+          color: #2196f3;
+        }
+      }
+  
+      &.workouts-card {
+        .metric-header mat-icon {
+          color: #4caf50;
+        }
+        .metric-value {
+          color: #4caf50;
+        }
+      }
+  
+      &.accuracy-card {
+        .metric-header mat-icon {
+          color: #ff9800;
+        }
+        .metric-value {
+          color: #ff9800;
+        }
+      }
+  
+      &.alerts-card {
+        .metric-header mat-icon {
+          color: #f44336;
+        }
+        .metric-value {
+          color: #f44336;
+        }
+      }
+    }
+  }
+  
+  // ================================================================================
+  // 👤 SELECTOR DE USUARIO
+  // ================================================================================
+  
+  .user-selector-card {
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+    border: none;
+  
+    .mat-mdc-card-header {
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+  
+      .mat-mdc-card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #333;
+  
+        mat-icon {
+          color: #1976d2;
+        }
+      }
+  
+      .mat-mdc-card-subtitle {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+      }
+    }
+  
+    .user-select {
+      width: 100%;
+      
+      .user-option {
+        padding: 0.5rem 0;
+        
+        .user-name {
+          display: block;
+          font-weight: 600;
+          color: #333;
+          margin-bottom: 0.25rem;
+        }
+        
+        .user-stats {
+          display: block;
+          font-size: 0.85rem;
+          color: #666;
+          margin-bottom: 0.5rem;
+        }
+        
+        .status-chip {
+          font-size: 0.7rem;
+          height: 20px;
+        }
+      }
+    }
+  }
+  
+  // ================================================================================
+  // 👤 VISTA DETALLADA DEL USUARIO
+  // ================================================================================
+  
+  .user-detail-section {
+    margin-bottom: 2rem;
+    
+    .user-loading {
+      .loading-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 2rem;
+        text-align: center;
+        color: #666;
+      }
+    }
+  
+    .user-header-card {
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.5rem;
+      border: 2px solid #2196f3;
+  
+      .user-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+  
+        .user-info {
+          h2 {
+            margin: 0 0 0.25rem 0;
+            color: #1976d2;
+            font-weight: 700;
+          }
+  
+          p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+          }
+        }
+      }
+    }
+  
+    .user-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+  
+      .user-metric-card {
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        border: none;
+  
+        .mat-mdc-card-content {
+          padding: 1.5rem;
+        }
+  
+        .metric-header {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+  
+          mat-icon {
+            font-size: 1.5rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            color: #1976d2;
+          }
+  
+          .metric-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+          }
+        }
+  
+        .metric-value {
+          font-size: 2rem;
+          font-weight: 700;
+          color: #1976d2;
+        }
+      }
+    }
+  
+    .user-chart-card {
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: none;
+    }
+  }
+  
+  // ================================================================================
+  // 📈 GRÁFICOS GLOBALES
+  // ================================================================================
+  
+  .global-charts-section {
+    margin-bottom: 2rem;
+  }
+  
+  .chart-card {
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+    border: none;
+  
+    .mat-mdc-card-header {
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+  
+      .mat-mdc-card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+  
+        mat-icon {
+          color: #1976d2;
+        }
+      }
+  
+      .mat-mdc-card-subtitle {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+      }
+    }
+  
+    .chart-container {
+      position: relative;
+      height: 350px;
+      margin: 1rem 0;
+  
+      canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+    }
+  }
+  
+  .secondary-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+  
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  
+    .chart-container {
+      height: 300px;
+    }
+  }
+  
+  // ================================================================================
+  // 🏆 USUARIOS MÁS ACTIVOS
+  // ================================================================================
+  
+  .top-users-card {
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+    border: none;
+  
+    .top-users-list {
+      .user-rank-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.3s ease;
+  
+        &:hover {
+          background: #e3f2fd;
+          transform: translateX(4px);
+        }
+  
+        &:last-child {
+          margin-bottom: 0;
+        }
+  
+        .rank-badge {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 1rem;
+  
+          .gold {
+            color: #ffd700;
+            font-size: 1.5rem;
+          }
+  
+          .silver {
+            color: #c0c0c0;
+            font-size: 1.5rem;
+          }
+  
+          .bronze {
+            color: #cd7f32;
+            font-size: 1.5rem;
+          }
+  
+          .rank-number {
+            background: #666;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+          }
+        }
+  
+        .user-rank-info {
+          flex: 1;
+  
+          .user-rank-name {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+          }
+  
+          .user-rank-stats {
+            font-size: 0.85rem;
+            color: #666;
+          }
+        }
+  
+        .view-icon {
+          color: #999;
+        }
+      }
+    }
+  }
+  
+  // ================================================================================
+  // 🚨 ALERTAS RECIENTES
+  // ================================================================================
+  
+  .recent-alerts-card {
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.1);
+    margin-bottom: 2rem;
+  
+    .alerts-list {
+      .alert-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+  
+        &:last-child {
+          border-bottom: none;
+        }
+  
+        .alert-severity {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 1rem;
+  
+          &.severity-critical {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+          }
+  
+          &.severity-high {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ff9800;
+          }
+  
+          &.severity-medium {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+          }
+  
+          mat-icon {
+            font-size: 1.2rem;
+          }
+        }
+  
+        .alert-info {
+          flex: 1;
+  
+          .alert-user {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+          }
+  
+          .alert-error {
+            display: block;
+            font-size: 0.85rem;
+            color: #f44336;
+            margin-bottom: 0.1rem;
+          }
+  
+          .alert-exercise {
+            font-size: 0.8rem;
+            color: #666;
+          }
+        }
+  
+        .alert-time {
+          font-size: 0.8rem;
+          color: #999;
+          text-align: right;
+        }
+      }
+    }
+  
+    .alerts-actions {
+      text-align: center;
+      padding: 1rem 0 0 0;
+  
+      .view-all-alerts-btn {
+        width: 100%;
+        height: 48px;
+        border-radius: 8px;
+      }
+    }
+  }
+  
+  // ================================================================================
+  // ⚡ ACCIONES RÁPIDAS
+  // ================================================================================
+  
+  .quick-actions {
+    h3 {
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+  
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+  
+      .action-btn {
+        height: 70px;
+        border-radius: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+  
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+  
+        &.analytics-btn {
+          background: linear-gradient(45deg, #673ab7, #9c27b0);
+          color: white;
+        }
+  
+        mat-icon {
+          font-size: 1.3rem;
+          width: 1.3rem;
+          height: 1.3rem;
+        }
+      }
+    }
+  }
+  
+  // ================================================================================
+  // 📭 ESTADO VACÍO
+  // ================================================================================
+  
+  .empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+  
+    .empty-card {
+      max-width: 500px;
+      text-align: center;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  
+      .empty-content {
+        padding: 3rem 2rem;
+  
+        .empty-icon {
+          font-size: 5rem;
+          width: 5rem;
+          height: 5rem;
+          color: #ddd;
+          margin-bottom: 1.5rem;
+        }
+  
+        h3 {
+          color: #666;
+          margin-bottom: 1rem;
+          font-size: 1.5rem;
+        }
+  
+        p {
+          color: #999;
+          margin-bottom: 1rem;
+          line-height: 1.6;
+        }
+  
+        button {
+          border-radius: 8px;
+          height: 48px;
+          margin-top: 1rem;
+        }
+      }
+    }
+  }
+  
+  // ================================================================================
+  // 📱 RESPONSIVE
+  // ================================================================================
+  
+  @media (max-width: 768px) {
+    .dashboard-container {
+      padding: 1rem 0.5rem;
+    }
+  
+    .global-metrics-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+  
+      .metric-card .metric-value {
+        font-size: 2.5rem;
+      }
+    }
+  
+    .secondary-charts-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  
+    .user-metrics-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  
+    .actions-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .chart-container {
+      height: 250px;
+    }
+  }

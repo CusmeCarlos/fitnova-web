@@ -1,28 +1,14 @@
 // src/app/dashboard/dashboard.module.ts
-// 📊 MÓDULO DASHBOARD TEMPORAL - PARA QUE COMPILE
+// 📊 MÓDULO DASHBOARD COMPLETO CON COMPONENTE REAL
 
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 
-// ✅ COMPONENTE TEMPORAL SIMPLE
-import { Component } from '@angular/core';
+// ✅ IMPORTAR COMPONENTE REAL
+import { DashboardOverviewComponent } from './overview/overview.component';
 
-@Component({
-  selector: 'app-dashboard-overview',
-  standalone: true,
-  template: `
-    <div style="padding: 2rem; text-align: center;">
-      <h1>🎉 ¡Login Exitoso!</h1>
-      <h2>Dashboard FitNova</h2>
-      <p>Autenticación funcionando correctamente</p>
-      <p>Próximo paso: Implementar métricas del móvil</p>
-    </div>
-  `
-})
-export class DashboardOverviewComponent { }
-
-// ✅ RUTAS TEMPORALES
+// ✅ RUTAS DEL DASHBOARD
 const routes: Routes = [
   {
     path: '',
@@ -39,7 +25,8 @@ const routes: Routes = [
 @NgModule({
   imports: [
     CommonModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    // El componente es standalone, se importa automáticamente
   ]
 })
 export class DashboardModule { }
