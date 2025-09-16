@@ -13,6 +13,9 @@ import { MatSnackBar } from '@angular/material/snack-bar'; // ✅ CAMBIO: Angula
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  createUserForWeb(email: any, password: any, arg2: { displayName: any; role: string; assignedTrainer: any; }) {
+    throw new Error('Method not implemented.');
+  }
   user$: Observable<User | null>;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
 
