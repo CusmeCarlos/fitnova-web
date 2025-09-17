@@ -114,24 +114,45 @@ export class DashboardService {
 
   private loadAllUsersData(currentUser: any): void {
     try {
-      // Cargar TODOS los usuarios con rol 'user' (sin filtros por ahora)
+      console.log('📡 Iniciando carga de usuarios con listeners tiempo real...');
+      
+      // ✅ SOLO UN LISTENER - Sin loops anidados
       this.db.collection('users')
         .where('role', '==', 'user')
         .onSnapshot(async (usersSnapshot) => {
+          console.log(`👥 Detectados ${usersSnapshot.docs.length} usuarios`);
           const allUsersStats: UserStats[] = [];
-
+  
           for (const userDoc of usersSnapshot.docs) {
             const userData = userDoc.data();
             
+            // ✅ GET directo - NO listener anidado
             const statsDoc = await this.db.collection('userStats').doc(userDoc.id).get();
             const statsData = statsDoc.exists ? statsDoc.data() : {};
-
+  
+            // Solo log si hay datos importantes
+            if (statsData?.['totalWorkouts'] > 0) {
+              console.log(`📊 UserStats para ${userData['displayName']}:`, {
+                totalWorkouts: statsData?.['totalWorkouts'],
+                lastActiveAt: statsData?.['lastActiveAt']?.toDate(),
+                averageAccuracy: statsData?.['averageAccuracy']
+              });
+            }
+  
+            let lastActiveAt = statsData?.['lastActiveAt']?.toDate();
+            if (!lastActiveAt && userData['lastActiveAt']) {
+              lastActiveAt = userData['lastActiveAt'].toDate();
+            }
+            if (!lastActiveAt && userData['createdAt']) {
+              lastActiveAt = userData['createdAt'].toDate();
+            }
+  
             const userStats: UserStats = {
               uid: userDoc.id,
               displayName: userData['displayName'] || 'Usuario sin nombre',
               email: userData['email'],
               assignedTrainer: userData['assignedTrainer'],
-              lastActiveAt: userData['lastActiveAt']?.toDate() || new Date(),
+              lastActiveAt: lastActiveAt || new Date(0),
               
               lastCriticalError: statsData?.['lastCriticalError'] || null,
               totalCriticalErrors: statsData?.['totalCriticalErrors'] || 0,
@@ -148,14 +169,14 @@ export class DashboardService {
               lastSessionDurationSeconds: statsData?.['lastSessionDurationSeconds'] || 0,
               totalSeconds: statsData?.['totalSeconds'] || 0
             };
-
+  
             allUsersStats.push(userStats);
           }
-
+  
           console.log(`📊 Cargados ${allUsersStats.length} usuarios para supervisión`);
           this.allUsersStatsSubject.next(allUsersStats);
         });
-
+  
     } catch (error) {
       console.error('❌ Error cargando datos de todos los usuarios:', error);
       this.allUsersStatsSubject.next([]);
@@ -281,36 +302,43 @@ export class DashboardService {
   }
 
   private calculateRealDailyActivity(users: UserStats[], alerts: CriticalAlert[]): 
-    { date: string; users: number; workouts: number; errors: number }[] {
+  { date: string; users: number; workouts: number; errors: number }[] {
+  
+  const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const now = new Date();
+  
+  return days.map((day, index) => {
+    // 🚨 MISMO ARREGLO: Calcular fecha correctamente
+    const date = new Date(now);
+    const currentDayOfWeek = now.getDay();
+    const currentDayIndex = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
+    const daysBack = currentDayIndex - index;
+    date.setDate(date.getDate() - daysBack);
     
-    const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    const now = new Date();
+    const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
     
-    return days.map((day, index) => {
-      const date = new Date(now);
-      date.setDate(date.getDate() - (6 - index));
-      
-      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-      
-      const usersActiveThisDay = users.filter(u => 
-        u.lastActiveAt && u.lastActiveAt >= dayStart && u.lastActiveAt < dayEnd
-      ).length;
-      
-      const errorsThisDay = alerts.filter(a => 
-        a.processedAt >= dayStart && a.processedAt < dayEnd
-      ).length;
-      
-      const workoutsThisDay = Math.max(usersActiveThisDay, Math.ceil(errorsThisDay / 3));
-      
-      return {
-        date: day,
-        users: usersActiveThisDay,
-        workouts: workoutsThisDay,
-        errors: errorsThisDay
-      };
-    });
-  }
+    // Usuarios activos ese día
+    const usersActiveThisDay = users.filter(u => 
+      u.lastActiveAt && u.lastActiveAt >= dayStart && u.lastActiveAt < dayEnd
+    ).length;
+    
+    // Errores de ese día
+    const errorsThisDay = alerts.filter(a => 
+      a.processedAt >= dayStart && a.processedAt < dayEnd
+    ).length;
+    
+    // Entrenamientos = usuarios activos (más realista)
+    const workoutsThisDay = Math.max(usersActiveThisDay, Math.ceil(errorsThisDay / 2));
+    
+    return {
+      date: day,
+      users: usersActiveThisDay,
+      workouts: workoutsThisDay,
+      errors: errorsThisDay
+    };
+  });
+}
 
   private calculateRealAccuracyTrend(users: UserStats[]): { date: string; accuracy: number }[] {
     const avgAccuracy = users.length > 0 ? 
@@ -450,21 +478,61 @@ export class DashboardService {
     const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     const now = new Date();
     
+    console.log(`📊 Calculando progreso semanal para ${user.displayName}:`, {
+      totalWorkouts: user.totalWorkouts,
+      lastActiveAt: user.lastActiveAt,
+      totalAlerts: alerts.length,
+      hoyEs: now.toLocaleDateString('es-ES', { weekday: 'long' })
+    });
+    
     return days.map((day, index) => {
+      // 🚨 ARREGLO: Calcular fecha correctamente
       const date = new Date(now);
-      date.setDate(date.getDate() - (6 - index));
+      // Obtener el día de la semana actual (0=domingo, 1=lunes, etc.)
+      const currentDayOfWeek = now.getDay();
+      // Convertir a formato donde lunes=0
+      const currentDayIndex = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
+      
+      // Calcular días hacia atrás desde hoy
+      const daysBack = currentDayIndex - index;
+      date.setDate(date.getDate() - daysBack);
       
       const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
       
-      // ✅ SOLO CONTAR ERRORES REALES DE ESE DÍA
+      // Detectar si es hoy correctamente
+      const isToday = dayStart.toDateString() === now.toDateString();
+      
+      console.log(`📅 ${day} (${date.toLocaleDateString()}): isToday=${isToday}`);
+      
+      // Contar errores reales de ese día
       const errorsThisDay = alerts.filter(a => 
         a.processedAt >= dayStart && a.processedAt < dayEnd
       ).length;
       
-      // ✅ SOLO MOSTRAR ENTRENAMIENTOS SI HAY ERRORES REALES
-      // Si no hay errores en Firebase para ese día = 0 entrenamientos
-      const workoutsThisDay = errorsThisDay > 0 ? Math.ceil(errorsThisDay / 2) : 0;
+      // Detectar actividad real del usuario
+      const userWasActiveThisDay = user.lastActiveAt && 
+        user.lastActiveAt >= dayStart && user.lastActiveAt < dayEnd;
+      
+      let workoutsThisDay = 0;
+      
+      // Si el usuario estuvo activo ese día
+      if (userWasActiveThisDay) {
+        workoutsThisDay = 1;
+        console.log(`✅ ${day}: Usuario activo - 1 entrenamiento`);
+      }
+      
+      // Si hay errores adicionales, puede indicar más entrenamientos
+      if (errorsThisDay > 3) {
+        workoutsThisDay = Math.max(workoutsThisDay, Math.ceil(errorsThisDay / 4));
+        console.log(`⚠️ ${day}: ${errorsThisDay} errores = ${workoutsThisDay} entrenamientos`);
+      }
+      
+      // Solo para hoy: si el usuario tiene entrenamientos totales pero no actividad registrada
+      if (isToday && (user.totalWorkouts || 0) > 0 && workoutsThisDay === 0) {
+        workoutsThisDay = 1;
+        console.log(`🚨 ${day} (HOY): Forzando 1 entrenamiento por totalWorkouts > 0`);
+      }
       
       return {
         day,

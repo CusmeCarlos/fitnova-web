@@ -378,14 +378,19 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     this.destroyUserDetailChart();
   }
 
-  // ✅ GRÁFICO DETALLADO DEL USUARIO
   private initUserDetailChart(): void {
     if (!this.userDetailChartRef?.nativeElement || !this.selectedUserMetrics) return;
-
+  
     try {
+      // ✅ DESTRUIR CHART ANTERIOR ANTES DE CREAR NUEVO
+      if (this.userDetailChart) {
+        this.userDetailChart.destroy();
+        this.userDetailChart = null;
+      }
+  
       const ctx = this.userDetailChartRef.nativeElement.getContext('2d');
       if (!ctx) return;
-
+  
       this.userDetailChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -433,7 +438,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
           }
         }
       });
-
+  
       console.log('📊 Gráfico detallado del usuario inicializado');
     } catch (error) {
       console.error('❌ Error inicializando gráfico del usuario:', error);
