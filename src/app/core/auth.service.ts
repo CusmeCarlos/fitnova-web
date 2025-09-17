@@ -58,8 +58,7 @@ export class AuthService {
 
     // Debug para desarrollo
     this.user$.subscribe(user => {
-      console.log('🔥 AuthService Web - Usuario actualizado:', user ? 
-        `${user.displayName} (${user.role})` : 'No autenticado');
+      console.log('Usuario autenticado:', user?.displayName || 'No autenticado');
     });
   }
 

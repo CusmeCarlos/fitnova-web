@@ -680,19 +680,7 @@ private getLastActiveText(lastActive: Date | undefined): string {
     });
   }
 
-  // ✅ DEBUG BUTTON - REMOVER DESPUÉS
-  debugCurrentUser(): void {
-    console.log('🐛 DEBUG - INFORMACIÓN COMPLETA:');
-    console.log('Current User:', this.currentUser);
-    console.log('User Role:', this.currentUser?.role);
-    console.log('Es admin?:', this.currentUser?.role === 'admin');
-    console.log('Es trainer?:', this.currentUser?.role === 'trainer');
-    console.log('Show Create Form:', this.showCreateForm);
-    console.log('Form Valid:', this.createUserForm.valid);
-    console.log('Form Value:', this.createUserForm.value);
-    console.log('Available Trainers:', this.availableTrainers);
-    console.log('Is Loading:', this.isLoading);
-  }
+
 
   // ✅ MENSAJES
   private showSuccessMessage(message: string): void {

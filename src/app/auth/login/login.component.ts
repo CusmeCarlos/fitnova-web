@@ -77,14 +77,7 @@ export class LoginComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
-
-    // ✅ PRECARGAR CREDENCIALES DE TRAINER PARA TESTING
-    if (this.testCredentials.trainer) {
-      this.loginForm.patchValue({
-        email: this.testCredentials.trainer.email,
-        password: this.testCredentials.trainer.password
-      });
-    }
+    // Sin precarga de credenciales de prueba en producción
   }
 
   // ✅ LOGIN - MISMA LÓGICA QUE MÓVIL

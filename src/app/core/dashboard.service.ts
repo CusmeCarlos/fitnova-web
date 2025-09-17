@@ -1,5 +1,5 @@
 // src/app/core/dashboard.service.ts
-// 📊 DASHBOARD SERVICE GLOBAL - SOLO DATOS REALES DE FIREBASE
+// DASHBOARD SERVICE GLOBAL - SOLO DATOS REALES DE FIREBASE
 
 import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject, combineLatest, map, catchError, of, switchMap, take } from 'rxjs';
@@ -8,7 +8,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 
-// ✅ INTERFACES
+// INTERFACES
 export interface UserStats {
   uid: string;
   displayName?: string;
@@ -112,76 +112,73 @@ export class DashboardService {
     });
   }
 
-  private loadAllUsersData(currentUser: any): void {
-    try {
-      console.log('📡 Iniciando carga de usuarios con listeners tiempo real...');
-      
-      // ✅ SOLO UN LISTENER - Sin loops anidados
-      this.db.collection('users')
-        .where('role', '==', 'user')
-        .onSnapshot(async (usersSnapshot) => {
-          console.log(`👥 Detectados ${usersSnapshot.docs.length} usuarios`);
-          const allUsersStats: UserStats[] = [];
-  
-          for (const userDoc of usersSnapshot.docs) {
-            const userData = userDoc.data();
-            
-            // ✅ GET directo - NO listener anidado
-            const statsDoc = await this.db.collection('userStats').doc(userDoc.id).get();
-            const statsData = statsDoc.exists ? statsDoc.data() : {};
-  
-            // Solo log si hay datos importantes
-            if (statsData?.['totalWorkouts'] > 0) {
-              console.log(`📊 UserStats para ${userData['displayName']}:`, {
-                totalWorkouts: statsData?.['totalWorkouts'],
-                lastActiveAt: statsData?.['lastActiveAt']?.toDate(),
-                averageAccuracy: statsData?.['averageAccuracy']
-              });
-            }
-  
-            let lastActiveAt = statsData?.['lastActiveAt']?.toDate();
-            if (!lastActiveAt && userData['lastActiveAt']) {
-              lastActiveAt = userData['lastActiveAt'].toDate();
-            }
-            if (!lastActiveAt && userData['createdAt']) {
-              lastActiveAt = userData['createdAt'].toDate();
-            }
-  
-            const userStats: UserStats = {
-              uid: userDoc.id,
-              displayName: userData['displayName'] || 'Usuario sin nombre',
-              email: userData['email'],
-              assignedTrainer: userData['assignedTrainer'],
-              lastActiveAt: lastActiveAt || new Date(0),
-              
-              lastCriticalError: statsData?.['lastCriticalError'] || null,
-              totalCriticalErrors: statsData?.['totalCriticalErrors'] || 0,
-              lastErrorType: statsData?.['lastErrorType'] || '',
-              lastExercise: statsData?.['lastExercise'] || '',
-              lastSessionId: statsData?.['lastSessionId'] || '',
-              accuracy: statsData?.['averageAccuracy'] || 0,
-              weeklyGoalProgress: statsData?.['weeklyGoalProgress'] || 0,
-              totalWorkouts: statsData?.['totalWorkouts'] || 0,
-              totalHours: statsData?.['totalHours'] || 0,
-              averageAccuracy: statsData?.['averageAccuracy'] || 0,
-              weeklyStreak: statsData?.['weeklyStreak'] || 0,
-              improvementRate: statsData?.['improvementRate'] || 0,
-              lastSessionDurationSeconds: statsData?.['lastSessionDurationSeconds'] || 0,
-              totalSeconds: statsData?.['totalSeconds'] || 0
-            };
-  
-            allUsersStats.push(userStats);
+ private loadAllUsersData(currentUser: any): void {
+  try {
+    console.log(' Iniciando carga de usuarios con listeners tiempo real...');
+    
+    // SOLO UN LISTENER - Sin loops anidados
+    this.db.collection('users')
+      .where('role', '==', 'user')
+      .onSnapshot(async (usersSnapshot) => {
+        console.log(` Detectados ${usersSnapshot.docs.length} usuarios`);
+        const allUsersStats: UserStats[] = [];
+
+        for (const userDoc of usersSnapshot.docs) {
+          const userData = userDoc.data();
+          
+          // GET directo - NO listener anidado
+          const statsDoc = await this.db.collection('userStats').doc(userDoc.id).get();
+          const statsData = (statsDoc.exists ? statsDoc.data() : {}) as Record<string, any>;
+          
+          // Solo log si hay datos importantes (evita 'posiblemente undefined')
+          const totalWorkouts = Number(statsData?.['totalWorkouts'] ?? 0);
+          if (totalWorkouts > 0) {
+            console.log(` Usuario activo: ${userData['displayName']} - ${totalWorkouts} entrenamientos`);
           }
-  
-          console.log(`📊 Cargados ${allUsersStats.length} usuarios para supervisión`);
-          this.allUsersStatsSubject.next(allUsersStats);
-        });
-  
-    } catch (error) {
-      console.error('❌ Error cargando datos de todos los usuarios:', error);
-      this.allUsersStatsSubject.next([]);
-    }
+
+          let lastActiveAt = statsData?.['lastActiveAt']?.toDate();
+          if (!lastActiveAt && userData['lastActiveAt']) {
+            lastActiveAt = userData['lastActiveAt'].toDate();
+          }
+          if (!lastActiveAt && userData['createdAt']) {
+            lastActiveAt = userData['createdAt'].toDate();
+          }
+
+          const userStats: UserStats = {
+            uid: userDoc.id,
+            displayName: userData['displayName'] || 'Usuario sin nombre',
+            email: userData['email'],
+            assignedTrainer: userData['assignedTrainer'],
+            lastActiveAt: lastActiveAt || new Date(0),
+            
+            lastCriticalError: statsData?.['lastCriticalError'] || null,
+            totalCriticalErrors: statsData?.['totalCriticalErrors'] || 0,
+            lastErrorType: statsData?.['lastErrorType'] || '',
+            lastExercise: statsData?.['lastExercise'] || '',
+            lastSessionId: statsData?.['lastSessionId'] || '',
+            accuracy: statsData?.['averageAccuracy'] || 0,
+            weeklyGoalProgress: statsData?.['weeklyGoalProgress'] || 0,
+            totalWorkouts: statsData?.['totalWorkouts'] || 0,
+            totalHours: statsData?.['totalHours'] || 0,
+            averageAccuracy: statsData?.['averageAccuracy'] || 0,
+            weeklyStreak: statsData?.['weeklyStreak'] || 0,
+            improvementRate: statsData?.['improvementRate'] || 0,
+            lastSessionDurationSeconds: statsData?.['lastSessionDurationSeconds'] || 0,
+            totalSeconds: statsData?.['totalSeconds'] || 0
+          };
+
+          allUsersStats.push(userStats);
+        }
+
+        console.log(` Cargados ${allUsersStats.length} usuarios para supervisión`);
+        this.allUsersStatsSubject.next(allUsersStats);
+      });
+
+  } catch (error) {
+    console.error(' Error cargando datos de todos los usuarios:', error);
+    this.allUsersStatsSubject.next([]);
   }
+}
 
   private loadAllAlertsData(currentUser: any): void {
     try {
@@ -205,7 +202,7 @@ export class DashboardService {
         });
 
     } catch (error) {
-      console.error('❌ Error cargando alertas globales:', error);
+      console.error(' Error cargando alertas globales:', error);
       this.allAlertsSubject.next([]);
     }
   }
@@ -232,14 +229,14 @@ export class DashboardService {
     ]).pipe(
       map(([allUsers, allAlerts, currentUser]) => {
         if (allUsers.length === 0 && allAlerts.length === 0) {
-          console.log('📊 Sin datos - Generando métricas globales de ejemplo');
+          console.log(' Sin datos - Generando métricas globales de ejemplo');
           return this.getExampleGlobalMetrics();
         }
 
         return this.calculateGlobalMetrics(allUsers, allAlerts, currentUser);
       }),
       catchError(error => {
-        console.error('❌ Error calculando métricas globales:', error);
+        console.error(' Error calculando métricas globales:', error);
         return of(this.getExampleGlobalMetrics());
       })
     );
@@ -308,7 +305,7 @@ export class DashboardService {
   const now = new Date();
   
   return days.map((day, index) => {
-    // 🚨 MISMO ARREGLO: Calcular fecha correctamente
+    // MISMO ARREGLO: Calcular fecha correctamente
     const date = new Date(now);
     const currentDayOfWeek = now.getDay();
     const currentDayIndex = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
@@ -431,7 +428,7 @@ export class DashboardService {
         return this.calculateUserDetailMetrics(user, userAlerts);
       }),
       catchError(error => {
-        console.error('❌ Error obteniendo métricas del usuario:', error);
+        console.error(' Error obteniendo métricas del usuario:', error);
         throw error;
       })
     );
@@ -478,7 +475,7 @@ export class DashboardService {
     const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     const now = new Date();
     
-    console.log(`📊 Calculando progreso semanal para ${user.displayName}:`, {
+    console.log(` Calculando progreso semanal para ${user.displayName}:`, {
       totalWorkouts: user.totalWorkouts,
       lastActiveAt: user.lastActiveAt,
       totalAlerts: alerts.length,
@@ -486,7 +483,7 @@ export class DashboardService {
     });
     
     return days.map((day, index) => {
-      // 🚨 ARREGLO: Calcular fecha correctamente
+      // ARREGLO: Calcular fecha correctamente
       const date = new Date(now);
       // Obtener el día de la semana actual (0=domingo, 1=lunes, etc.)
       const currentDayOfWeek = now.getDay();
@@ -503,7 +500,7 @@ export class DashboardService {
       // Detectar si es hoy correctamente
       const isToday = dayStart.toDateString() === now.toDateString();
       
-      console.log(`📅 ${day} (${date.toLocaleDateString()}): isToday=${isToday}`);
+      console.log(` ${day} (${date.toLocaleDateString()}): isToday=${isToday}`);
       
       // Contar errores reales de ese día
       const errorsThisDay = alerts.filter(a => 
@@ -519,19 +516,19 @@ export class DashboardService {
       // Si el usuario estuvo activo ese día
       if (userWasActiveThisDay) {
         workoutsThisDay = 1;
-        console.log(`✅ ${day}: Usuario activo - 1 entrenamiento`);
+        console.log(` Usuario activo - 1 entrenamiento`);
       }
       
       // Si hay errores adicionales, puede indicar más entrenamientos
       if (errorsThisDay > 3) {
         workoutsThisDay = Math.max(workoutsThisDay, Math.ceil(errorsThisDay / 4));
-        console.log(`⚠️ ${day}: ${errorsThisDay} errores = ${workoutsThisDay} entrenamientos`);
+        console.log(` ${errorsThisDay} errores = ${workoutsThisDay} entrenamientos`);
       }
       
       // Solo para hoy: si el usuario tiene entrenamientos totales pero no actividad registrada
       if (isToday && (user.totalWorkouts || 0) > 0 && workoutsThisDay === 0) {
         workoutsThisDay = 1;
-        console.log(`🚨 ${day} (HOY): Forzando 1 entrenamiento por totalWorkouts > 0`);
+        console.log(` (HOY): Forzando 1 entrenamiento por totalWorkouts > 0`);
       }
       
       return {
@@ -550,7 +547,7 @@ export class DashboardService {
       const date = new Date();
       date.setDate(date.getDate() - i);
       
-      // ✅ USAR EXACTAMENTE LA PRECISIÓN REAL SIN VARIACIONES
+      // USAR EXACTAMENTE LA PRECISIÓN REAL SIN VARIACIONES
       // Si el usuario no tiene precisión = 0
       const accuracy = baseAccuracy;
       
@@ -569,15 +566,15 @@ export class DashboardService {
     const baseAccuracy = user.averageAccuracy || 0;
     
     return exercises.map(exercise => {
-      // ✅ CONTAR SOLO ERRORES REALES PARA ESTE EJERCICIO
+      // CONTAR SOLO ERRORES REALES PARA ESTE EJERCICIO
       const exerciseAlerts = alerts.filter(a => 
         a.exercise && a.exercise.toLowerCase().includes(exercise.toLowerCase())
       );
       
-      // ✅ MOSTRAR DATOS REALES: Si no hay errores = 0 count
+      // MOSTRAR DATOS REALES: Si no hay errores = 0 count
       const count = exerciseAlerts.length > 0 ? exerciseAlerts.length * 2 : 0;
       
-      // ✅ PRECISIÓN REAL: Si no tiene datos = 0
+      // PRECISIÓN REAL: Si no tiene datos = 0
       const accuracy = baseAccuracy;
       
       return {
