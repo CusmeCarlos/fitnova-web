@@ -5,6 +5,7 @@ import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
+import 'firebase/compat/functions';
 import { Router } from '@angular/router';
 import { Observable, of, BehaviorSubject } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
@@ -13,11 +14,9 @@ import { MatSnackBar } from '@angular/material/snack-bar'; // ✅ CAMBIO: Angula
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  createUserForWeb(email: any, password: any, arg2: { displayName: any; role: string; assignedTrainer: any; }) {
-    throw new Error('Method not implemented.');
-  }
   user$: Observable<User | null>;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
+  
 
   constructor(
     private afAuth: AngularFireAuth,
@@ -121,61 +120,167 @@ export class AuthService {
     }
   }
 
-  // ✅ CREAR USUARIO - SOLO PARA ADMIN (funcionalidad web)
-  async createUser(userData: {
-    email: string;
-    password: string;
-    displayName: string;
-    role: 'trainer' | 'admin';
-  }): Promise<void> {
-    try {
-      console.log('👤 Creando usuario web:', userData.email);
-      
-      // Verificar que el usuario actual sea admin
-      const currentUser = this.currentUserSubject.value;
-      if (!currentUser || currentUser.role !== 'admin') {
-        throw new Error('Solo los administradores pueden crear usuarios');
-      }
-      
-      const userCredential = await this.afAuth.createUserWithEmailAndPassword(
-        userData.email, 
-        userData.password
-      );
+  // 🚀 MÉTODO createUserForWeb ACTUALIZADO - USA CLOUD FUNCTIONS
+// Reemplazar el método actual en auth.service.ts
 
-      if (userCredential.user) {
-        // Actualizar perfil
-        await userCredential.user.updateProfile({
-          displayName: userData.displayName
-        });
-
-        // Crear documento en Firestore
-        const db = firebase.firestore();
-        await db.doc(`users/${userCredential.user.uid}`).set({
-          uid: userCredential.user.uid,
-          email: userData.email,
-          displayName: userData.displayName,
-          role: userData.role,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          isActive: true,
-          createdBy: currentUser.uid, // Quien creó el usuario
-          trainerProfile: userData.role === 'trainer' ? {
-            specialties: [],
-            certifications: [],
-            assignedUsers: []
-          } : undefined
-        });
-
-        await this.showSuccessMessage('Usuario creado exitosamente');
-        console.log('✅ Usuario web creado exitosamente');
-      }
-    } catch (error: any) {
-      console.error('❌ Error creando usuario web:', error);
-      await this.showErrorMessage(this.getErrorMessage(error));
-      throw error;
+async createUserForWeb(userData: {
+  email: string;
+  password: string;
+  displayName: string;
+  role: 'user';
+  assignedTrainer?: string;
+}): Promise<void> {
+  try {
+    console.log('👤 Creando usuario web via Cloud Function:', userData.email);
+    
+    // ✅ VERIFICAR PERMISOS LOCALMENTE (doble verificación)
+    const currentUser = this.currentUserSubject.value;
+    if (!currentUser || !['trainer', 'admin'].includes(currentUser.role)) {
+      throw new Error('Solo los entrenadores y administradores pueden crear usuarios');
     }
-  }
 
+    // ✅ PREPARAR DATOS PARA CLOUD FUNCTION
+    const functionData = {
+      email: userData.email,
+      password: userData.password,
+      displayName: userData.displayName,
+      assignedTrainer: currentUser.role === 'trainer' ? currentUser.uid : userData.assignedTrainer
+    };
+
+    console.log('📡 Llamando Cloud Function con datos:', {
+      email: functionData.email,
+      displayName: functionData.displayName,
+      assignedTrainer: functionData.assignedTrainer,
+      callerRole: currentUser.role
+    });
+
+    // ✅ OBTENER TOKEN DE AUTENTICACIÓN
+    const user = await this.afAuth.currentUser;
+    const idToken = user ? await user.getIdToken() : null;
+    if (!idToken) {
+      throw new Error('Token de autenticación no disponible');
+    }
+
+    // ✅ LLAMAR CLOUD FUNCTION
+    const createUserFunction = firebase.functions().httpsCallable('createMobileUser');
+    
+    // Llamada con retry en caso de timeout
+    let result;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      try {
+        console.log(`📞 Intento ${attempts + 1}/${maxAttempts} - Llamando Cloud Function...`);
+        
+        result = await createUserFunction(functionData);
+        
+        console.log('✅ Cloud Function ejecutada exitosamente:', result.data);
+        break;
+        
+      } catch (functionError: any) {
+        attempts++;
+        console.error(`❌ Error en intento ${attempts}:`, functionError);
+        
+        if (attempts >= maxAttempts) {
+          throw functionError;
+        }
+        
+        // Esperar 1 segundo antes del siguiente intento
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    // ✅ PROCESAR RESPUESTA
+    if (result?.data?.success) {
+      const userData = result.data.userData;
+      
+      // Mensaje personalizado según el rol
+      let successMessage = '';
+      if (currentUser.role === 'trainer') {
+        successMessage = `Usuario ${userData.displayName} registrado exitosamente y asignado a ti como entrenador`;
+      } else {
+        successMessage = `Usuario ${userData.displayName} creado exitosamente`;
+        if (userData.assignedTrainerName) {
+          successMessage += ` y asignado al entrenador ${userData.assignedTrainerName}`;
+        }
+      }
+      
+      await this.showSuccessMessage(successMessage);
+      console.log('🎉 Usuario creado exitosamente:', userData);
+      
+      return; // Éxito completo
+    } else {
+      throw new Error('La Cloud Function no retornó éxito');
+    }
+    
+  } catch (error: any) {
+    console.error('❌ Error completo al crear usuario:', error);
+    
+    // ✅ MANEJO DE ERRORES ESPECÍFICOS DE CLOUD FUNCTIONS
+    let errorMessage = 'Error al crear el usuario';
+    
+    if (error.code) {
+      switch (error.code) {
+        case 'functions/unauthenticated':
+          errorMessage = 'Sesión expirada. Por favor inicia sesión nuevamente';
+          // Opcional: redirigir al login
+          this.router.navigate(['/auth/login']);
+          break;
+          
+        case 'functions/permission-denied':
+          errorMessage = 'No tienes permisos para crear usuarios';
+          break;
+          
+        case 'functions/already-exists':
+          errorMessage = 'Ya existe una cuenta con este email';
+          break;
+          
+        case 'functions/invalid-argument':
+          errorMessage = error.message || 'Datos inválidos';
+          break;
+          
+        case 'functions/internal':
+          errorMessage = 'Error interno del servidor. Intenta nuevamente';
+          break;
+          
+        case 'functions/unavailable':
+          errorMessage = 'Servicio temporalmente no disponible. Intenta más tarde';
+          break;
+          
+        case 'functions/deadline-exceeded':
+          errorMessage = 'Tiempo de espera agotado. Intenta nuevamente';
+          break;
+          
+        default:
+          errorMessage = error.message || 'Error desconocido';
+          console.error('Error de Cloud Function no manejado:', error.code, error);
+      }
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    await this.showErrorMessage(errorMessage);
+    throw error;
+  }
+}
+
+// 🚀 MÉTODO ADICIONAL: Obtener estadísticas via Cloud Function (bonus)
+async getUserStatsViaFunction(userId?: string): Promise<any> {
+  try {
+    const getUserStatsFunction = firebase.functions().httpsCallable('getUserStats');
+    const result = await getUserStatsFunction({ userId });
+    
+    if (result?.data?.success) {
+      return result.data.stats;
+    } else {
+      throw new Error('No se pudieron obtener las estadísticas');
+    }
+  } catch (error: any) {
+    console.error('❌ Error obteniendo estadísticas:', error);
+    throw error;
+  }
+}
   // ✅ OBTENER USUARIO ACTUAL SINCRONO
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
