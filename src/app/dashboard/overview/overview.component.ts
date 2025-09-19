@@ -555,7 +555,8 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
   }
 
   navigateToAlerts(): void {
-    this.router.navigate(['/alerts/alert-dashboard']);
+    console.log('🚨 Navegando al centro de alertas críticas...');
+    this.router.navigate(['/alerts/dashboard']);
   }
 
   navigateToRoutines(): void {

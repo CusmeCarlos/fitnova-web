@@ -280,21 +280,42 @@ async getUserStatsViaFunction(userId?: string): Promise<any> {
     throw error;
   }
 }
-  // ✅ OBTENER USUARIO ACTUAL SINCRONO
-  getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
-  }
+getCurrentUser(): User | null {
+  return this.currentUserSubject.value;
+}
 
-  // ✅ OBTENER UID DEL USUARIO ACTUAL
-  async getCurrentUserId(): Promise<string | null> {
-    try {
-      const user = await this.afAuth.currentUser;
-      return user?.uid || null;
-    } catch (error) {
-      console.error('Error obteniendo UID actual:', error);
-      return null;
+// ✅ MÉTODO PARA OBTENER USUARIO ACTUAL - ASINCRONO (PARA ALERT SERVICE)
+async getCurrentUserAsync(): Promise<User | null> {
+  try {
+    const currentUser = this.currentUserSubject.value;
+    if (currentUser) {
+      return currentUser;
     }
+    
+    // Si no hay usuario en el subject, intentar obtenerlo de Firebase
+    const user = await this.afAuth.currentUser;
+    if (user) {
+      const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        return {
+          uid: user.uid,
+          email: user.email || '',
+          displayName: user.displayName || '',
+          role: userData?.['role'] || 'user',
+          emailVerified: user.emailVerified,
+          createdAt: userData?.['createdAt']?.toDate() || new Date(),
+          ...userData
+        } as User;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error obteniendo usuario actual:', error);
+    return null;
   }
+}
 
   // ✅ VERIFICAR SI ES ADMIN
   isAdmin(): boolean {
