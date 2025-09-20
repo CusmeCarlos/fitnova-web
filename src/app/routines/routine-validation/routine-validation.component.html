@@ -1,0 +1,472 @@
+<!-- src/app/routines/routine-validation/routine-validation.component.html -->
+<!-- 🤖 TEMPLATE PARA VALIDACIÓN DE RUTINAS IA -->
+
+<div class="routine-validation-container">
+
+    <!-- ✅ HEADER CON MÉTRICAS -->
+    <div class="validation-header">
+      <div class="header-content">
+        <h1>
+          <mat-icon>fitness_center</mat-icon>
+          Validación de Rutinas IA
+        </h1>
+        <p class="subtitle">Dashboard para revisar y aprobar rutinas generadas por inteligencia artificial</p>
+      </div>
+  
+      <!-- Métricas rápidas -->
+      <div class="metrics-cards" *ngIf="metrics">
+        <mat-card class="metric-card pending">
+          <mat-card-content>
+            <div class="metric-value">{{ totalPendingRoutines }}</div>
+            <div class="metric-label">Pendientes</div>
+            <mat-icon>schedule</mat-icon>
+          </mat-card-content>
+        </mat-card>
+  
+        <mat-card class="metric-card approved">
+          <mat-card-content>
+            <div class="metric-value">{{ totalApprovedRoutines }}</div>
+            <div class="metric-label">Aprobadas</div>
+            <mat-icon>check_circle</mat-icon>
+          </mat-card-content>
+        </mat-card>
+  
+        <mat-card class="metric-card rejected">
+          <mat-card-content>
+            <div class="metric-value">{{ totalRejectedRoutines }}</div>
+            <div class="metric-label">Rechazadas</div>
+            <mat-icon>cancel</mat-icon>
+          </mat-card-content>
+        </mat-card>
+  
+        <mat-card class="metric-card time">
+          <mat-card-content>
+            <div class="metric-value">{{ averageApprovalTime }}</div>
+            <div class="metric-label">Tiempo Promedio</div>
+            <mat-icon>timer</mat-icon>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  
+    <!-- ✅ BARRA DE ACCIONES -->
+    <div class="actions-bar">
+      <div class="left-actions">
+        <!-- Filtros rápidos -->
+        <button mat-raised-button color="warn" 
+                [class.active]="filterForm.get('status')?.value === 'pending_approval'"
+                (click)="showPendingOnly()"
+                matTooltip="Solo rutinas pendientes">
+          <mat-icon>schedule</mat-icon>
+          Pendientes
+          <mat-badge [matBadge]="totalPendingRoutines" matBadgeColor="warn" *ngIf="totalPendingRoutines > 0"></mat-badge>
+        </button>
+  
+        <button mat-raised-button color="primary"
+                [class.active]="filterForm.get('status')?.value === 'approved'"
+                (click)="showApprovedOnly()"
+                matTooltip="Solo rutinas aprobadas">
+          <mat-icon>check_circle</mat-icon>
+          Aprobadas
+        </button>
+  
+        <button mat-raised-button color="accent"
+                [class.active]="filterForm.get('status')?.value === 'rejected'"
+                (click)="showRejectedOnly()"
+                matTooltip="Solo rutinas rechazadas">
+          <mat-icon>cancel</mat-icon>
+          Rechazadas
+        </button>
+  
+        <button mat-stroked-button
+                [class.active]="filterForm.get('status')?.value === 'all'"
+                (click)="showAllRoutines()"
+                matTooltip="Todas las rutinas">
+          <mat-icon>list</mat-icon>
+          Todas
+        </button>
+      </div>
+  
+      <div class="right-actions">
+        <!-- Toggle filtros avanzados -->
+        <button mat-icon-button 
+                (click)="showFilters = !showFilters"
+                [color]="showFilters ? 'primary' : ''"
+                matTooltip="Filtros avanzados">
+          <mat-icon>filter_list</mat-icon>
+        </button>
+  
+        <!-- Refrescar -->
+        <button mat-icon-button 
+                (click)="refreshData()"
+                [disabled]="loading"
+                matTooltip="Refrescar datos">
+          <mat-icon>refresh</mat-icon>
+        </button>
+  
+        <!-- Exportar -->
+        <button mat-icon-button 
+                (click)="exportToCSV()"
+                matTooltip="Exportar a CSV">
+          <mat-icon>download</mat-icon>
+        </button>
+      </div>
+    </div>
+  
+    <!-- ✅ PANEL DE FILTROS AVANZADOS -->
+    <mat-expansion-panel [expanded]="showFilters" class="filters-panel" *ngIf="showFilters">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <mat-icon>tune</mat-icon>
+          Filtros Avanzados
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+  
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filter-row">
+          <!-- Estado -->
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="all">Todos</mat-option>
+              <mat-option value="pending_approval">Pendientes</mat-option>
+              <mat-option value="approved">Aprobadas</mat-option>
+              <mat-option value="rejected">Rechazadas</mat-option>
+            </mat-select>
+          </mat-form-field>
+  
+          <!-- Dificultad -->
+          <mat-form-field appearance="outline">
+            <mat-label>Dificultad</mat-label>
+            <mat-select formControlName="difficulty">
+              <mat-option value="all">Todas</mat-option>
+              <mat-option value="beginner">Principiante</mat-option>
+              <mat-option value="intermediate">Intermedio</mat-option>
+              <mat-option value="advanced">Avanzado</mat-option>
+            </mat-select>
+          </mat-form-field>
+  
+          <!-- Nivel de adaptación -->
+          <mat-form-field appearance="outline">
+            <mat-label>Adaptación</mat-label>
+            <mat-select formControlName="adaptationLevel">
+              <mat-option value="all">Todos</mat-option>
+              <mat-option value="low">Baja</mat-option>
+              <mat-option value="medium">Media</mat-option>
+              <mat-option value="high">Alta</mat-option>
+            </mat-select>
+          </mat-form-field>
+  
+          <!-- Búsqueda -->
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Buscar usuario o rutina</mat-label>
+            <input matInput formControlName="searchTerm" placeholder="Nombre, email o descripción...">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+        </div>
+  
+        <div class="filter-row">
+          <!-- Fecha inicio -->
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha desde</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="dateStart">
+            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+          </mat-form-field>
+  
+          <!-- Fecha fin -->
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha hasta</mat-label>
+            <input matInput [matDatepicker]="endPicker" formControlName="dateEnd">
+            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+          </mat-form-field>
+  
+          <!-- Botones de acción -->
+          <div class="filter-actions">
+            <button mat-raised-button color="primary" (click)="applyFilters()">
+              <mat-icon>search</mat-icon>
+              Aplicar
+            </button>
+            <button mat-stroked-button (click)="clearFilters()">
+              <mat-icon>clear</mat-icon>
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-expansion-panel>
+  
+    <!-- ✅ TABLA DE RUTINAS -->
+    <div class="table-container">
+      <mat-card>
+        <mat-card-content>
+          
+          <!-- Loading spinner -->
+          <div class="loading-container" *ngIf="loading">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Cargando rutinas...</p>
+          </div>
+  
+          <!-- Tabla principal -->
+          <div class="table-wrapper" *ngIf="!loading">
+            <table mat-table [dataSource]="dataSource" matSort class="routines-table">
+  
+              <!-- Columna: Información del Usuario -->
+              <ng-container matColumnDef="userInfo">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header="userDisplayName">Usuario</th>
+                <td mat-cell *matCellDef="let routine" class="user-info-cell">
+                  <div class="user-info">
+                    <div class="user-avatar">
+                      <mat-icon>person</mat-icon>
+                    </div>
+                    <div class="user-details">
+                      <div class="user-name">{{ routine.userDisplayName || 'Usuario' }}</div>
+                      <div class="user-email">{{ routine.userEmail || 'Sin email' }}</div>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Columna: Nombre de Rutina -->
+              <ng-container matColumnDef="routineName">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header="routine.name">Rutina</th>
+                <td mat-cell *matCellDef="let routine" class="routine-name-cell">
+                  <div class="routine-info">
+                    <div class="routine-name">{{ routine.routine.name || 'Sin nombre' }}</div>
+                    <div class="routine-description">{{ routine.routine.description || 'Sin descripción' }}</div>
+                    <div class="routine-focus" *ngIf="routine.routine.focusAreas?.length">
+                      <mat-chip-set>
+                        <mat-chip *ngFor="let area of routine.routine.focusAreas.slice(0, 2)" 
+                                 [color]="'primary'" 
+                                 selected>
+                          {{ area }}
+                        </mat-chip>
+                        <mat-chip *ngIf="routine.routine.focusAreas.length > 2" 
+                                 color="accent">
+                          +{{ routine.routine.focusAreas.length - 2 }}
+                        </mat-chip>
+                      </mat-chip-set>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Columna: Dificultad -->
+              <ng-container matColumnDef="difficulty">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header="routine.difficulty">Dificultad</th>
+                <td mat-cell *matCellDef="let routine">
+                  <mat-chip [color]="getDifficultyColor(routine.routine.difficulty)" selected>
+                    {{ routine.routine.difficulty || 'No definida' }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+  
+              <!-- Columna: Duración -->
+              <ng-container matColumnDef="duration">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header="routine.duration">Duración</th>
+                <td mat-cell *matCellDef="let routine">
+                  <div class="duration-info">
+                    <mat-icon>schedule</mat-icon>
+                    {{ formatDuration(routine.routine.duration) }}
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Columna: Ejercicios -->
+              <ng-container matColumnDef="exercises">
+                <th mat-header-cell *matHeaderCellDef>Ejercicios</th>
+                <td mat-cell *matCellDef="let routine">
+                  <div class="exercises-info">
+                    <mat-icon>fitness_center</mat-icon>
+                    {{ routine.routine.exercises?.length || 0 }} ejercicios
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Columna: Confianza IA -->
+              <ng-container matColumnDef="aiConfidence">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header="aiConfidence">Confianza IA</th>
+                <td mat-cell *matCellDef="let routine">
+                  <div class="confidence-info">
+                    <mat-chip [color]="getConfidenceColor(routine.aiConfidence || 0)" selected>
+                      {{ routine.aiConfidence || 0 }}%
+                    </mat-chip>
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Columna: Nivel de Adaptación -->
+              <ng-container matColumnDef="adaptationLevel">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header="adaptationLevel">Adaptación</th>
+                <td mat-cell *matCellDef="let routine">
+                  <mat-chip [color]="getAdaptationColor(routine.adaptationLevel)" selected>
+                    {{ routine.adaptationLevel || 'Media' }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+  
+              <!-- Columna: Fecha Generada -->
+              <ng-container matColumnDef="generatedAt">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header="generatedAt">Generada</th>
+                <td mat-cell *matCellDef="let routine">
+                  <div class="date-info">
+                    <mat-icon>event</mat-icon>
+                    {{ formatDate(routine.generatedAt) }}
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Columna: Acciones -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let routine" class="actions-cell">
+                  
+                  <!-- Estado actual -->
+                  <mat-chip [color]="getStatusColor(routine.status)" selected class="status-chip">
+                    <mat-icon [fontIcon]="getStatusIcon(routine.status)"></mat-icon>
+                    {{ routine.status === 'pending_approval' ? 'Pendiente' : 
+                       routine.status === 'approved' ? 'Aprobada' : 'Rechazada' }}
+                  </mat-chip>
+  
+                  <!-- Botones de acción para rutinas pendientes -->
+                  <div class="action-buttons" *ngIf="canApproveReject(routine)">
+                    <button mat-mini-fab 
+                            color="primary"
+                            (click)="approveRoutine(routine)"
+                            matTooltip="Aprobar rutina">
+                      <mat-icon>check</mat-icon>
+                    </button>
+  
+                    <button mat-mini-fab 
+                            color="warn"
+                            (click)="rejectRoutine(routine)"
+                            matTooltip="Rechazar rutina">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+  
+                  <!-- Botón ver detalles -->
+                  <button mat-icon-button 
+                          (click)="viewRoutineDetails(routine)"
+                          matTooltip="Ver detalles">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+  
+                </td>
+              </ng-container>
+  
+              <!-- Header y filas -->
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                  [class.selected]="selectedRoutine?.id === row.id"
+                  (click)="viewRoutineDetails(row)"></tr>
+            </table>
+  
+            <!-- Mensaje cuando no hay datos -->
+            <div class="no-data" *ngIf="dataSource.data.length === 0 && !loading">
+              <mat-icon>inbox</mat-icon>
+              <h3>No hay rutinas para mostrar</h3>
+              <p>No se encontraron rutinas con los filtros actuales.</p>
+              <button mat-raised-button color="primary" (click)="clearFilters()">
+                Limpiar Filtros
+              </button>
+            </div>
+          </div>
+  
+          <!-- Paginador -->
+          <mat-paginator 
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            [pageSize]="25"
+            showFirstLastButtons
+            aria-label="Seleccionar página">
+          </mat-paginator>
+  
+        </mat-card-content>
+      </mat-card>
+    </div>
+  
+    <!-- ✅ PANEL DE DETALLES (OPCIONAL) -->
+    <div class="details-panel" *ngIf="selectedRoutine">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>info</mat-icon>
+            Detalles de la Rutina
+          </mat-card-title>
+          <button mat-icon-button (click)="selectedRoutine = null">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <strong>Usuario:</strong> {{ selectedRoutine.userDisplayName }}
+            </div>
+            <div class="detail-item">
+              <strong>Email:</strong> {{ selectedRoutine.userEmail }}
+            </div>
+            <div class="detail-item">
+              <strong>Rutina:</strong> {{ selectedRoutine.routine.name }}
+            </div>
+            <div class="detail-item">
+              <strong>Descripción:</strong> {{ selectedRoutine.routine.description }}
+            </div>
+            <div class="detail-item">
+              <strong>Dificultad:</strong> {{ selectedRoutine.routine.difficulty }}
+            </div>
+            <div class="detail-item">
+              <strong>Duración:</strong> {{ formatDuration(selectedRoutine.routine.duration) }}
+            </div>
+            <div class="detail-item">
+              <strong>Ejercicios:</strong> {{ selectedRoutine.routine.exercises.length || 0 }}
+            </div>
+            <div class="detail-item">
+              <strong>Confianza IA:</strong> {{ selectedRoutine.aiConfidence }}%
+            </div>
+            <div class="detail-item">
+              <strong>Adaptación:</strong> {{ selectedRoutine.adaptationLevel }}
+            </div>
+            <div class="detail-item">
+              <strong>Estado:</strong> {{ selectedRoutine.status }}
+            </div>
+            <div class="detail-item">
+              <strong>Generada:</strong> {{ formatDate(selectedRoutine.generatedAt) }}
+            </div>
+            <div class="detail-item" *ngIf="selectedRoutine.trainerNotes">
+              <strong>Notas:</strong> {{ selectedRoutine.trainerNotes }}
+            </div>
+          </div>
+  
+          <!-- Lista de ejercicios -->
+          <div class="exercises-list" *ngIf="selectedRoutine.routine.exercises && selectedRoutine.routine.exercises.length > 0">
+            <h4>Ejercicios de la Rutina:</h4>
+            <mat-list>
+              <mat-list-item *ngFor="let exercise of selectedRoutine.routine.exercises; let i = index">
+                <div matListItemTitle>{{ i + 1 }}. {{ exercise.name }}</div>
+                <div matListItemLine *ngIf="exercise.sets && exercise.reps">
+                  {{ exercise.sets }} series × {{ exercise.reps }} repeticiones
+                </div>
+                <div matListItemLine *ngIf="exercise.weight">
+                  Peso: {{ exercise.weight }}kg
+                </div>
+              </mat-list-item>
+            </mat-list>
+          </div>
+  
+          <!-- Adaptaciones médicas -->
+          <div class="adaptations-list" *ngIf="selectedRoutine.routine.adaptations && selectedRoutine.routine.adaptations.length > 0">
+            <h4>Adaptaciones Médicas:</h4>
+            <mat-chip-set>
+              <mat-chip *ngFor="let adaptation of selectedRoutine.routine.adaptations" 
+                       color="accent" selected>
+                {{ adaptation }}
+              </mat-chip>
+            </mat-chip-set>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  
+  </div>

@@ -1,0 +1,628 @@
+// src/app/routines/routine-validation/routine-validation.component.scss
+// 🤖 ESTILOS PARA VALIDACIÓN DE RUTINAS IA
+
+.routine-validation-container {
+    padding: 24px;
+    background: #f5f5f5;
+    min-height: 100vh;
+  
+    // ✅ HEADER PRINCIPAL
+    .validation-header {
+      margin-bottom: 32px;
+  
+      .header-content {
+        margin-bottom: 24px;
+  
+        h1 {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 0 0 8px 0;
+          font-size: 2rem;
+          font-weight: 600;
+          color: #333;
+  
+          mat-icon {
+            font-size: 2rem;
+            color: #2196f3;
+          }
+        }
+  
+        .subtitle {
+          margin: 0;
+          color: #666;
+          font-size: 1.1rem;
+        }
+      }
+  
+      // Tarjetas de métricas
+      .metrics-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+  
+        .metric-card {
+          position: relative;
+          transition: transform 0.2s, box-shadow 0.2s;
+  
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          }
+  
+          mat-card-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px !important;
+  
+            .metric-value {
+              font-size: 2rem;
+              font-weight: 700;
+              margin-bottom: 4px;
+            }
+  
+            .metric-label {
+              font-size: 0.9rem;
+              color: #666;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+  
+            mat-icon {
+              font-size: 2.5rem;
+              opacity: 0.7;
+            }
+          }
+  
+          &.pending {
+            border-left: 4px solid #ff9800;
+            .metric-value { color: #ff9800; }
+            mat-icon { color: #ff9800; }
+          }
+  
+          &.approved {
+            border-left: 4px solid #4caf50;
+            .metric-value { color: #4caf50; }
+            mat-icon { color: #4caf50; }
+          }
+  
+          &.rejected {
+            border-left: 4px solid #f44336;
+            .metric-value { color: #f44336; }
+            mat-icon { color: #f44336; }
+          }
+  
+          &.time {
+            border-left: 4px solid #2196f3;
+            .metric-value { color: #2196f3; }
+            mat-icon { color: #2196f3; }
+          }
+        }
+      }
+    }
+  
+    // ✅ BARRA DE ACCIONES
+    .actions-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 16px 24px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  
+      .left-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+  
+        button {
+          position: relative;
+          transition: all 0.2s;
+  
+          &.active {
+            background-color: #2196f3 !important;
+            color: white !important;
+          }
+  
+          mat-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+          }
+        }
+      }
+  
+      .right-actions {
+        display: flex;
+        gap: 8px;
+  
+        button {
+          transition: all 0.2s;
+  
+          &:hover {
+            background-color: rgba(33, 150, 243, 0.1);
+          }
+        }
+      }
+    }
+  
+    // ✅ PANEL DE FILTROS
+    .filters-panel {
+      margin-bottom: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  
+      .mat-expansion-panel-header {
+        height: 64px;
+  
+        mat-panel-title {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-weight: 600;
+        }
+      }
+  
+      .filters-form {
+        padding: 24px;
+  
+        .filter-row {
+          display: flex;
+          gap: 16px;
+          margin-bottom: 16px;
+          flex-wrap: wrap;
+  
+          mat-form-field {
+            flex: 1;
+            min-width: 200px;
+  
+            &.search-field {
+              flex: 2;
+              min-width: 300px;
+            }
+          }
+  
+          .filter-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            
+            button {
+              height: 48px;
+            }
+          }
+        }
+      }
+    }
+  
+    // ✅ CONTENEDOR DE TABLA
+    .table-container {
+      mat-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  
+        mat-card-content {
+          padding: 0 !important;
+        }
+      }
+  
+      .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 64px;
+        gap: 16px;
+  
+        p {
+          margin: 0;
+          color: #666;
+          font-size: 1.1rem;
+        }
+      }
+  
+      .table-wrapper {
+        overflow-x: auto;
+      }
+  
+      // ✅ ESTILOS DE TABLA
+      .routines-table {
+        width: 100%;
+        
+        th {
+          background-color: #fafafa;
+          font-weight: 600;
+          color: #333;
+          border-bottom: 2px solid #e0e0e0;
+          padding: 16px;
+        }
+  
+        td {
+          padding: 16px;
+          border-bottom: 1px solid #e0e0e0;
+        }
+  
+        tr {
+          transition: background-color 0.2s;
+  
+          &:hover {
+            background-color: #f5f5f5;
+            cursor: pointer;
+          }
+  
+          &.selected {
+            background-color: #e3f2fd;
+          }
+        }
+  
+        // Columna de información de usuario
+        .user-info-cell {
+          .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+  
+            .user-avatar {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              background: #2196f3;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+  
+              mat-icon {
+                font-size: 20px;
+              }
+            }
+  
+            .user-details {
+              .user-name {
+                font-weight: 600;
+                margin-bottom: 2px;
+              }
+  
+              .user-email {
+                font-size: 0.85rem;
+                color: #666;
+              }
+            }
+          }
+        }
+  
+        // Columna de nombre de rutina
+        .routine-name-cell {
+          .routine-info {
+            .routine-name {
+              font-weight: 600;
+              margin-bottom: 4px;
+              color: #333;
+            }
+  
+            .routine-description {
+              font-size: 0.9rem;
+              color: #666;
+              margin-bottom: 8px;
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+            }
+  
+            .routine-focus {
+              mat-chip-set {
+                mat-chip {
+                  font-size: 0.75rem;
+                  height: 24px;
+                }
+              }
+            }
+          }
+        }
+  
+        // Información de duración
+        .duration-info,
+        .exercises-info,
+        .date-info {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.9rem;
+  
+          mat-icon {
+            font-size: 18px;
+            color: #666;
+          }
+        }
+  
+        // Información de confianza
+        .confidence-info {
+          text-align: center;
+        }
+  
+        // Columna de acciones
+        .actions-cell {
+          text-align: center;
+          width: 200px;
+  
+          .status-chip {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+            justify-content: center;
+  
+            mat-icon {
+              font-size: 16px;
+            }
+          }
+  
+          .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 8px;
+  
+            button {
+              transition: transform 0.2s;
+  
+              &:hover {
+                transform: scale(1.1);
+              }
+            }
+          }
+        }
+      }
+  
+      // Mensaje sin datos
+      .no-data {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 64px;
+        text-align: center;
+  
+        mat-icon {
+          font-size: 4rem;
+          color: #ccc;
+          margin-bottom: 16px;
+        }
+  
+        h3 {
+          margin: 0 0 8px 0;
+          color: #666;
+        }
+  
+        p {
+          margin: 0 0 24px 0;
+          color: #999;
+        }
+      }
+    }
+  
+    // ✅ PANEL DE DETALLES
+    .details-panel {
+      margin-top: 24px;
+  
+      mat-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  
+        mat-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #e0e0e0;
+  
+          mat-card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+          }
+        }
+  
+        mat-card-content {
+          padding: 24px !important;
+        }
+      }
+  
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+  
+        .detail-item {
+          padding: 12px;
+          background: #f8f9fa;
+          border-radius: 8px;
+          border-left: 4px solid #2196f3;
+  
+          strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #333;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+        }
+      }
+  
+      .exercises-list,
+      .adaptations-list {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #e0e0e0;
+  
+        h4 {
+          margin: 0 0 16px 0;
+          color: #333;
+          font-weight: 600;
+        }
+  
+        mat-list {
+          .mat-mdc-list-item {
+            border-bottom: 1px solid #f0f0f0;
+  
+            &:last-child {
+              border-bottom: none;
+            }
+          }
+        }
+  
+        mat-chip-set {
+          mat-chip {
+            margin: 4px;
+          }
+        }
+      }
+    }
+  
+    // ✅ RESPONSIVE DESIGN
+    @media (max-width: 768px) {
+      padding: 16px;
+  
+      .validation-header {
+        .metrics-cards {
+          grid-template-columns: 1fr;
+        }
+      }
+  
+      .actions-bar {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+  
+        .left-actions,
+        .right-actions {
+          justify-content: center;
+        }
+      }
+  
+      .filters-form {
+        .filter-row {
+          flex-direction: column;
+  
+          mat-form-field {
+            width: 100%;
+          }
+  
+          .filter-actions {
+            justify-content: stretch;
+  
+            button {
+              flex: 1;
+            }
+          }
+        }
+      }
+  
+      .routines-table {
+        font-size: 0.85rem;
+  
+        th, td {
+          padding: 12px 8px;
+        }
+  
+        .actions-cell {
+          width: 150px;
+  
+          .action-buttons {
+            flex-direction: column;
+            gap: 4px;
+          }
+        }
+      }
+  
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  
+    // ✅ DARK MODE SUPPORT
+    @media (prefers-color-scheme: dark) {
+      background: #121212;
+  
+      .validation-header {
+        .header-content h1 {
+          color: #fff;
+        }
+  
+        .header-content .subtitle {
+          color: #ccc;
+        }
+      }
+  
+      .actions-bar,
+      .filters-panel,
+      .table-container mat-card,
+      .details-panel mat-card {
+        background: #1e1e1e;
+        color: #fff;
+      }
+  
+      .routines-table {
+        th {
+          background-color: #2a2a2a;
+          color: #fff;
+          border-bottom-color: #333;
+        }
+  
+        td {
+          border-bottom-color: #333;
+        }
+  
+        tr:hover {
+          background-color: #2a2a2a;
+        }
+  
+        tr.selected {
+          background-color: #1565c0;
+        }
+      }
+  
+      .detail-grid .detail-item {
+        background: #2a2a2a;
+        color: #fff;
+      }
+    }
+  
+    // ✅ ANIMACIONES
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  
+    .metric-card,
+    .table-container,
+    .details-panel {
+      animation: fadeIn 0.6s ease-out;
+    }
+  
+    // ✅ UTILS
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-left { text-align: left; }
+    
+    .mb-16 { margin-bottom: 16px; }
+    .mb-24 { margin-bottom: 24px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-24 { margin-top: 24px; }
+  }

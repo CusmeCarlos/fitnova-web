@@ -560,7 +560,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
   }
 
   navigateToRoutines(): void {
-    this.router.navigate(['/routines/routine-list']);
+    this.router.navigate(['/routines']); // ✅ CAMBIAR DE '/routines/routine-list' a '/routines'
   }
 
   navigateToAnalytics(): void {
