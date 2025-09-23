@@ -1,441 +1,446 @@
 <!-- src/app/dashboard/overview/overview.component.html -->
-<!-- 📊 DASHBOARD GLOBAL - SUPERVISIÓN DE TODOS LOS USUARIOS -->
+<!-- 📊 DASHBOARD PREMIUM - SIN HEADER REDUNDANTE -->
 
 <div class="dashboard-container">
-  
-    <!-- ✅ HEADER GLOBAL -->
-    <div class="dashboard-header">
-      <div class="welcome-section">
-        <h1 class="dashboard-title">
-          <mat-icon>supervisor_account</mat-icon>
-          Dashboard de Supervisión
-        </h1>
-        <p class="welcome-message" *ngIf="currentUser">
-          <strong>{{currentUser.displayName}}</strong> 
-          <mat-chip [color]="currentUser.role === 'admin' ? 'primary' : 'accent'">
-            {{currentUser.role === 'admin' ? 'Administrador' : 'Entrenador'}}
-          </mat-chip>
-        </p>
-        <p class="last-updated">
-          Última actualización: {{lastUpdated | date:'dd/MM/yyyy HH:mm'}}
-        </p>
+
+  <!-- ✅ LOADING STATE -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="loading-content">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Cargando métricas del gimnasio...</p>
+    </div>
+  </div>
+
+  <!-- ✅ CONTENIDO PRINCIPAL -->
+  <div class="dashboard-content" *ngIf="!isLoading && globalMetrics">
+
+    <!-- ✅ MÉTRICAS PRINCIPALES -->
+    <div class="metrics-section">
+      <h3 class="fade-in-up">
+        <mat-icon>dashboard</mat-icon>
+        Resumen de Entrenamiento
+      </h3>
+      
+      <div class="metrics-grid">
+        
+        <!-- Total Usuarios -->
+        <div class="metric-card users-card fade-in-up stagger-1">
+          <div class="metric-header">
+            <div class="metric-info">
+              <div class="metric-title">Total Usuarios</div>
+              <div class="metric-subtitle">Registrados en la plataforma</div>
+            </div>
+            <div class="metric-icon">
+              <mat-icon>people</mat-icon>
+            </div>
+          </div>
+          <div class="metric-value">{{formatNumber(globalMetrics.totalUsers)}}</div>
+          <div class="metric-change positive">
+            <mat-icon class="change-icon">trending_up</mat-icon>
+            <span>{{globalMetrics.activeUsersToday}} activos hoy</span>
+          </div>
+        </div>
+
+        <!-- Entrenamientos Hoy -->
+        <div class="metric-card training-card fade-in-up stagger-2">
+          <div class="metric-header">
+            <div class="metric-info">
+              <div class="metric-title">Entrenamientos Hoy</div>
+              <div class="metric-subtitle">Sesiones completadas</div>
+            </div>
+            <div class="metric-icon">
+              <mat-icon>fitness_center</mat-icon>
+            </div>
+          </div>
+          <div class="metric-value">{{formatNumber(globalMetrics.totalWorkoutsToday)}}</div>
+          <div class="metric-change positive">
+            <mat-icon class="change-icon">arrow_upward</mat-icon>
+            <span>{{formatNumber(globalMetrics.totalWorkoutsAllTime)}} totales</span>
+          </div>
+        </div>
+
+        <!-- Precisión Promedio -->
+        <div class="metric-card accuracy-card fade-in-up stagger-3">
+          <div class="metric-header">
+            <div class="metric-info">
+              <div class="metric-title">Precisión Promedio</div>
+              <div class="metric-subtitle">Todos los usuarios</div>
+            </div>
+            <div class="metric-icon">
+              <mat-icon>target</mat-icon>
+            </div>
+          </div>
+          <div class="metric-value">{{globalMetrics.averageAccuracyGlobal}}%</div>
+          <div class="metric-change positive">
+            <mat-icon class="change-icon">trending_up</mat-icon>
+            <span>Mejorando</span>
+          </div>
+        </div>
+
+        <!-- Errores Críticos -->
+        <div class="metric-card errors-card fade-in-up stagger-4">
+          <div class="metric-header">
+            <div class="metric-info">
+              <div class="metric-title">Errores Críticos</div>
+              <div class="metric-subtitle">Detectados hoy</div>
+            </div>
+            <div class="metric-icon">
+              <mat-icon>warning</mat-icon>
+            </div>
+          </div>
+          <div class="metric-value">{{formatNumber(globalMetrics.criticalErrorsToday)}}</div>
+          <div class="metric-change" [class]="globalMetrics.criticalErrorsToday === 0 ? 'positive' : 'negative'">
+            <mat-icon class="change-icon">
+              {{globalMetrics.criticalErrorsToday === 0 ? 'check_circle' : 'warning'}}
+            </mat-icon>
+            <span>{{globalMetrics.criticalErrorsToday === 0 ? 'Sin errores' : 'Requiere atención'}}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ✅ ACCIONES RÁPIDAS -->
+    <div class="quick-actions-section fade-in-up">
+      <h3>
+        <mat-icon>bolt</mat-icon>
+        Acciones Rápidas
+      </h3>
+      
+      <div class="actions-grid">
+        <a class="action-card" (click)="navigateToUserManagement()">
+          <div class="action-icon">
+            <mat-icon>people</mat-icon>
+          </div>
+          <span class="action-text">Gestionar Usuarios</span>
+        </a>
+
+        <a class="action-card" (click)="navigateToRoutines()">
+          <div class="action-icon">
+            <mat-icon>assignment</mat-icon>
+          </div>
+          <span class="action-text">Validar Rutinas IA</span>
+        </a>
+
+        <a class="action-card" (click)="navigateToAlerts()">
+          <div class="action-icon">
+            <mat-icon>notification_important</mat-icon>
+          </div>
+          <span class="action-text">Centro de Alertas</span>
+        </a>
+
+        <a class="action-card" (click)="navigateToAnalytics()">
+          <div class="action-icon">
+            <mat-icon>analytics</mat-icon>
+          </div>
+          <span class="action-text">Analytics Avanzado</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ✅ SECCIÓN DE PROGRESO -->
+    <div class="progress-section fade-in-up" *ngIf="!showUserDetail">
+      <div class="progress-header">
+        <h3>
+          <mat-icon>trending_up</mat-icon>
+          Progreso de Usuarios
+        </h3>
+        <a href="#" class="view-all-btn" (click)="navigateToAnalytics()">Ver todo</a>
       </div>
       
-      <!-- ✅ ACCIONES DEL HEADER -->
-      <div class="header-actions">
-        <button mat-icon-button 
-                (click)="refreshDashboard()" 
-                [disabled]="isLoading"
-                matTooltip="Actualizar dashboard">
-          <mat-icon [class.spinning]="isLoading">refresh</mat-icon>
-        </button>
-        
-        <!-- ✅ BOTÓN LOGOUT -->
-        <button mat-icon-button 
-                (click)="logout()" 
-                matTooltip="Cerrar sesión"
-                class="logout-btn">
-          <mat-icon>logout</mat-icon>
-        </button>
-      </div>
-    </div>
-  
-    <!-- ✅ LOADING STATE GLOBAL -->
-    <div class="loading-container" *ngIf="isLoading">
-      <div class="loading-content">
-        <mat-spinner diameter="50"></mat-spinner>
-        <p>Cargando métricas globales del gimnasio...</p>
-      </div>
-    </div>
-  
-    <!-- ✅ CONTENIDO PRINCIPAL -->
-    <div class="dashboard-content" *ngIf="!isLoading && globalMetrics">
-  
-      <!-- ✅ MÉTRICAS GLOBALES PRINCIPALES -->
-      <div class="global-metrics-grid">
-        
-        <!-- 👥 TOTAL USUARIOS -->
-        <mat-card class="metric-card users-card">
-          <mat-card-content>
-            <div class="metric-header">
-              <mat-icon>people</mat-icon>
-              <span class="metric-label">Total Usuarios</span>
-            </div>
-            <div class="metric-value">
-              {{formatNumber(globalMetrics.totalUsers)}}
-            </div>
-            <div class="metric-subtitle">
-              <span class="active-today">{{globalMetrics.activeUsersToday}} activos hoy</span>
-            </div>
-          </mat-card-content>
-        </mat-card>
-  
-        <!-- 🏋️ ENTRENAMIENTOS HOY -->
-        <mat-card class="metric-card workouts-card">
-          <mat-card-content>
-            <div class="metric-header">
-              <mat-icon>fitness_center</mat-icon>
-              <span class="metric-label">Entrenamientos Hoy</span>
-            </div>
-            <div class="metric-value">
-              {{formatNumber(globalMetrics.totalWorkoutsToday)}}
-            </div>
-            <div class="metric-subtitle">
-              {{formatNumber(globalMetrics.totalWorkoutsAllTime)}} totales
-            </div>
-          </mat-card-content>
-        </mat-card>
-  
-        <!-- 📊 PRECISIÓN GLOBAL -->
-        <mat-card class="metric-card accuracy-card">
-          <mat-card-content>
-            <div class="metric-header">
-              <mat-icon>track_changes</mat-icon>
-              <span class="metric-label">Precisión Promedio</span>
-            </div>
-            <div class="metric-value">
-              {{globalMetrics.averageAccuracyGlobal}}%
-            </div>
-            <div class="metric-subtitle">Todos los usuarios</div>
-          </mat-card-content>
-        </mat-card>
-  
-        <!-- 🚨 ERRORES CRÍTICOS HOY -->
-        <mat-card class="metric-card alerts-card">
-          <mat-card-content>
-            <div class="metric-header">
-              <mat-icon [matBadge]="globalMetrics.criticalErrorsToday" 
-                       [matBadgeHidden]="globalMetrics.criticalErrorsToday === 0"
-                       matBadgeColor="warn">
-                warning
-              </mat-icon>
-              <span class="metric-label">Errores Críticos</span>
-            </div>
-            <div class="metric-value">
-              {{formatNumber(globalMetrics.criticalErrorsToday)}}
-            </div>
-            <div class="metric-subtitle">Detectados hoy</div>
-          </mat-card-content>
-        </mat-card>
-  
-      </div>
-  
-      <!-- ✅ SELECTOR DE USUARIO PARA VISTA DETALLADA -->
-      <mat-card class="user-selector-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon>person_search</mat-icon>
-            Vista Detallada por Usuario
-          </mat-card-title>
-          <mat-card-subtitle>Selecciona un usuario para ver sus métricas específicas</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <mat-form-field appearance="outline" class="user-select">
-            <mat-label>Seleccionar Usuario</mat-label>
-            <mat-select [value]="selectedUserId" 
-                        (selectionChange)="onUserSelected($event.value)"
-                        placeholder="Elige un usuario...">
-              <mat-option value="">-- Ver métricas globales --</mat-option>
-              <mat-option *ngFor="let user of allUsers" [value]="user.uid">
-                <div class="user-option">
-                  <span class="user-name">{{user.displayName}}</span>
-                  <span class="user-stats">
-                    {{user.totalWorkouts || 0}} entrenamientos · 
-                    {{user.averageAccuracy || 0}}% precisión
-                  </span>
-                  <mat-chip [color]="getUserStatusColor(user)" class="status-chip">
-                    {{getUserStatusColor(user) === 'primary' ? 'Activo hoy' : 
-                      getUserStatusColor(user) === 'accent' ? 'Reciente' : 'Inactivo'}}
-                  </mat-chip>
-                </div>
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-        </mat-card-content>
-      </mat-card>
-  
-      <!-- ✅ VISTA DETALLADA DEL USUARIO SELECCIONADO -->
-      <div class="user-detail-section" *ngIf="showUserDetail">
-        
-        <!-- Loading del usuario -->
-        <div class="user-loading" *ngIf="isLoadingUserDetail">
-          <mat-card>
-            <mat-card-content>
-              <div class="loading-content">
-                <mat-spinner diameter="30"></mat-spinner>
-                <span>Cargando métricas del usuario...</span>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </div>
-  
-        <!-- Métricas del usuario -->
-        <div class="user-metrics" *ngIf="!isLoadingUserDetail && selectedUserMetrics">
-          
-          <!-- Header del usuario -->
-          <mat-card class="user-header-card">
-            <mat-card-content>
-              <div class="user-header">
-                <div class="user-info">
-                  <h2>{{selectedUserMetrics.userInfo.displayName}}</h2>
-                  <p>{{selectedUserMetrics.userInfo.email}}</p>
-                </div>
-                <button mat-icon-button (click)="hideUserDetail()" matTooltip="Cerrar vista detallada">
-                  <mat-icon>close</mat-icon>
-                </button>
-              </div>
-            </mat-card-content>
-          </mat-card>
-  
-          <!-- Métricas específicas del usuario -->
-          <div class="user-metrics-grid">
-            
-            <mat-card class="user-metric-card">
-              <mat-card-content>
-                <div class="metric-header">
-                  <mat-icon>fitness_center</mat-icon>
-                  <span class="metric-label">Entrenamientos</span>
-                </div>
-                <div class="metric-value">{{selectedUserMetrics.totalWorkouts}}</div>
-              </mat-card-content>
-            </mat-card>
-  
-            <mat-card class="user-metric-card">
-              <mat-card-content>
-                <div class="metric-header">
-                  <mat-icon>track_changes</mat-icon>
-                  <span class="metric-label">Precisión</span>
-                </div>
-                <div class="metric-value">{{selectedUserMetrics.accuracy}}%</div>
-              </mat-card-content>
-            </mat-card>
-  
-            <mat-card class="user-metric-card">
-              <mat-card-content>
-                <div class="metric-header">
-                  <mat-icon>schedule</mat-icon>
-                  <span class="metric-label">Tiempo Total</span>
-                </div>
-                <div class="metric-value">{{formatHours(selectedUserMetrics.totalHours)}}</div>
-              </mat-card-content>
-            </mat-card>
-  
-            <mat-card class="user-metric-card">
-              <mat-card-content>
-                <div class="metric-header">
-                  <mat-icon>warning</mat-icon>
-                  <span class="metric-label">Errores Críticos</span>
-                </div>
-                <div class="metric-value">{{selectedUserMetrics.criticalErrorsTotal}}</div>
-              </mat-card-content>
-            </mat-card>
-  
+      <div class="progress-list">
+        <div class="progress-item" *ngFor="let user of allUsers.slice(0, 3)">
+          <div class="progress-info">
+            <div class="progress-name">{{user.displayName}}</div>
+            <div class="progress-detail">{{user.totalWorkouts || 0}} entrenamientos completados</div>
           </div>
-  
-          <!-- Gráfico del usuario específico -->
-          <mat-card class="user-chart-card">
-            <mat-card-header>
-              <mat-card-title>
-                <mat-icon>trending_up</mat-icon>
-                Progreso Semanal - {{selectedUserMetrics.userInfo.displayName}}
-              </mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="chart-container">
-                <canvas #userDetailChart></canvas>
-              </div>
-            </mat-card-content>
-          </mat-card>
-  
+          <div class="progress-bar-container">
+            <div class="progress-bar" [style.width.%]="user.averageAccuracy || 0"></div>
+          </div>
+          <div class="progress-percentage">{{user.averageAccuracy || 0}}%</div>
         </div>
       </div>
-  
-      <!-- ✅ GRÁFICOS GLOBALES (solo si no hay usuario seleccionado) -->
-      <div class="global-charts-section" *ngIf="!showUserDetail">
+    </div>
+
+    <!-- ✅ SELECTOR DE USUARIO -->
+    <mat-card class="user-selector-card fade-in-up" *ngIf="!showUserDetail">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>person_search</mat-icon>
+          Vista Detallada por Usuario
+        </mat-card-title>
+        <mat-card-subtitle>Selecciona un usuario para ver sus métricas específicas</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="user-select">
+          <mat-label>Seleccionar Usuario</mat-label>
+          <mat-select [value]="selectedUserId" 
+                      (selectionChange)="onUserSelected($event.value)"
+                      placeholder="Elige un usuario...">
+            <mat-option value="">-- Ver métricas globales --</mat-option>
+            <mat-option *ngFor="let user of allUsers" [value]="user.uid">
+              <div class="user-option">
+                <span class="user-name">{{user.displayName}}</span>
+                <span class="user-stats">
+                  {{user.totalWorkouts || 0}} entrenamientos · 
+                  {{user.averageAccuracy || 0}}% precisión
+                </span>
+                <mat-chip [color]="getUserStatusColor(user)" class="status-chip">
+                  {{getUserStatusColor(user) === 'primary' ? 'Activo hoy' : 
+                    getUserStatusColor(user) === 'accent' ? 'Reciente' : 'Inactivo'}}
+                </mat-chip>
+              </div>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- ✅ VISTA DETALLADA DEL USUARIO -->
+    <div class="user-detail-section fade-in-up" *ngIf="showUserDetail">
+      
+      <!-- Loading del usuario -->
+      <div class="user-loading" *ngIf="isLoadingUserDetail">
+        <mat-card>
+          <mat-card-content>
+            <div class="loading-content">
+              <mat-spinner diameter="30"></mat-spinner>
+              <span>Cargando métricas del usuario...</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Métricas del usuario -->
+      <div class="user-metrics" *ngIf="!isLoadingUserDetail && selectedUserMetrics">
         
-        <!-- Actividad Global -->
-        <mat-card class="chart-card">
+        <!-- Header del usuario -->
+        <mat-card class="user-header-card">
+          <mat-card-content>
+            <div class="user-header">
+              <div class="user-info">
+                <h2>{{selectedUserMetrics.userInfo.displayName}}</h2>
+                <p>{{selectedUserMetrics.userInfo.email}}</p>
+              </div>
+              <button mat-icon-button (click)="hideUserDetail()" matTooltip="Cerrar vista detallada">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Métricas específicas del usuario -->
+        <div class="user-metrics-grid">
+          
+          <mat-card class="user-metric-card">
+            <mat-card-content>
+              <div class="metric-header">
+                <mat-icon>fitness_center</mat-icon>
+                <span class="metric-label">Entrenamientos</span>
+              </div>
+              <div class="metric-value">{{selectedUserMetrics.totalWorkouts}}</div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="user-metric-card">
+            <mat-card-content>
+              <div class="metric-header">
+                <mat-icon>track_changes</mat-icon>
+                <span class="metric-label">Precisión</span>
+              </div>
+              <div class="metric-value">{{selectedUserMetrics.accuracy}}%</div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="user-metric-card">
+            <mat-card-content>
+              <div class="metric-header">
+                <mat-icon>schedule</mat-icon>
+                <span class="metric-label">Tiempo Total</span>
+              </div>
+              <div class="metric-value">{{formatHours(selectedUserMetrics.totalHours)}}</div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="user-metric-card">
+            <mat-card-content>
+              <div class="metric-header">
+                <mat-icon>warning</mat-icon>
+                <span class="metric-label">Errores Críticos</span>
+              </div>
+              <div class="metric-value">{{selectedUserMetrics.criticalErrorsTotal}}</div>
+            </mat-card-content>
+          </mat-card>
+
+        </div>
+
+        <!-- Gráfico del usuario específico -->
+        <mat-card class="user-chart-card">
           <mat-card-header>
             <mat-card-title>
-              <mat-icon>bar_chart</mat-icon>
-              Actividad Global del Gimnasio
+              <mat-icon>trending_up</mat-icon>
+              Progreso Semanal - {{selectedUserMetrics.userInfo.displayName}}
             </mat-card-title>
-            <mat-card-subtitle>Usuarios activos y entrenamientos por día</mat-card-subtitle>
           </mat-card-header>
           <mat-card-content>
             <div class="chart-container">
-              <canvas #globalActivityChart></canvas>
+              <canvas #userDetailChart></canvas>
             </div>
           </mat-card-content>
         </mat-card>
-  
-        <!-- Grid de gráficos secundarios -->
-        <div class="secondary-charts-grid">
-          
-          <!-- Tendencia de Precisión Global -->
-          <mat-card class="chart-card">
-            <mat-card-header>
-              <mat-card-title>
-                <mat-icon>show_chart</mat-icon>
-                Tendencia de Precisión
-              </mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="chart-container">
-                <canvas #globalAccuracyChart></canvas>
-              </div>
-            </mat-card-content>
-          </mat-card>
-  
-          <!-- Distribución de Errores -->
-          <mat-card class="chart-card">
-            <mat-card-header>
-              <mat-card-title>
-                <mat-icon>pie_chart</mat-icon>
-                Errores Más Comunes
-              </mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="chart-container">
-                <canvas #globalErrorsChart></canvas>
-              </div>
-            </mat-card-content>
-          </mat-card>
-  
-        </div>
-  
+
       </div>
-  
-      <!-- ✅ USUARIOS MÁS ACTIVOS -->
-      <mat-card class="top-users-card" *ngIf="!showUserDetail">
+    </div>
+
+    <!-- ✅ GRÁFICOS GLOBALES -->
+    <div class="global-charts-section fade-in-up" *ngIf="!showUserDetail">
+      
+      <!-- Actividad Global -->
+      <mat-card class="chart-card">
         <mat-card-header>
           <mat-card-title>
-            <mat-icon>emoji_events</mat-icon>
-            Usuarios Más Activos
+            <mat-icon>bar_chart</mat-icon>
+            Actividad Global del Gimnasio
           </mat-card-title>
-          <mat-card-subtitle>Top 5 usuarios con más entrenamientos</mat-card-subtitle>
+          <mat-card-subtitle>Usuarios activos y entrenamientos por día</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div class="top-users-list">
-            <div class="user-rank-item" 
-                 *ngFor="let user of globalMetrics.topActiveUsers; let i = index"
-                 (click)="onUserSelected(user.uid)">
-              <div class="rank-badge">
-                <mat-icon *ngIf="i === 0" class="gold">emoji_events</mat-icon>
-                <mat-icon *ngIf="i === 1" class="silver">emoji_events</mat-icon>
-                <mat-icon *ngIf="i === 2" class="bronze">emoji_events</mat-icon>
-                <span *ngIf="i > 2" class="rank-number">{{i + 1}}</span>
-              </div>
-              <div class="user-rank-info">
-                <span class="user-rank-name">{{user.displayName}}</span>
-                <span class="user-rank-stats">
-                  {{user.workouts}} entrenamientos · {{user.accuracy}}% precisión
-                </span>
-              </div>
-              <mat-icon class="view-icon">chevron_right</mat-icon>
-            </div>
+          <div class="chart-container">
+            <canvas #globalActivityChart></canvas>
           </div>
         </mat-card-content>
       </mat-card>
-  
-      <!-- ✅ ALERTAS RECIENTES GLOBALES -->
-      <mat-card class="recent-alerts-card" *ngIf="!showUserDetail && globalMetrics.recentAlertsGlobal.length > 0">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon [matBadge]="globalMetrics.recentAlertsGlobal.length" matBadgeColor="warn">
-              notification_important
-            </mat-icon>
-            Alertas Recientes
-          </mat-card-title>
-          <mat-card-subtitle>Errores críticos de la última semana</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="alerts-list">
-            <div class="alert-item" *ngFor="let alert of globalMetrics.recentAlertsGlobal.slice(0, 5)">
-              <div class="alert-severity" [class]="'severity-' + alert.severity">
-                <mat-icon>warning</mat-icon>
-              </div>
-              <div class="alert-info">
-                <span class="alert-user">{{alert.userDisplayName || 'Usuario desconocido'}}</span>
-                <span class="alert-error">{{getErrorTypeLabel(alert.errorType)}}</span>
-                <span class="alert-exercise">{{alert.exercise}}</span>
-              </div>
-              <div class="alert-time">
-                {{alert.processedAt | date:'dd/MM HH:mm'}}
-              </div>
+
+      <!-- Grid de gráficos secundarios -->
+      <div class="secondary-charts-grid">
+        
+        <!-- Tendencia de Precisión Global -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>show_chart</mat-icon>
+              Tendencia de Precisión
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container">
+              <canvas #globalAccuracyChart></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Distribución de Errores -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>pie_chart</mat-icon>
+              Errores Más Comunes
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container">
+              <canvas #globalErrorsChart></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+
+    </div>
+
+    <!-- ✅ USUARIOS MÁS ACTIVOS -->
+    <mat-card class="top-users-card fade-in-up" *ngIf="!showUserDetail && globalMetrics?.topActiveUsers && globalMetrics.topActiveUsers.length > 0">
+
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>emoji_events</mat-icon>
+          Usuarios Más Activos
+        </mat-card-title>
+        <mat-card-subtitle>Top 5 usuarios con más entrenamientos</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="top-users-list">
+          <div class="user-rank-item" 
+               *ngFor="let user of globalMetrics.topActiveUsers; let i = index"
+               (click)="onUserSelected(user.uid)">
+            <div class="rank-badge">
+              <mat-icon *ngIf="i === 0" class="gold">emoji_events</mat-icon>
+              <mat-icon *ngIf="i === 1" class="silver">emoji_events</mat-icon>
+              <mat-icon *ngIf="i === 2" class="bronze">emoji_events</mat-icon>
+              <span *ngIf="i > 2" class="rank-number">{{i + 1}}</span>
+            </div>
+            <div class="user-rank-info">
+              <span class="user-rank-name">{{user.displayName}}</span>
+              <span class="user-rank-stats">
+                {{user.workouts}} entrenamientos · {{user.accuracy}}% precisión
+              </span>
+            </div>
+            <mat-icon class="view-icon">chevron_right</mat-icon>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- ✅ ALERTAS RECIENTES -->
+    <mat-card class="recent-alerts-card fade-in-up" *ngIf="!showUserDetail && globalMetrics?.recentAlertsGlobal && globalMetrics.recentAlertsGlobal.length > 0">
+
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon [matBadge]="globalMetrics.recentAlertsGlobal.length" matBadgeColor="warn">
+            notification_important
+          </mat-icon>
+          Alertas Recientes
+        </mat-card-title>
+        <mat-card-subtitle>Errores críticos de la última semana</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="alerts-list">
+          <div class="alert-item" *ngFor="let alert of globalMetrics.recentAlertsGlobal.slice(0, 5)">
+            <div class="alert-severity" [class]="'severity-' + alert.severity">
+              <mat-icon>warning</mat-icon>
+            </div>
+            <div class="alert-info">
+              <span class="alert-user">{{alert.userDisplayName || 'Usuario desconocido'}}</span>
+              <span class="alert-error">{{getErrorTypeLabel(alert.errorType)}}</span>
+              <span class="alert-exercise">{{alert.exercise}}</span>
+            </div>
+            <div class="alert-time">
+              {{alert.processedAt | date:'dd/MM HH:mm'}}
             </div>
           </div>
-          <div class="alerts-actions">
-            <button mat-raised-button 
-                    color="warn" 
-                    (click)="navigateToAlerts()"
-                    class="view-all-alerts-btn">
-              <mat-icon>visibility</mat-icon>
-              Ver Todas las Alertas
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-  
-      <!-- ✅ ACCIONES RÁPIDAS -->
-      <div class="quick-actions" *ngIf="!showUserDetail">
-        <h3>Acciones de Supervisión</h3>
-        <div class="actions-grid">
-          
-          <button mat-raised-button 
-                  color="primary" 
-                  (click)="navigateToUserManagement()"
-                  class="action-btn">
-            <mat-icon>people</mat-icon>
-            Gestionar Usuarios
-          </button>
-  
-          <button mat-raised-button 
-                  color="accent" 
-                  (click)="navigateToRoutines()"
-                  class="action-btn">
-            <mat-icon>assignment</mat-icon>
-            Validar Rutinas IA
-          </button>
-  
+        </div>
+        <div class="alerts-actions">
           <button mat-raised-button 
                   color="warn" 
                   (click)="navigateToAlerts()"
-                  class="action-btn">
-            <mat-icon>notification_important</mat-icon>
-            Centro de Alertas
+                  class="view-all-alerts-btn">
+            <mat-icon>visibility</mat-icon>
+            Ver Todas las Alertas
           </button>
-  
-          <button mat-raised-button 
-                  (click)="navigateToAnalytics()"
-                  class="action-btn analytics-btn">
-            <mat-icon>analytics</mat-icon>
-            Analytics Avanzado
-          </button>
-  
         </div>
-      </div>
-  
-    </div>
-  
-    <!-- ✅ ESTADO VACÍO -->
-    <div class="empty-state" *ngIf="!isLoading && globalMetrics?.isEmpty">
-      <mat-card class="empty-card">
-        <mat-card-content>
-          <div class="empty-content">
-            <mat-icon class="empty-icon">people_outline</mat-icon>
-            <h3>No hay usuarios registrados</h3>
-            <p>Aún no se han registrado usuarios en la aplicación móvil.</p>
-            <p>Los datos aparecerán aquí cuando los usuarios comiencen a entrenar.</p>
-            <button mat-raised-button 
-                    color="primary" 
-                    (click)="navigateToUserManagement()">
-              <mat-icon>add</mat-icon>
-              Gestionar Usuarios
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  
+      </mat-card-content>
+    </mat-card>
+
   </div>
+
+  <!-- ✅ ESTADO VACÍO -->
+  <div class="empty-state fade-in-up" *ngIf="!isLoading && globalMetrics?.isEmpty">
+    <mat-card class="empty-card">
+      <mat-card-content>
+        <div class="empty-content">
+          <mat-icon class="empty-icon">people_outline</mat-icon>
+          <h3>No hay usuarios registrados</h3>
+          <p>Aún no se han registrado usuarios en la aplicación móvil.</p>
+          <p>Los datos aparecerán aquí cuando los usuarios comiencen a entrenar.</p>
+          <button mat-raised-button 
+                  color="primary" 
+                  (click)="navigateToUserManagement()">
+            <mat-icon>add</mat-icon>
+            Gestionar Usuarios
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+</div>

@@ -1,1 +1,95 @@
-<p>sidebar works!</p>
+<!-- src/app/shared/sidebar/sidebar.component.html -->
+<!-- SIDEBAR RETRÁCTIL PREMIUM -->
+
+<aside class="sidebar" [class.collapsed]="isCollapsed">
+    <!-- Toggle Button -->
+    <button class="sidebar-toggle" (click)="toggleSidebar()" matTooltip="{{isCollapsed ? 'Expandir menú' : 'Contraer menú'}}">
+      <mat-icon>menu</mat-icon>
+    </button>
+  
+    <!-- Logo y Brand -->
+    <div class="sidebar-header">
+      <div class="logo" [class.logo-collapsed]="isCollapsed">
+        <mat-icon class="logo-icon">fitness_center</mat-icon>
+        <h1 class="brand-name" *ngIf="!isCollapsed">FitNova</h1>
+      </div>
+    </div>
+  
+    <!-- Header de Bienvenida (estilo FinZenApp) -->
+    <div class="welcome-header" *ngIf="currentUser && !isCollapsed">
+      <div class="welcome-icon">
+        <mat-icon>waving_hand</mat-icon>
+      </div>
+      <div class="welcome-content">
+        <div class="greeting">{{getGreeting()}}, <span class="username">{{currentUser.displayName}}</span>!</div>
+        <div class="welcome-subtitle">Bienvenido de vuelta</div>
+      </div>
+      <div class="online-status">
+        <div class="status-dot"></div>
+        <span class="status-text" *ngIf="!isCollapsed">En línea</span>
+      </div>
+    </div>
+  
+    <!-- Información del Usuario (compacta cuando está collapsed) -->
+    <div class="user-info" *ngIf="currentUser" [class.user-info-collapsed]="isCollapsed">
+      <div class="user-avatar">
+        <mat-icon>person</mat-icon>
+      </div>
+      <div class="user-details" *ngIf="!isCollapsed">
+        <div class="user-name">{{currentUser.displayName}}</div>
+        <div class="user-role">{{currentUser.role === 'admin' ? 'Administrador' : 'Entrenador'}}</div>
+      </div>
+      <div class="user-status" *ngIf="!isCollapsed">
+        <div class="status-indicator online"></div>
+      </div>
+    </div>
+  
+    <!-- Navegación Principal -->
+    <nav class="sidebar-nav">
+      <ul class="nav-list">
+        <li class="nav-item" *ngFor="let item of navigationItems">
+          <button 
+            class="nav-link"
+            [class.active]="isActiveRoute(item.route)"
+            [class.nav-link-collapsed]="isCollapsed"
+            (click)="navigateTo(item.route)"
+            [matTooltip]="isCollapsed ? item.label : ''"
+            matTooltipPosition="right">
+            
+            <div class="nav-content">
+              <mat-icon 
+                class="nav-icon"
+                [matBadge]="item.badge"
+                [matBadgeHidden]="!item.badge || isCollapsed"
+                matBadgeColor="warn"
+                matBadgeSize="small">
+                {{item.icon}}
+              </mat-icon>
+              <span class="nav-text" *ngIf="!isCollapsed">{{item.label}}</span>
+            </div>
+            
+            <!-- Indicador activo -->
+            <div class="active-indicator" *ngIf="isActiveRoute(item.route)"></div>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  
+    <!-- Sección inferior con logout -->
+    <div class="sidebar-footer">
+      <mat-divider *ngIf="!isCollapsed"></mat-divider>
+      
+      <button 
+        class="nav-link logout-btn"
+        [class.nav-link-collapsed]="isCollapsed"
+        (click)="logout()"
+        [matTooltip]="isCollapsed ? 'Cerrar sesión' : ''"
+        matTooltipPosition="right">
+        
+        <div class="nav-content">
+          <mat-icon class="nav-icon">logout</mat-icon>
+          <span class="nav-text" *ngIf="!isCollapsed">Cerrar Sesión</span>
+        </div>
+      </button>
+    </div>
+  </aside>

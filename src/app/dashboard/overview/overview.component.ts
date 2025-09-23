@@ -42,7 +42,7 @@ Chart.register(...registerables);
     MatSelectModule,
     MatFormFieldModule,
     MatDividerModule,
-    MatBadgeModule
+    MatBadgeModule,
   ],
   templateUrl: './overview.component.html',
   styleUrls: ['./overview.component.scss']

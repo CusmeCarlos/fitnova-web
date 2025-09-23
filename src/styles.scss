@@ -1,224 +1,283 @@
-/* src/styles.scss */
-/* 🎨 ESTILOS GLOBALES FITNOVA - VERSIÓN SIMPLE FUNCIONAL */
+// src/styles.scss - ESTILOS GLOBALES PREMIUM FITNOVA
+// Reemplaza el contenido completo de tu archivo styles.scss
 
-// ✅ RESET Y BASE STYLES
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+// ================================================================================
+// 🎨 VARIABLES GLOBALES - TEMA DARK PREMIUM
+// ================================================================================
+:root {
+  // Colores principales
+  --primary-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --secondary-bg: rgba(30, 41, 59, 0.95);
+  --card-bg: rgba(30, 41, 59, 0.4);
+  --card-hover: rgba(51, 65, 85, 0.5);
+  
+  // Bordes y divisores
+  --border-color: rgba(51, 65, 85, 0.3);
+  --border-light: rgba(148, 163, 184, 0.1);
+  
+  // Colores de acento
+  --accent-blue: #3b82f6;
+  --accent-green: #10b981;
+  --accent-yellow: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-purple: #8b5cf6;
+  
+  // Tipografía
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  
+  // Sombras
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.25);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.3);
+  
+  // Glassmorphism
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: blur(10px);
+}
+
+// ================================================================================
+// 🔄 RESET Y BASE
+// ================================================================================
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--primary-bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// ================================================================================
+// 📱 ANGULAR MATERIAL CUSTOMIZATION
+// ================================================================================
+
+// Mat-card premium styling
+.mat-mdc-card {
+  background: var(--card-bg) !important;
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-md) !important;
+  transition: all 0.3s ease !important;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg) !important;
+    border-color: var(--accent-blue) !important;
   }
   
-  html, body {
-    height: 100%;
-    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background-color: #fafafa;
-    color: rgba(0, 0, 0, 0.87);
-    line-height: 1.6;
+  .mat-mdc-card-header {
+    padding: 24px 24px 16px 24px !important;
+    
+    .mat-mdc-card-title {
+      color: var(--text-primary) !important;
+      font-weight: 600 !important;
+      font-size: 1.25rem !important;
+    }
+    
+    .mat-mdc-card-subtitle {
+      color: var(--text-secondary) !important;
+      font-size: 0.875rem !important;
+    }
   }
   
-  body {
-    margin: 0;
-    overflow-x: hidden;
+  .mat-mdc-card-content {
+    padding: 0 24px 24px 24px !important;
+    color: var(--text-primary) !important;
   }
+}
+
+// Botones premium
+.mat-mdc-button, .mat-mdc-outlined-button, .mat-mdc-raised-button {
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  transition: all 0.3s ease !important;
   
-  // ✅ CLASES UTILITARIAS
-  .full-width {
-    width: 100% !important;
-  }
-  
-  .full-height {
-    height: 100% !important;
-  }
-  
-  .text-center {
-    text-align: center !important;
-  }
-  
-  .text-right {
-    text-align: right !important;
-  }
-  
-  .mt-1 { margin-top: 0.5rem !important; }
-  .mt-2 { margin-top: 1rem !important; }
-  .mt-3 { margin-top: 1.5rem !important; }
-  .mb-1 { margin-bottom: 0.5rem !important; }
-  .mb-2 { margin-bottom: 1rem !important; }
-  .mb-3 { margin-bottom: 1.5rem !important; }
-  
-  .p-1 { padding: 0.5rem !important; }
-  .p-2 { padding: 1rem !important; }
-  .p-3 { padding: 1.5rem !important; }
-  
-  // ✅ SCROLLBAR PERSONALIZADA
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
+  &.mat-primary {
+    background: linear-gradient(135deg, var(--accent-blue), #1d4ed8) !important;
+    color: white !important;
     
     &:hover {
-      background: #a8a8a8;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
     }
   }
-  
-  // ✅ ANIMATIONS GLOBALES
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes slideInLeft {
-    from {
-      transform: translateX(-100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  
-  @keyframes pulse {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.05);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-  
-  .fade-in {
-    animation: fadeIn 0.6s ease-out;
-  }
-  
-  .slide-in-left {
-    animation: slideInLeft 0.6s ease-out;
-  }
-  
-  .pulse {
-    animation: pulse 2s infinite;
-  }
-  
-  // ✅ RESPONSIVE BREAKPOINTS
-  $mobile: 480px;
-  $tablet: 768px;
-  $desktop: 1024px;
-  $large: 1200px;
-  
-  @mixin mobile {
-    @media (max-width: #{$mobile}) {
-      @content;
-    }
-  }
-  
-  @mixin tablet {
-    @media (max-width: #{$tablet}) {
-      @content;
-    }
-  }
-  
-  @mixin desktop {
-    @media (min-width: #{$desktop}) {
-      @content;
-    }
-  }
-  
-  // ✅ SNACKBAR CUSTOMIZATION SIN DEPENDENCY DE MATERIAL THEMING
-  .success-snackbar {
-    background-color: #4caf50 !important;
-    color: white !important;
-  }
-  
-  .error-snackbar {
-    background-color: #f44336 !important;
-    color: white !important;
-  }
-  
-  .warning-snackbar {
-    background-color: #ff9800 !important;
-    color: white !important;
-  }
-  
-  .info-snackbar {
-    background-color: #2196f3 !important;
-    color: white !important;
-  }
-  
-  // ✅ LOADING STATES
-  .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-  }
-  
-  // ✅ FITNOVA BRANDING COLORS
-  :root {
-    --fitnova-primary: #2196f3;
-    --fitnova-secondary: #21cbf3;
-    --fitnova-accent: #00bcd4;
-    --fitnova-warn: #f44336;
-    --fitnova-success: #4caf50;
-    --fitnova-warning: #ff9800;
-    --fitnova-info: #2196f3;
-    
-    --fitnova-gradient-primary: linear-gradient(45deg, #2196f3, #21cbf3);
-    --fitnova-gradient-success: linear-gradient(45deg, #4caf50, #8bc34a);
-    --fitnova-gradient-warning: linear-gradient(45deg, #ff9800, #ffc107);
-  }
-  
-  // ✅ MATERIAL OVERRIDES SIN THEMING IMPORTS
-  .mat-mdc-card {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+// Form fields premium
+.mat-mdc-form-field {
+  .mat-mdc-text-field-wrapper {
+    background: var(--glass-bg) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 12px !important;
+    backdrop-filter: var(--glass-blur);
   }
   
-  .mat-mdc-raised-button {
-    border-radius: 8px !important;
-    font-weight: 600 !important;
+  .mat-mdc-input-element {
+    color: var(--text-primary) !important;
   }
   
-  .mat-mdc-form-field {
-    width: 100%;
+  .mat-mdc-floating-label {
+    color: var(--text-secondary) !important;
   }
+}
+
+// Chips premium
+.mat-mdc-chip {
+  border-radius: 8px !important;
+  backdrop-filter: var(--glass-blur);
   
-  // ✅ CUSTOM BUTTON STYLES
-  .fitnova-primary-button {
-    background: linear-gradient(45deg, #2196f3, #21cbf3) !important;
+  &.mat-mdc-chip-selected {
+    background: var(--accent-blue) !important;
     color: white !important;
-    border-radius: 8px !important;
-    font-weight: 600 !important;
-    transition: all 0.3s ease !important;
-    
-    &:hover {
-      transform: translateY(-2px) !important;
-      box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4) !important;
-    }
-    
-    &:active {
-      transform: translateY(0) !important;
+  }
+}
+
+// ================================================================================
+// 🎯 UTILITY CLASSES
+// ================================================================================
+
+// Glass effect
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+
+// Gradients
+.gradient-primary {
+  background: linear-gradient(135deg, var(--accent-blue), #1d4ed8);
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, var(--accent-green), #047857);
+}
+
+.gradient-warning {
+  background: linear-gradient(135deg, var(--accent-yellow), #d97706);
+}
+
+.gradient-danger {
+  background: linear-gradient(135deg, var(--accent-red), #dc2626);
+}
+
+// Animations
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+// Stagger animations
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+
+// Text utilities
+.text-gradient {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// Spacing utilities
+.p-4 { padding: 1rem; }
+.p-6 { padding: 1.5rem; }
+.p-8 { padding: 2rem; }
+
+.m-4 { margin: 1rem; }
+.m-6 { margin: 1.5rem; }
+.m-8 { margin: 2rem; }
+
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+
+// Responsive utilities
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+  
+  .mat-mdc-card {
+    .mat-mdc-card-header, .mat-mdc-card-content {
+      padding-left: 16px !important;
+      padding-right: 16px !important;
     }
   }
+}
+
+// ================================================================================
+// 🎨 SCROLLBAR CUSTOMIZATION
+// ================================================================================
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--secondary-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+  
+  &:hover {
+    background: var(--text-secondary);
+  }
+}
+
+// ================================================================================
+// 📊 CHART CUSTOMIZATION
+// ================================================================================
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+  
+  canvas {
+    border-radius: 12px;
+  }
+}
