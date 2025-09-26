@@ -1,49 +1,58 @@
 <!-- src/app/users/user-list/user-list.component.html -->
-<!-- 👥 GESTIÓN COMPLETA DE USUARIOS - TEMPLATE MATERIAL DESIGN -->
-<div class="back-navigation">
-  <button mat-button 
-          (click)="goBack()" 
-          class="back-button">
-    <mat-icon>arrow_back</mat-icon>
-    <span>Volver al Dashboard</span>
-  </button>
-</div>
-
+<!-- 👥 GESTIÓN DE USUARIOS - TEMPLATE PREMIUM FINZENAPP -->
 <div class="user-management-container">
   
+  <!-- 🔙 NAVEGACIÓN ATRÁS -->
+  <div class="back-navigation">
+    <button mat-button 
+            (click)="goBack()" 
+            class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Volver al Dashboard</span>
+    </button>
+  </div>
+
   <!-- ✅ HEADER CON MÉTRICAS GLOBALES -->
   <div class="metrics-header">
     <div class="page-title-section">
-      <h1 class="page-title">
-        <mat-icon>people</mat-icon>
-        Gestión de Usuarios Móvil
-      </h1>
-      <p class="subtitle">Supervisa y gestiona usuarios de la aplicación móvil FitNova</p>
+      <div>
+        <h1 class="page-title">
+          <mat-icon>people</mat-icon>
+          Gestión de Usuarios
+        </h1>
+        <p class="subtitle">Supervisa y gestiona usuarios de la aplicación móvil FitNova</p>
+      </div>
     </div>
     
-    <!-- 🚨 BOTÓN CREAR USUARIO - ARREGLADO PARA AMBOS ROLES -->
+    <!-- 🚀 HEADER ACTIONS -->
     <div class="header-actions">
       <button mat-raised-button 
               color="primary"
               (click)="toggleCreateUserForm()"
               *ngIf="currentUser?.role === 'admin' || currentUser?.role === 'trainer'">
         <mat-icon>person_add</mat-icon>
-        <span *ngIf="currentUser?.role === 'admin'">Crear Nuevo Usuario</span>
+        <span *ngIf="currentUser?.role === 'admin'">Crear Usuario</span>
         <span *ngIf="currentUser?.role === 'trainer'">Registrar Usuario</span>
       </button>
 
-      <button mat-button 
-              (click)="refreshData()">
-        <mat-icon>refresh</mat-icon>
-        Actualizar
+      <button mat-button (click)="forceUpdateActivity()" 
+              matTooltip="Actualizar mi estado a EN LÍNEA">
+        <mat-icon>sync</mat-icon>
+        <span>Actualizar Estado</span>
       </button>
 
-      <button mat-button 
-              (click)="exportData()">
-        <mat-icon>file_download</mat-icon>
-        Exportar
+      <button mat-button (click)="refreshData()">
+        <mat-icon>refresh</mat-icon>
+        <span>Actualizar</span>
       </button>
-    
+
+      <button mat-button (click)="exportData()">
+        <mat-icon>file_download</mat-icon>
+        <span>Exportar</span>
+      </button>
+    </div>
+
+    <!-- 📊 MÉTRICAS CARDS -->
     <div class="metrics-cards">
       <mat-card class="metric-card primary">
         <mat-card-content>
@@ -72,22 +81,22 @@
       <mat-card class="metric-card warn">
         <mat-card-content>
           <div class="metric-content">
-            <mat-icon>person_off</mat-icon>
+            <mat-icon>trending_up</mat-icon>
             <div class="metric-text">
-              <span class="metric-value">{{usersWithoutTrainer}}</span>
-              <span class="metric-label">Sin Entrenador</span>
+              <span class="metric-value">{{newUsersThisMonth}}</span>
+              <span class="metric-label">Nuevos Este Mes</span>
             </div>
           </div>
         </mat-card-content>
       </mat-card>
 
-      <mat-card class="metric-card success">
+      <mat-card class="metric-card primary">
         <mat-card-content>
           <div class="metric-content">
             <mat-icon>fitness_center</mat-icon>
             <div class="metric-text">
-              <span class="metric-value">{{totalWorkoutsAllUsers}}</span>
-              <span class="metric-label">Total Entrenamientos</span>
+              <span class="metric-value">{{totalWorkoutsCompleted}}</span>
+              <span class="metric-label">Entrenamientos</span>
             </div>
           </div>
         </mat-card-content>
@@ -95,152 +104,58 @@
     </div>
   </div>
 
-  <!-- 🚨 MODAL CREAR USUARIO - ARREGLADO PARA AMBOS ROLES -->
-  <div class="create-user-section" *ngIf="showCreateForm && (currentUser?.role === 'admin' || currentUser?.role === 'trainer')">
-    <mat-card class="create-user-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>person_add</mat-icon>
-          <span *ngIf="currentUser?.role === 'admin'">Crear Nuevo Usuario Móvil</span>
-          <span *ngIf="currentUser?.role === 'trainer'">Registrar Usuario para Entrenamiento</span>
-        </mat-card-title>
-        <mat-card-subtitle>
-          <span *ngIf="currentUser?.role === 'admin'">Los usuarios creados podrán usar la aplicación móvil FitNova</span>
-          <span *ngIf="currentUser?.role === 'trainer'">El usuario será asignado automáticamente a ti como entrenador</span>
-        </mat-card-subtitle>
-      </mat-card-header>
-      
-      <mat-card-content>
-        <form [formGroup]="createUserForm" 
-              (ngSubmit)="createUser()"
-              class="create-user-form">
-          
-          <div class="form-row">
-            <mat-form-field appearance="outline">
-              <mat-label>Nombre completo</mat-label>
-              <input matInput 
-                     formControlName="displayName"
-                     placeholder="Juan Pérez">
-              <mat-error *ngIf="createUserForm.get('displayName')?.hasError('required')">
-                El nombre es requerido
-              </mat-error>
-              <mat-error *ngIf="createUserForm.get('displayName')?.hasError('minlength')">
-                Mínimo 2 caracteres
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Email</mat-label>
-              <input matInput 
-                     type="email"
-                     formControlName="email"
-                     placeholder="juan@example.com">
-              <mat-error *ngIf="createUserForm.get('email')?.hasError('required')">
-                El email es requerido
-              </mat-error>
-              <mat-error *ngIf="createUserForm.get('email')?.hasError('email')">
-                Formato de email inválido
-              </mat-error>
-            </mat-form-field>
-          </div>
-
-          <div class="form-row">
-            <mat-form-field appearance="outline">
-              <mat-label>Contraseña</mat-label>
-              <input matInput 
-                     type="password"
-                     formControlName="password"
-                     placeholder="Mínimo 6 caracteres">
-              <mat-error *ngIf="createUserForm.get('password')?.hasError('required')">
-                La contraseña es requerida
-              </mat-error>
-              <mat-error *ngIf="createUserForm.get('password')?.hasError('minlength')">
-                Mínimo 6 caracteres
-              </mat-error>
-            </mat-form-field>
-
-            <!-- Entrenador asignado - Solo para admins -->
-            <mat-form-field appearance="outline" *ngIf="currentUser?.role === 'admin'">
-              <mat-label>Entrenador asignado</mat-label>
-              <mat-select formControlName="assignedTrainer">
-                <mat-option value="">Sin asignar</mat-option>
-                <mat-option *ngFor="let trainer of availableTrainers" 
-                           [value]="trainer.uid">
-                  {{trainer.displayName}}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <!-- Info para trainers -->
-            <div class="trainer-info" *ngIf="currentUser?.role === 'trainer'">
-              <mat-icon>info</mat-icon>
-              <span>Este usuario será asignado automáticamente a ti como entrenador</span>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button mat-raised-button 
-                    color="primary"
-                    type="submit"
-                    [disabled]="createUserForm.invalid || isLoading">
-              <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
-              <mat-icon *ngIf="!isLoading">add</mat-icon>
-              <span *ngIf="!isLoading && currentUser?.role === 'admin'">Crear Usuario</span>
-              <span *ngIf="!isLoading && currentUser?.role === 'trainer'">Registrar Usuario</span>
-              <span *ngIf="isLoading">Creando...</span>
-            </button>
-
-            <button mat-button 
-                    type="button"
-                    (click)="toggleCreateUserForm()"
-                    [disabled]="isLoading">
-              <mat-icon>cancel</mat-icon>
-              Cancelar
-            </button>
-          </div>
-
-        </form>
-      </mat-card-content>
-    </mat-card>
-  </div>
-
-  <!-- ✅ CONTROLES Y FILTROS -->
+  <!-- 🎛️ CONTROLES Y FILTROS -->
   <mat-card class="controls-card">
     <mat-card-content>
       <div class="controls-section">
-        
-        <!-- Búsqueda y acciones principales -->
         <div class="search-actions">
           <mat-form-field class="search-field" appearance="outline">
             <mat-label>Buscar usuarios</mat-label>
             <input matInput 
-                   formControlName="searchText"
-                   placeholder="Nombre, email..."
-                   (input)="onSearchChange($event)">
-            <mat-icon matSuffix>search</mat-icon>
-          </mat-form-field>
-
-          <div class="action-buttons">
-            <button mat-button 
-                    (click)="refreshData()">
-              <mat-icon>refresh</mat-icon>
-              Actualizar
+                   [(ngModel)]="searchTerm" 
+                   (input)="applySearch()"
+                   placeholder="Buscar por nombre, email o ID...">
+            <mat-icon matPrefix>search</mat-icon>
+            <button matSuffix 
+                    mat-icon-button 
+                    (click)="clearSearch()" 
+                    *ngIf="searchTerm"
+                    aria-label="Limpiar búsqueda">
+              <mat-icon>close</mat-icon>
             </button>
-
+          </mat-form-field>
+          
+          <div class="action-buttons">
+            <button mat-button (click)="toggleAdvancedFilters()">
+              <mat-icon>filter_list</mat-icon>
+              <span>Filtros</span>
+            </button>
+            
             <button mat-button 
-                    (click)="exportData()">
-              <mat-icon>file_download</mat-icon>
-              Exportar
+                    (click)="clearAllFilters()"
+                    [disabled]="!hasActiveFilters()">
+              <mat-icon>clear_all</mat-icon>
+              <span>Limpiar</span>
             </button>
           </div>
         </div>
-
-        <!-- Filtros avanzados -->
-        <div class="advanced-filters" [formGroup]="filterForm">
+        
+        <!-- Filtros Avanzados -->
+        <div class="advanced-filters" *ngIf="showAdvancedFilters">
           <mat-form-field appearance="outline">
-            <mat-label>Entrenador Asignado</mat-label>
-            <mat-select formControlName="trainerFilter" (selectionChange)="onTrainerFilterChange()">
-              <mat-option value="all">Todos los entrenadores</mat-option>
+            <mat-label>Estado</mat-label>
+            <mat-select [(ngModel)]="statusFilter" (selectionChange)="applyFilters()">
+              <mat-option value="">Todos</mat-option>
+              <mat-option value="active">Activos</mat-option>
+              <mat-option value="inactive">Inactivos</mat-option>
+              <mat-option value="blocked">Bloqueados</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="currentUser?.role === 'admin'">
+            <mat-label>Entrenador</mat-label>
+            <mat-select [(ngModel)]="trainerFilter" (selectionChange)="applyFilters()">
+              <mat-option value="">Todos</mat-option>
               <mat-option value="unassigned">Sin asignar</mat-option>
               <mat-option *ngFor="let trainer of availableTrainers" 
                          [value]="trainer.uid">
@@ -250,233 +165,339 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Actividad</mat-label>
-            <mat-select formControlName="activityFilter" (selectionChange)="onActivityFilterChange()">
-              <mat-option value="all">Toda la actividad</mat-option>
-              <mat-option value="today">Activos hoy</mat-option>
-              <mat-option value="week">Última semana</mat-option>
-              <mat-option value="month">Último mes</mat-option>
-              <mat-option value="inactive">Inactivos</mat-option>
-            </mat-select>
+            <mat-label>Desde</mat-label>
+            <input matInput 
+                   [matDatepicker]="startPicker" 
+                   [(ngModel)]="dateRangeStart"
+                   (dateChange)="applyFilters()">
+            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
           </mat-form-field>
 
-          <button mat-button 
-                  color="warn"
-                  (click)="clearFilters()">
-            <mat-icon>clear</mat-icon>
-            Limpiar Filtros
+          <mat-form-field appearance="outline">
+            <mat-label>Hasta</mat-label>
+            <input matInput 
+                   [matDatepicker]="endPicker" 
+                   [(ngModel)]="dateRangeEnd"
+                   (dateChange)="applyFilters()">
+            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+          </mat-form-field>
+
+          <button mat-button (click)="resetDateFilters()">
+            <mat-icon>date_range</mat-icon>
+            <span>Resetear fechas</span>
           </button>
         </div>
-
       </div>
     </mat-card-content>
   </mat-card>
 
-  <!-- ✅ TABLA DE USUARIOS -->
+  <!-- 📋 TABLA DE USUARIOS -->
   <mat-card class="table-card">
-    <mat-card-content>
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="isLoading">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
 
-      <!-- Loading state -->
-      <div class="loading-container" *ngIf="isLoading">
-        <mat-spinner diameter="50"></mat-spinner>
-        <p>Cargando usuarios...</p>
+    <!-- Contenido de la tabla -->
+    <div *ngIf="!isLoading">
+      <!-- Estado vacío -->
+      <div class="empty-state" *ngIf="dataSource.data.length === 0 && !isLoading">
+        <mat-icon class="empty-icon">people_outline</mat-icon>
+        <h3>No hay usuarios disponibles</h3>
+        <p *ngIf="!hasActiveFilters()">
+          Aún no tienes usuarios registrados en tu aplicación. 
+          ¡Comienza creando el primer usuario!
+        </p>
+        <p *ngIf="hasActiveFilters()">
+          No se encontraron usuarios que coincidan con los filtros aplicados. 
+          Intenta ajustar los criterios de búsqueda.
+        </p>
+        <button mat-raised-button 
+                color="primary"
+                (click)="toggleCreateUserForm()"
+                *ngIf="!hasActiveFilters() && (currentUser?.role === 'admin' || currentUser?.role === 'trainer')">
+          <mat-icon>person_add</mat-icon>
+          Crear Primer Usuario
+        </button>
+        <button mat-button 
+                (click)="clearAllFilters()"
+                *ngIf="hasActiveFilters()">
+          <mat-icon>clear_all</mat-icon>
+          Limpiar Filtros
+        </button>
       </div>
 
-      <!-- Tabla con datos -->
-      <div class="table-container" *ngIf="!isLoading">
+      <!-- Tabla de usuarios -->
+      <div class="table-container" *ngIf="dataSource.data.length > 0">
         <table mat-table 
                [dataSource]="dataSource" 
                matSort 
-               class="users-table"
-               matSortActive="displayName"
-               matSortDirection="asc">
+               class="users-table">
 
-          <!-- Columna: Usuario -->
-          <ng-container matColumnDef="displayName">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Usuario</th>
-            <td mat-cell *matCellDef="let user">
+          <!-- Columna: Información del Usuario -->
+          <ng-container matColumnDef="userInfo">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="displayName">
+              Usuario
+            </th>
+            <td mat-cell *matCellDef="let user" class="user-info-cell">
               <div class="user-info">
-                <mat-icon class="user-avatar">person</mat-icon>
+                <div class="user-avatar">
+                  {{getUserInitials(user.displayName)}}
+                </div>
                 <div class="user-details">
-                  <strong>{{user.displayName}}</strong>
-                  <small>ID: {{user.uid | slice:0:8}}...</small>
+                  <div class="user-name">{{user.displayName}}</div>
+                  <div class="user-email">{{user.email}}</div>
                 </div>
               </div>
             </td>
           </ng-container>
 
-          <!-- Columna: Email -->
-          <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Email</th>
-            <td mat-cell *matCellDef="let user">
-              <span class="email-text">{{user.email}}</span>
-            </td>
-          </ng-container>
-
           <!-- Columna: Estado -->
-          <ng-container matColumnDef="statusText">
-            <th mat-header-cell *matHeaderCellDef>Estado</th>
-            <td mat-cell *matCellDef="let user">
-              <mat-chip [color]="user.statusColor" selected>
-                {{user.statusText}}
-              </mat-chip>
-            </td>
-          </ng-container>
-
-          <!-- Columna: Entrenamientos -->
-          <ng-container matColumnDef="totalWorkouts">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Entrenamientos</th>
-            <td mat-cell *matCellDef="let user">
-              <div class="workout-cell">
-                <mat-icon>fitness_center</mat-icon>
-                <strong>{{user.totalWorkouts || 0}}</strong>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Columna: Precisión -->
-          <ng-container matColumnDef="averageAccuracy">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Precisión</th>
-            <td mat-cell *matCellDef="let user">
-              <div class="accuracy-cell">
-                <mat-icon [style.color]="user.averageAccuracy > 80 ? '#4caf50' : user.averageAccuracy > 60 ? '#ff9800' : '#f44336'">
-                  trending_up
-                </mat-icon>
-                <span>{{user.averageAccuracy || 0}}%</span>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Columna: Errores Críticos -->
-          <ng-container matColumnDef="totalCriticalErrors">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Errores</th>
-            <td mat-cell *matCellDef="let user">
-              <div class="errors-cell">
-                <mat-icon [style.color]="user.totalCriticalErrors > 10 ? '#f44336' : '#4caf50'">
-                  warning
-                </mat-icon>
-                <span>{{user.totalCriticalErrors || 0}}</span>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Columna: Entrenador -->
-          <ng-container matColumnDef="assignedTrainerName">
-            <th mat-header-cell *matHeaderCellDef>Entrenador</th>
-            <td mat-cell *matCellDef="let user">
-              <div class="trainer-cell">
-                <mat-form-field appearance="outline" 
-                                *ngIf="currentUser?.role === 'admin'">
-                  <mat-select [value]="user.assignedTrainer || ''"
-                              (selectionChange)="assignTrainer(user.uid, $event.value)">
-                    <mat-option value="">Sin asignar</mat-option>
-                    <mat-option *ngFor="let trainer of availableTrainers" 
-                               [value]="trainer.uid">
-                      {{trainer.displayName}}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-                
-                <span *ngIf="currentUser?.role === 'trainer'" 
-                      class="trainer-name">
-                  {{user.assignedTrainerName}}
-                </span>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="status">
+              Estado
+            </th>
+            <td mat-cell *matCellDef="let user" class="status-cell">
+              <div class="status-chip" 
+                   [ngClass]="{
+                     'status-active': user.statusColor === 'primary' || user.statusColor === 'accent',
+                     'status-inactive': user.statusColor === 'warn' || user.statusText.includes('Inactivo'),
+                     'status-blocked': user.status === 'blocked'
+                   }">
+                <div class="status-dot"></div>
+                <span>{{user.statusText}}</span>
               </div>
             </td>
           </ng-container>
 
           <!-- Columna: Última Actividad -->
-          <ng-container matColumnDef="lastActiveText">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Última Actividad</th>
+          <ng-container matColumnDef="lastActive">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="lastActiveAt">
+              Última Actividad
+            </th>
             <td mat-cell *matCellDef="let user">
-              <div class="activity-cell">
-                <mat-icon>schedule</mat-icon>
-                <span>{{user.lastActiveText}}</span>
+              <div class="last-active-info">
+                <span class="activity-date">{{user.lastActiveText}}</span>
+                <span class="activity-details" *ngIf="user.totalWorkouts > 0">
+                  {{user.totalWorkouts}} entrenamientos
+                </span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna: Estadísticas -->
+          <ng-container matColumnDef="stats">
+            <th mat-header-cell *matHeaderCellDef>
+              Estadísticas
+            </th>
+            <td mat-cell *matCellDef="let user">
+              <div class="user-stats">
+                <div class="stat-item">
+                  <mat-icon>fitness_center</mat-icon>
+                  <span>{{user.totalWorkouts || 0}}</span>
+                </div>
+                <div class="stat-item">
+                  <mat-icon>schedule</mat-icon>
+                  <span>{{formatMinutes(user.totalMinutes || 0)}}</span>
+                </div>
+                <div class="stat-item" *ngIf="user.avgAccuracy">
+                  <mat-icon>target</mat-icon>
+                  <span>{{user.avgAccuracy}}%</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Columna: Entrenador Asignado (solo Admin) -->
+          <ng-container matColumnDef="assignedTrainer" *ngIf="currentUser?.role === 'admin'">
+            <th mat-header-cell *matHeaderCellDef>
+              Entrenador
+            </th>
+            <td mat-cell *matCellDef="let user" class="trainer-cell">
+              <mat-form-field appearance="outline" *ngIf="!user.isUpdatingTrainer">
+                <mat-select [value]="user.assignedTrainer || ''" 
+                           (selectionChange)="updateAssignedTrainer(user, $event.value)"
+                           [disabled]="user.isUpdatingTrainer">
+                  <mat-option value="">Sin asignar</mat-option>
+                  <mat-option *ngFor="let trainer of availableTrainers" 
+                             [value]="trainer.uid">
+                    {{trainer.displayName}}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <div *ngIf="user.isUpdatingTrainer" class="updating-trainer">
+                <mat-spinner diameter="24"></mat-spinner>
+                <span>Actualizando...</span>
+              </div>
+              <div class="trainer-name" *ngIf="user.assignedTrainerName && !user.isUpdatingTrainer">
+                {{user.assignedTrainerName}}
               </div>
             </td>
           </ng-container>
 
           <!-- Columna: Acciones -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Acciones</th>
-            <td mat-cell *matCellDef="let user">
-              <div class="actions-cell">
-                <button mat-icon-button 
-                        [matMenuTriggerFor]="userMenu"
-                        matTooltip="Más opciones">
-                  <mat-icon>more_vert</mat-icon>
+            <th mat-header-cell *matHeaderCellDef>
+              Acciones
+            </th>
+            <td mat-cell *matCellDef="let user" class="actions-cell">
+              <button mat-icon-button 
+                      [matMenuTriggerFor]="userActionsMenu"
+                      [disabled]="user.isUpdating"
+                      matTooltip="Más acciones">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              
+              <!-- Menú de acciones -->
+              <mat-menu #userActionsMenu="matMenu">
+                <button mat-menu-item (click)="viewUserDetails(user)">
+                  <mat-icon>visibility</mat-icon>
+                  <span>Ver detalles</span>
                 </button>
                 
-                <mat-menu #userMenu="matMenu">
-                  <button mat-menu-item 
-                          (click)="viewUserDetail(user.uid)">
-                    <mat-icon>visibility</mat-icon>
-                    Ver Detalles
-                  </button>
-                  
-                  <button mat-menu-item 
-                          (click)="editUser(user.uid)">
-                    <mat-icon>edit</mat-icon>
-                    Editar Usuario
-                  </button>
-                  
-                  <button mat-menu-item 
-                          (click)="viewUserStats(user.uid)">
-                    <mat-icon>analytics</mat-icon>
-                    Ver Estadísticas
-                  </button>
-                  
-                  <mat-divider></mat-divider>
-                  
-                  <button mat-menu-item 
-                          (click)="resetUserPassword(user.uid)"
-                          *ngIf="currentUser?.role === 'admin'">
-                    <mat-icon>lock_reset</mat-icon>
-                    Resetear Contraseña
-                  </button>
-                  
-                  <button mat-menu-item 
-                          (click)="deleteUser(user.uid)"
-                          *ngIf="currentUser?.role === 'admin'"
-                          class="delete-action">
-                    <mat-icon>delete</mat-icon>
-                    Desactivar Usuario
-                  </button>
-                </mat-menu>
-              </div>
+                <button mat-menu-item (click)="editUser(user)">
+                  <mat-icon>edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                
+                <button mat-menu-item 
+                        (click)="toggleUserStatus(user)"
+                        [disabled]="user.isUpdating">
+                  <mat-icon>{{user.status === 'active' ? 'block' : 'check_circle'}}</mat-icon>
+                  <span>{{user.status === 'active' ? 'Desactivar' : 'Activar'}}</span>
+                </button>
+                
+                <mat-divider></mat-divider>
+                
+                <button mat-menu-item 
+                        (click)="resetUserPassword(user)"
+                        class="warning-action">
+                  <mat-icon>lock_reset</mat-icon>
+                  <span>Resetear contraseña</span>
+                </button>
+                
+                <button mat-menu-item 
+                        (click)="deleteUser(user)"
+                        class="delete-action"
+                        *ngIf="currentUser?.role === 'admin'">
+                  <mat-icon>delete</mat-icon>
+                  <span>Eliminar</span>
+                </button>
+              </mat-menu>
             </td>
           </ng-container>
 
-          <!-- Header y filas de la tabla -->
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+          <!-- Definición de filas -->
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row 
+              *matRowDef="let user; columns: displayedColumns;" 
               class="user-row"
-              [class.inactive-user]="row.statusColor === 'warn'"></tr>
-
+              [class.inactive-user]="user.status !== 'active'"></tr>
         </table>
 
         <!-- Paginador -->
-        <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]"
-                       [pageSize]="25"
-                       showFirstLastButtons>
+        <mat-paginator 
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          [pageSize]="25"
+          showFirstLastButtons
+          aria-label="Seleccionar página de usuarios">
         </mat-paginator>
-
       </div>
-
-      <!-- Estado vacío -->
-      <div class="empty-state" *ngIf="!isLoading && dataSource.data.length === 0">
-        <mat-icon class="empty-icon">people_outline</mat-icon>
-        <h3>No se encontraron usuarios</h3>
-        <p>No hay usuarios que coincidan con los filtros aplicados</p>
-        <button mat-raised-button 
-                color="primary"
-                (click)="clearFilters()">
-          <mat-icon>clear</mat-icon>
-          Limpiar Filtros
-        </button>
-      </div>
-
-    </mat-card-content>
+    </div>
   </mat-card>
 
+  <!-- 🚨 FORMULARIO DE CREAR USUARIO (Modal o Expansible) -->
+  <mat-card *ngIf="showCreateUserForm" class="create-user-form">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>person_add</mat-icon>
+        Crear Nuevo Usuario
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="createUserForm" (ngSubmit)="createUser()">
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre completo</mat-label>
+            <input matInput 
+                   formControlName="displayName" 
+                   placeholder="Ej: Juan Pérez"
+                   required>
+            <mat-error *ngIf="createUserForm.get('displayName')?.hasError('required')">
+              El nombre es requerido
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput 
+                   type="email"
+                   formControlName="email" 
+                   placeholder="usuario@ejemplo.com"
+                   required>
+            <mat-error *ngIf="createUserForm.get('email')?.hasError('required')">
+              El email es requerido
+            </mat-error>
+            <mat-error *ngIf="createUserForm.get('email')?.hasError('email')">
+              Ingresa un email válido
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Contraseña temporal</mat-label>
+            <input matInput 
+                   [type]="hidePassword ? 'password' : 'text'"
+                   formControlName="password" 
+                   placeholder="Mínimo 6 caracteres"
+                   required>
+            <button mat-icon-button 
+                    matSuffix 
+                    (click)="hidePassword = !hidePassword"
+                    type="button">
+              <mat-icon>{{hidePassword ? 'visibility' : 'visibility_off'}}</mat-icon>
+            </button>
+            <mat-error *ngIf="createUserForm.get('password')?.hasError('required')">
+              La contraseña es requerida
+            </mat-error>
+            <mat-error *ngIf="createUserForm.get('password')?.hasError('minlength')">
+              Mínimo 6 caracteres
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="currentUser?.role === 'admin'">
+            <mat-label>Asignar entrenador</mat-label>
+            <mat-select formControlName="assignedTrainer">
+              <mat-option value="">Sin asignar</mat-option>
+              <mat-option *ngFor="let trainer of availableTrainers" 
+                         [value]="trainer.uid">
+                {{trainer.displayName}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-button 
+              type="button" 
+              (click)="cancelCreateUser()">
+        Cancelar
+      </button>
+      
+      <button mat-raised-button 
+              color="primary"
+              [disabled]="createUserForm.invalid || isCreatingUser"
+              (click)="createUser()">
+        <mat-spinner diameter="20" *ngIf="isCreatingUser"></mat-spinner>
+        <span *ngIf="!isCreatingUser">Crear Usuario</span>
+        <span *ngIf="isCreatingUser">Creando...</span>
+      </button>
+    </mat-card-actions>
+  </mat-card>
 </div>

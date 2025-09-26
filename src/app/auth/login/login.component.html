@@ -1,108 +1,168 @@
 <!-- src/app/auth/login/login.component.html -->
-<!-- LOGIN WEB - MATERIAL DESIGN - BASADO EN MÓVIL FUNCIONAL -->
+<!-- LOGIN PREMIUM - HTML CORREGIDO SIN SUPERPOSICIONES -->
 
 <div class="login-container">
-    <!-- HEADER CON BRANDING FITNOVA -->
-    <div class="login-header">
-      <div class="brand">
-        <mat-icon class="brand-icon">fitness_center</mat-icon>
-        <h1 class="brand-title">FitNova</h1>
-        <p class="brand-subtitle">Plataforma Web para Entrenadores</p>
+  <!-- ==================== LADO IZQUIERDO - ANIMACIÓN GYM ==================== -->
+  <div class="animation-section">
+    <!-- Background Gradient -->
+    <div class="gym-background">
+      <div class="gradient-overlay"></div>
+    </div>
+
+    <!-- Gym Animation -->
+    <div class="gym-animation">
+      <!-- Logo Principal CENTRADO -->
+      <div class="logo-main">
+        <div class="logo-circle">
+          <mat-icon class="logo-icon">fitness_center</mat-icon>
+        </div>
+        <h1 class="brand-name">FitNova</h1>
+        <p class="brand-tagline">Entrena con Inteligencia Artificial</p>
+      </div>
+
+      <!-- PESA 1 - ESQUINA SUPERIOR IZQUIERDA -->
+      <div class="weight-1">
+        <mat-icon>fitness_center</mat-icon>
+      </div>
+
+      <!-- PESA 2 - ESQUINA SUPERIOR DERECHA -->
+      <div class="weight-2">
+        <mat-icon>sports_gymnastics</mat-icon>
+      </div>
+
+      <!-- PESA 3 - ESQUINA INFERIOR IZQUIERDA -->
+      <div class="weight-3">
+        <mat-icon>self_improvement</mat-icon>
+      </div>
+
+      <!-- PERSONA ENTRENANDO - LADO DERECHO -->
+      <div class="trainer-figure">
+        <div class="trainer-body">
+          <mat-icon class="trainer-icon">directions_run</mat-icon>
+        </div>
+        <div class="trainer-shadow"></div>
+      </div>
+
+      <!-- STAT CARD 1 - IZQUIERDA CENTRO -->
+      <div class="stat-card-1">
+        <mat-icon>trending_up</mat-icon>
+        <span>+50% Fuerza</span>
+      </div>
+
+      <!-- STAT CARD 2 - DERECHA INFERIOR -->
+      <div class="stat-card-2">
+        <mat-icon>psychology</mat-icon>
+        <span>IA Personal</span>
+      </div>
+
+      <!-- Features List en la parte inferior -->
+      <div class="features-list">
+        <div class="feature-item">
+          <mat-icon>check_circle</mat-icon>
+          <span>Rutinas generadas por IA</span>
+        </div>
+        <div class="feature-item">
+          <mat-icon>check_circle</mat-icon>
+          <span>Análisis postural en tiempo real</span>
+        </div>
+        <div class="feature-item">
+          <mat-icon>check_circle</mat-icon>
+          <span>Dashboard para entrenadores</span>
+        </div>
       </div>
     </div>
-  
-    <!-- FORMULARIO DE LOGIN -->
-    <mat-card class="login-card">
-      <mat-card-header>
-        <mat-card-title>Iniciar Sesión</mat-card-title>
-        <mat-card-subtitle>Acceso para entrenadores y administradores</mat-card-subtitle>
-      </mat-card-header>
-  
-      <mat-card-content>
-        <!-- FORMULARIO REACTIVO -->
-        <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="login-form">
-          
-          <!-- CAMPO EMAIL -->
-          <mat-form-field appearance="outline" class="full-width">
+  </div>
+
+  <!-- ==================== LADO DERECHO - FORMULARIO LOGIN ==================== -->
+  <div class="form-section">
+    <div class="login-card" [class.animated]="isFormAnimated">
+      <!-- Header -->
+      <div class="login-header">
+        <h2>¡Bienvenido de vuelta!</h2>
+        <p>Accede a tu panel de entrenador</p>
+      </div>
+
+      <!-- Formulario -->
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="login-form">
+        <!-- Email Field -->
+        <div class="form-group">
+          <mat-form-field appearance="outline" class="premium-field">
             <mat-label>Correo Electrónico</mat-label>
             <input 
               matInput 
-              type="email" 
+              type="email"
               formControlName="email"
-              placeholder="ejemplo&#64;fitnova.com"
+              placeholder="entrenador@fitnova.com"
               autocomplete="email">
-            <mat-icon matSuffix>email</mat-icon>
-            
-            <!-- ERRORES DE VALIDACIÓN -->
+            <mat-icon matPrefix>email</mat-icon>
             <mat-error *ngIf="email?.invalid && email?.touched">
-              {{ getEmailErrorMessage() }}
+              <span *ngIf="email?.hasError('required')">El correo es requerido</span>
+              <span *ngIf="email?.hasError('email')">Ingresa un correo válido</span>
             </mat-error>
           </mat-form-field>
-  
-          <!-- CAMPO PASSWORD -->
-          <mat-form-field appearance="outline" class="full-width">
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <mat-form-field appearance="outline" class="premium-field">
             <mat-label>Contraseña</mat-label>
             <input 
               matInput 
               [type]="hidePassword ? 'password' : 'text'"
               formControlName="password"
-              placeholder="Mínimo 6 caracteres"
+              placeholder="••••••••"
               autocomplete="current-password">
-            
-            <!-- TOGGLE VISIBILIDAD PASSWORD -->
+            <mat-icon matPrefix>lock</mat-icon>
             <button 
               mat-icon-button 
               matSuffix 
               type="button"
               (click)="togglePasswordVisibility()"
-              [attr.aria-label]="'Hide password'"
-              [attr.aria-pressed]="hidePassword">
-              <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+              class="password-toggle">
+              <mat-icon>{{hidePassword ? 'visibility' : 'visibility_off'}}</mat-icon>
             </button>
-  
-            <!-- ERRORES DE VALIDACIÓN -->
             <mat-error *ngIf="password?.invalid && password?.touched">
-              {{ getPasswordErrorMessage() }}
+              <span *ngIf="password?.hasError('required')">La contraseña es requerida</span>
+              <span *ngIf="password?.hasError('minlength')">Mínimo 6 caracteres</span>
             </mat-error>
           </mat-form-field>
-  
-          <!-- BOTÓN LOGIN -->
-          <button 
-            mat-raised-button 
-            color="primary" 
-            type="submit"
-            class="login-button full-width"
-            [disabled]="isLoading">
-            
-            <span *ngIf="!isLoading">Iniciar Sesión</span>
-            <span *ngIf="isLoading" class="loading-content">
-              <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
-              Iniciando sesión...
-            </span>
-          </button>
-  
-          <!-- LINK FORGOT PASSWORD -->
-          <button 
-            mat-button 
-            type="button"
-            class="forgot-password-btn"
-            (click)="onForgotPassword()"
-            [disabled]="isLoading || !email?.value">
-            ¿Olvidaste tu contraseña?
-          </button>
-  
-        </form>
-  
-      </mat-card-content>
-    </mat-card>
-  
-    <!-- FOOTER CON INFO -->
-    <div class="login-footer">
-      <p class="footer-text">
-        <mat-icon class="footer-icon">security</mat-icon>
-        Conexión segura con Firebase Auth
-      </p>
-      <p class="footer-version">FitNova v2.0 - Plataforma Web</p>
+        </div>
+
+        <!-- Remember Me -->
+        <div class="form-options">
+          <label class="remember-checkbox">
+            <input type="checkbox">
+            <span class="checkmark"></span>
+            Recordarme
+          </label>
+          <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <!-- Login Button -->
+        <button 
+          mat-flat-button 
+          type="submit"
+          class="login-btn"
+          [disabled]="isLoading || loginForm.invalid">
+          <span *ngIf="!isLoading" class="btn-content">
+            <mat-icon>login</mat-icon>
+            Iniciar Sesión
+          </span>
+          <mat-spinner *ngIf="isLoading" diameter="24" class="login-spinner"></mat-spinner>
+        </button>
+      </form>
+
+      <!-- Footer -->
+      <div class="login-footer">
+        <p class="help-text">
+          ¿Necesitas ayuda? 
+          <a href="mailto:soporte@fitnova.com">Contacta soporte</a>
+        </p>
+        <div class="version-info">
+          <span>FitNova Dashboard v1.0.0</span>
+          <span class="developer">Por Carlos Cusme</span>
+        </div>
+      </div>
     </div>
-  
   </div>
+</div>

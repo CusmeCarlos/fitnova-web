@@ -1,346 +1,624 @@
-/* src/app/auth/login/login.component.scss */
-/* 🎨 LOGIN WEB STYLES - MATERIAL DESIGN - PROFESSIONAL */
+// src/app/auth/login/login.component.scss
+// 🎨 LOGIN PREMIUM SPLIT DESIGN - NIVEL FINZENAPP
 
+// ================================================================================
+// 🌟 CONTAINER PRINCIPAL - SPLIT LAYOUT
+// ================================================================================
 .login-container {
-    min-height: 100vh;
-    display: flex;
+  display: flex;
+  min-height: 100vh;
+  background: var(--primary-bg);
+  
+  @media (max-width: 1024px) {
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem 1rem;
-    
-    // ✅ RESPONSIVE
-    @media (max-width: 768px) {
-      padding: 1rem 0.5rem;
-    }
+  }
+}
+
+// ================================================================================
+// 🎨 LADO IZQUIERDO - ANIMACIÓN GYM
+// ================================================================================
+.animation-section {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  min-height: 100vh;
+  
+  @media (max-width: 1024px) {
+    min-height: 40vh;
+    order: 2;
   }
   
-  // ✅ HEADER CON BRANDING
-  .login-header {
-    text-align: center;
-    margin-bottom: 2rem;
+  .gym-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #1a202c;
     
-    .brand {
-      .brand-icon {
+    .gradient-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 60%),
+        radial-gradient(circle at 40% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
+    }
+  }
+}
+
+.gym-animation {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: white;
+  max-width: 500px;
+  padding: 2rem;
+  
+  .logo-main {
+    margin-bottom: 3rem;
+    animation: fadeInUp 1s ease-out;
+    position: relative;
+    z-index: 10;
+    
+    .logo-circle {
+      width: 120px;
+      height: 120px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 2rem;
+      animation: gentlePulse 4s ease-in-out infinite;
+      
+      .logo-icon {
         font-size: 4rem;
         width: 4rem;
         height: 4rem;
         color: white;
-        margin-bottom: 1rem;
-        
-        @media (max-width: 480px) {
-          font-size: 3rem;
-          width: 3rem;
-          height: 3rem;
-        }
       }
-      
-      .brand-title {
-        color: white;
-        font-size: 3rem;
-        font-weight: 700;
-        margin: 0 0 0.5rem 0;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        
-        @media (max-width: 480px) {
-          font-size: 2.5rem;
-        }
-      }
-      
-      .brand-subtitle {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1.1rem;
-        margin: 0;
-        font-weight: 300;
-        
-        @media (max-width: 480px) {
-          font-size: 1rem;
-        }
-      }
+    }
+    
+    .brand-name {
+      font-size: 3.5rem;
+      font-weight: 900;
+      margin: 0 0 1rem;
+      letter-spacing: -0.02em;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .brand-tagline {
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin: 0;
+      opacity: 0.9;
     }
   }
   
-  // ✅ CARD PRINCIPAL
-  .login-card {
-    width: 100%;
-    max-width: 450px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    border-radius: 16px;
-    overflow: hidden;
+  .features-list {
+    position: absolute;
+    bottom: 2rem;
+    left: 2rem;
+    right: 2rem;
+    z-index: 5;
     
-    mat-card-header {
-      background: linear-gradient(45deg, #2196f3, #21cbf3);
-      color: white;
-      padding: 2rem 2rem 1rem 2rem;
-      text-align: center;
-      
-      mat-card-title {
-        font-size: 1.8rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-      }
-      
-      mat-card-subtitle {
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 1rem;
-      }
-    }
-    
-    mat-card-content {
-      padding: 2rem;
-      
-      @media (max-width: 480px) {
-        padding: 1.5rem;
-      }
-    }
-  }
-  
-  // ✅ FORMULARIO
-  .login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    
-    .full-width {
-      width: 100%;
-    }
-    
-    mat-form-field {
-      .mat-form-field-outline {
-        color: #ddd;
-      }
-      
-      &.mat-focused .mat-form-field-outline {
-        color: #2196f3;
-      }
-    }
-    
-    .login-button {
-      height: 48px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-top: 1rem;
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 0.75rem 1rem;
       border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      animation: slideInLeft 0.6s ease-out;
       
-      .loading-content {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
+      &:nth-child(1) { animation-delay: 0.2s; }
+      &:nth-child(2) { animation-delay: 0.4s; }
+      &:nth-child(3) { animation-delay: 0.6s; }
+      
+      mat-icon {
+        color: #10b981;
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+      
+      span {
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+
+
+// ================================================================================
+// 📝 LADO DERECHO - FORMULARIO ESTILO FINZENAPP
+// ================================================================================
+.form-section {
+  flex: 0 0 500px;
+  background: #2d3748;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  
+  @media (max-width: 1024px) {
+    flex: none;
+    order: 1;
+    min-height: 60vh;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  transform: translateX(20px);
+  opacity: 0;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &.animated {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+// ================================================================================
+// 🎯 HEADER DEL FORMULARIO
+// ================================================================================
+.login-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  
+  h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem;
+  }
+  
+  p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
+// ================================================================================
+// 📋 FORMULARIO PREMIUM
+// ================================================================================
+.login-form {
+  .form-group {
+    margin-bottom: 1.5rem;
+    
+    .premium-field {
+      width: 100%;
+      
+      ::ng-deep {
+        .mat-mdc-text-field-wrapper {
+          background: var(--glass-bg) !important;
+          border: 1px solid var(--border-color) !important;
+          border-radius: 12px !important;
+          backdrop-filter: var(--glass-blur);
+          transition: all 0.3s ease !important;
+        }
         
-        .inline-spinner {
-          ::ng-deep .mat-progress-spinner circle {
-            stroke: white;
+        .mat-mdc-input-element {
+          color: var(--text-primary) !important;
+          font-weight: 500;
+          
+          &::placeholder {
+            color: var(--text-muted) !important;
+          }
+        }
+        
+        .mat-mdc-floating-label {
+          color: var(--text-secondary) !important;
+        }
+        
+        &.mat-focused {
+          .mat-mdc-text-field-wrapper {
+            border-color: var(--accent-blue) !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+          }
+        }
+        
+        .mat-icon {
+          color: var(--text-secondary);
+        }
+        
+        .password-toggle {
+          color: var(--text-secondary) !important;
+          
+          &:hover {
+            color: var(--accent-blue) !important;
           }
         }
       }
     }
+  }
+  
+  .form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
     
-    .forgot-password-btn {
-      align-self: center;
-      color: #666;
-      text-transform: none;
-      font-size: 0.9rem;
+    .remember-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      
+      input[type="checkbox"] {
+        display: none;
+      }
+      
+      .checkmark {
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--border-color);
+        border-radius: 4px;
+        position: relative;
+        transition: all 0.3s ease;
+        
+        &::after {
+          content: '✓';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          color: white;
+          font-size: 12px;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+      }
+      
+      input:checked + .checkmark {
+        background: var(--accent-blue);
+        border-color: var(--accent-blue);
+        
+        &::after {
+          opacity: 1;
+        }
+      }
+    }
+    
+    .forgot-password {
+      color: var(--accent-blue);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.3s ease;
       
       &:hover {
-        color: #2196f3;
-      }
-      
-      &:disabled {
-        color: #ccc;
+        color: #1d4ed8;
+        text-decoration: underline;
       }
     }
   }
   
-  // ✅ DIVIDER
-  .divider {
-    margin: 2rem 0 1.5rem 0;
-    opacity: 0.3;
-  }
-  
-  // ✅ SECCIÓN DE TESTING
-  .testing-section {
-    text-align: center;
+  .login-btn {
+    width: 100% !important;
+    height: 56px !important;
+    background: linear-gradient(135deg, var(--accent-blue), #1d4ed8) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    position: relative;
+    overflow: hidden;
     
-    .test-credentials {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      margin-bottom: 1rem;
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.6s ease;
+    }
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4) !important;
       
-      @media (max-width: 480px) {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      
-      .test-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        text-transform: none;
-        font-size: 0.9rem;
-        
-        mat-icon {
-          font-size: 1.2rem;
-          width: 1.2rem;
-          height: 1.2rem;
-        }
-        
-        &:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
+      &::before {
+        left: 100%;
       }
     }
     
-    .credentials-info {
-      background: #f5f5f5;
-      border-radius: 8px;
-      padding: 1rem;
-      font-size: 0.8rem;
-      color: #555;
-      line-height: 1.4;
-      
-      p {
-        margin: 0.25rem 0;
-        
-        strong {
-          color: #333;
-        }
-      }
+    &:disabled {
+      opacity: 0.6;
+      transform: none !important;
+      cursor: not-allowed;
     }
-  }
-  
-  // ✅ FOOTER
-  .login-footer {
-    text-align: center;
-    margin-top: 2rem;
     
-    .footer-text {
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 0.9rem;
-      margin: 0.5rem 0;
+    .btn-content {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
+    }
+    
+    .login-spinner {
+      color: white;
+    }
+  }
+}
+
+// ================================================================================
+// 🔻 FOOTER
+// ================================================================================
+.login-footer {
+  margin-top: 2rem;
+  text-align: center;
+  
+  .help-text {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0 0 1rem;
+    
+    a {
+      color: var(--accent-blue);
+      text-decoration: none;
       
-      .footer-icon {
-        font-size: 1.1rem;
-        width: 1.1rem;
-        height: 1.1rem;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+  
+  .version-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    
+    .developer {
+      font-weight: 600;
+      color: var(--accent-blue);
+    }
+  }
+}
+
+// ================================================================================
+// 🎬 ANIMACIONES SUAVES Y ELEGANTES
+// ================================================================================
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes gentleSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gentleFloat {
+  0%, 100% { 
+    transform: translateY(0px) rotate(0deg); 
+  }
+  50% { 
+    transform: translateY(-15px) rotate(2deg); 
+  }
+}
+
+@keyframes gentleBob {
+  0%, 100% { 
+    transform: translateY(-50%); 
+  }
+  50% { 
+    transform: translateY(-65%); 
+  }
+}
+
+@keyframes gentleShadow {
+  0%, 100% { 
+    transform: scale(1); 
+    opacity: 0.15; 
+  }
+  50% { 
+    transform: scale(1.1); 
+    opacity: 0.25; 
+  }
+}
+
+@keyframes gentlePulse {
+  0%, 100% { 
+    transform: scale(1); 
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3);
+  }
+  50% { 
+    transform: scale(1.02); 
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.1);
+  }
+}
+
+// ================================================================================
+// 📱 RESPONSIVE
+// ================================================================================
+@media (max-width: 640px) {
+  .login-container {
+    flex-direction: column;
+  }
+  
+  .animation-section {
+    min-height: 35vh;
+    
+    .gym-animation {
+      padding: 1rem;
+      
+      .logo-main {
+        margin-bottom: 2rem;
+        
+        .logo-circle {
+          width: 80px;
+          height: 80px;
+          
+          .logo-icon {
+            font-size: 2.5rem;
+            width: 2.5rem;
+            height: 2.5rem;
+          }
+        }
+        
+        .brand-name {
+          font-size: 2.5rem;
+        }
+        
+        .brand-tagline {
+          font-size: 1rem;
+        }
+      }
+      
+      .features-list {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        right: auto;
+        margin-top: 1rem;
+        
+        .feature-item {
+          font-size: 0.8rem;
+          padding: 0.5rem 0.75rem;
+        }
       }
     }
     
-    .footer-version {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 0.8rem;
-      margin: 0;
-      font-weight: 300;
-    }
-  }
-  
-  // ✅ ANIMACIONES Y EFECTOS
-  .login-card {
-    animation: slideInUp 0.6s ease-out;
-  }
-  
-  @keyframes slideInUp {
-    from {
-      transform: translateY(50px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-  
-  // ✅ ESTILOS PARA SNACKBAR (MENSAJES)
-  ::ng-deep {
-    .success-snackbar {
-      background-color: #4caf50 !important;
-      color: white !important;
+    .floating-elements {
+      .weight {
+        width: 40px;
+        height: 40px;
+        
+        mat-icon {
+          font-size: 1rem;
+        }
+      }
       
-      .mat-simple-snackbar-action {
-        color: white !important;
+      .trainer-figure {
+        .trainer-body {
+          width: 60px;
+          height: 60px;
+          
+          .trainer-icon {
+            font-size: 1.5rem;
+            width: 1.5rem;
+            height: 1.5rem;
+          }
+        }
+      }
+      
+      .stat-card {
+        font-size: 0.7rem;
+        padding: 0.5rem 0.75rem;
       }
     }
-    
-    .error-snackbar {
-      background-color: #f44336 !important;
-      color: white !important;
-      
-      .mat-simple-snackbar-action {
-        color: white !important;
-      }
-    }
-    
-    // Loading spinner personalizado
-    .inline-spinner .mat-progress-spinner circle {
-      stroke: white !important;
-    }
   }
   
-  // ✅ ESTADOS DE HOVER Y FOCUS
-  .login-button {
-    transition: all 0.3s ease;
-    
-    &:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
-    }
-    
-    &:active {
-      transform: translateY(0);
-    }
-  }
-  
-  // ✅ RESPONSIVE MEJORADO
-  @media (max-width: 480px) {
-    .login-container {
-      min-height: 100vh;
-      padding: 1rem 0.5rem;
-    }
+  .form-section {
+    padding: 1rem;
     
     .login-card {
-      margin: 0 0.5rem;
+      max-width: none;
+    }
+    
+    .login-header {
+      h2 {
+        font-size: 1.5rem;
+      }
       
-      mat-card-content {
-        padding: 1rem;
+      p {
+        font-size: 0.9rem;
       }
     }
     
-    .login-form {
-      gap: 1rem;
-      
-      .login-button {
-        height: 44px;
-        font-size: 1rem;
-      }
+    .version-info {
+      flex-direction: column;
+      gap: 0.25rem;
+      text-align: center;
     }
   }
+}
+
+@media (max-width: 480px) {
+  .form-section {
+    padding: 0.75rem;
+  }
   
-  // ✅ DARK MODE SUPPORT (FUTURO)
-  @media (prefers-color-scheme: dark) {
-    .credentials-info {
-      background: #333;
-      color: #ccc;
-      
-      p strong {
-        color: #fff;
-      }
+  .login-form {
+    .form-options {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start;
     }
-  }ing-title {
-      font-size: 0.9rem;
-      color: #666;
-      margin-bottom: 1rem;
-      font-weight: 500;
-    }
-    
-    .test {
-      
-    }
+  }
+}
+
+// ================================================================================
+// 🎨 SNACKBAR CUSTOM STYLES
+// ================================================================================
+::ng-deep {
+  .success-snackbar {
+    background: var(--accent-green) !important;
+    color: white !important;
+  }
+  
+  .error-snackbar {
+    background: var(--accent-red) !important;
+    color: white !important;
+  }
+  
+  .mat-mdc-snack-bar-container {
+    border-radius: 12px !important;
+    box-shadow: var(--shadow-lg) !important;
+  }
+}

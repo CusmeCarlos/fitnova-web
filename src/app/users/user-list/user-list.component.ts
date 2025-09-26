@@ -1,9 +1,9 @@
 // src/app/users/user-list/user-list.component.ts
-// 👥 GESTIÓN COMPLETA DE USUARIOS MÓVIL - CON DATOS REALES FIREBASE
+// 👥 GESTIÓN COMPLETA DE USUARIOS PREMIUM - ESTILO FINZENAPP
 
 import { Component, OnInit, OnDestroy, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -23,20 +23,29 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
+
 import { AuthService } from '../../core/auth.service';
 import { Router } from '@angular/router';
 import { DashboardService, UserStats } from '../../core/dashboard.service';
 import { User } from '../../interfaces/user.interface';
 import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
+
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 import 'firebase/compat/auth';
 
+// ===============================================================================
+// 🔧 INTERFACES
+// ===============================================================================
 interface UserTableData extends UserStats {
   statusText: string;
   statusColor: string;
   lastActiveText: string;
   assignedTrainerName: string;
+  isUpdating?: boolean;
+  isUpdatingTrainer?: boolean;
+  status: 'active' | 'inactive' | 'blocked';
+  createdAt: Date;
 }
 
 interface TrainerInfo {
@@ -51,6 +60,7 @@ interface TrainerInfo {
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
@@ -78,65 +88,91 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  // ✅ DATOS DE LA TABLA
-  displayedColumns: string[] = [
-    'displayName', 
-    'email', 
-    'statusText', 
-    'totalWorkouts', 
-    'averageAccuracy', 
-    'totalCriticalErrors', 
-    'assignedTrainerName',
-    'lastActiveText',
-    'actions'
-  ];
-  
-  dataSource = new MatTableDataSource<UserTableData>();
-  
-  // ✅ ESTADOS DEL COMPONENTE
-  isLoading = true;
+  // ===============================================================================
+  // 📊 PROPIEDADES PRINCIPALES
+  // ===============================================================================
   currentUser: User | null = null;
-  allUsers: UserStats[] = [];
+  dataSource = new MatTableDataSource<UserTableData>([]);
+  allUsers: UserTableData[] = [];
   availableTrainers: TrainerInfo[] = [];
-  showCreateForm = false;
+
+  // Estados de loading
+  isLoading = false;
+  isCreatingUser = false;
   
-  // ✅ FILTROS
-  filterForm: FormGroup;
-  createUserForm: FormGroup;
-  
-  // ✅ MÉTRICAS DE RESUMEN
+  // Métricas principales
   totalUsers = 0;
   activeUsersToday = 0;
-  usersWithoutTrainer = 0;
-  totalWorkoutsAllUsers = 0;
+  newUsersThisMonth = 0;
+  totalWorkoutsCompleted = 0;
+
+  // Formularios
+  createUserForm: FormGroup;
+  showCreateUserForm = false;
+  hidePassword = true;
+
+  // Filtros y búsqueda
+  searchTerm = '';
+  statusFilter = '';
+  trainerFilter = '';
+  dateRangeStart: Date | null = null;
+  dateRangeEnd: Date | null = null;
+  showAdvancedFilters = false;
+
+  // Configuración de tabla
+  displayedColumns: string[] = [];
   
-  // ✅ SUBSCRIPCIONES
+  // Subscripciones
   private subscriptions = new Subscription();
   private db = firebase.firestore();
 
   constructor(
     private auth: AuthService,
+    private router: Router,
     private dashboardService: DashboardService,
     private fb: FormBuilder,
-    private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private router: Router
+    private dialog: MatDialog
   ) {
-    this.filterForm = this.createFilterForm();
-    this.createUserForm = this.createUserCreationForm();
+    this.createUserForm = this.initCreateUserForm();
+    this.setupDisplayedColumns();
   }
 
-  ngOnInit(): void {
-    this.initializeComponent();
-    this.setupFilters();
-    
-    // Debug para verificar currentUser
-    this.auth.user$.subscribe(user => {
-      this.currentUser = user;
-      console.log('👤 CurrentUser en ngOnInit:', user);
-      console.log('👤 Es admin?:', user?.role === 'admin');
-      console.log('👤 Es trainer?:', user?.role === 'trainer');
-    });
+  // ===============================================================================
+  // 🚀 LIFECYCLE HOOKS
+  // ===============================================================================
+  async ngOnInit(): Promise<void> {
+    try {
+      await this.loadCurrentUser();
+      await this.loadAvailableTrainers();
+      
+      // 🔥 ACTUALIZAR ÚLTIMA ACTIVIDAD DEL USUARIO ACTUAL
+      await this.updateCurrentUserActivity();
+      
+      this.loadUsersData(); // Sin await porque ahora es un listener
+      this.setupSearchDebounce();
+      
+      // 🔥 TIMER PARA MANTENER USUARIO ACTUAL ONLINE
+      this.setupOnlineStatusTimer();
+      
+    } catch (error) {
+      console.error('❌ Error inicializando componente:', error);
+      this.showErrorMessage('Error cargando datos');
+    }
+  }
+
+  // 🔥 TIMER PARA MANTENER ESTADO ONLINE
+  private setupOnlineStatusTimer(): void {
+    // Actualizar estado cada 30 segundos
+    const onlineTimer = setInterval(() => {
+      if (this.currentUser?.uid) {
+        console.log('🔄 Manteniendo estado online...');
+        this.forceCurrentUserOnlineStatus();
+      }
+    }, 30000); // 30 segundos
+
+    // Limpiar timer al destruir componente
+    this.subscriptions.add(() => clearInterval(onlineTimer));
   }
 
   ngAfterViewInit(): void {
@@ -146,96 +182,405 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
   }
-  goBack(): void {
-    console.log('🔙 Navegando de vuelta al dashboard');
-    this.router.navigate(['/dashboard/overview']);
-  }
 
-  // ✅ INICIALIZACIÓN
-  private initializeComponent(): void {
-    const authSub = this.auth.user$.subscribe(user => {
-      this.currentUser = user;
-      if (user && ['trainer', 'admin'].includes(user.role)) {
-        this.loadUsersData();
-        this.loadAvailableTrainers();
-      }
-    });
-    this.subscriptions.add(authSub);
-  }
-
-  private createFilterForm(): FormGroup {
-    return this.fb.group({
-      searchText: [''],
-      statusFilter: ['all'],
-      trainerFilter: ['all'],
-      activityFilter: ['all'],
-      dateRange: [null]
-    });
-  }
-
-  private createUserCreationForm(): FormGroup {
+  // ===============================================================================
+  // 🏗️ INICIALIZACIÓN
+  // ===============================================================================
+  private initCreateUserForm(): FormGroup {
     return this.fb.group({
       displayName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      assignedTrainer: [''],
-      role: ['user'] // Siempre será 'user' para usuarios móvil
+      assignedTrainer: ['']
     });
   }
 
-  private setupFilters(): void {
-    // Búsqueda en tiempo real
-    const searchControl = this.filterForm.get('searchText');
-    if (searchControl) {
-      const searchSub = searchControl.valueChanges.pipe(
-        debounceTime(300),
-        distinctUntilChanged()
-      ).subscribe((searchValue) => {
-        console.log('🔍 Buscando:', searchValue);
-        this.applySearch(searchValue);
-      });
-      this.subscriptions.add(searchSub);
-    }
-
-    // Otros filtros (entrenador, actividad)
-    const trainerControl = this.filterForm.get('trainerFilter');
-    const activityControl = this.filterForm.get('activityFilter');
+  private setupDisplayedColumns(): void {
+    this.displayedColumns = ['userInfo', 'status', 'lastActive', 'stats'];
     
-    if (trainerControl) {
-      const trainerSub = trainerControl.valueChanges.subscribe(() => {
-        this.applyFilters();
-      });
-      this.subscriptions.add(trainerSub);
+    // Solo admin puede ver y asignar entrenadores
+    if (this.currentUser?.role === 'admin') {
+      this.displayedColumns.push('assignedTrainer');
     }
+    
+    this.displayedColumns.push('actions');
+  }
 
-    if (activityControl) {
-      const activitySub = activityControl.valueChanges.subscribe(() => {
-        this.applyFilters();
+  // ===============================================================================
+  // 🔄 CARGA DE DATOS
+  // ===============================================================================
+  private async updateCurrentUserActivity(): Promise<void> {
+    try {
+      if (!this.currentUser?.uid) return;
+
+      const now = new Date(); // Usar fecha local para actualización inmediata
+      const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+      
+      console.log(`🕒 FORZANDO actualización de actividad para: ${this.currentUser.displayName} (${this.currentUser.uid})`);
+
+      // Actualizar en la colección users con fecha local primero
+      await this.db.collection('users').doc(this.currentUser.uid).update({
+        lastActiveAt: serverTimestamp,
+        updatedAt: serverTimestamp
       });
-      this.subscriptions.add(activitySub);
+
+      // También actualizar en userStats si existe
+      const userStatsRef = this.db.collection('userStats').doc(this.currentUser.uid);
+      const userStatsDoc = await userStatsRef.get();
+      
+      if (userStatsDoc.exists) {
+        await userStatsRef.update({
+          lastActiveAt: serverTimestamp,
+          updatedAt: serverTimestamp
+        });
+      } else {
+        // Crear documento básico en userStats si no existe
+        await userStatsRef.set({
+          uid: this.currentUser.uid,
+          lastActiveAt: serverTimestamp,
+          createdAt: serverTimestamp,
+          updatedAt: serverTimestamp,
+          totalWorkouts: 0,
+          totalCriticalErrors: 0,
+          totalHours: 0,
+          averageAccuracy: 0
+        });
+      }
+
+      // 🔥 FORZAR ACTUALIZACIÓN LOCAL INMEDIATA
+      this.forceCurrentUserOnlineStatus();
+
+      console.log(`✅ Actividad actualizada para: ${this.currentUser.displayName}`);
+    } catch (error) {
+      console.error('❌ Error actualizando última actividad:', error);
     }
   }
 
-  private applySearch(searchTerm: string): void {
+  // 🔥 MÉTODO PARA FORZAR ESTADO ONLINE DEL USUARIO ACTUAL
+  private forceCurrentUserOnlineStatus(): void {
+    if (!this.currentUser?.uid || this.allUsers.length === 0) return;
+
+    // Encontrar al usuario actual en la lista y forzar su estado
+    const currentUserIndex = this.allUsers.findIndex(u => u.uid === this.currentUser!.uid);
+    
+    if (currentUserIndex >= 0) {
+      this.allUsers[currentUserIndex].lastActiveAt = new Date(); // Fecha actual
+      this.allUsers[currentUserIndex].statusText = 'EN LÍNEA';
+      this.allUsers[currentUserIndex].statusColor = 'primary';
+      this.allUsers[currentUserIndex].lastActiveText = 'Ahora mismo';
+      
+      // Actualizar la tabla inmediatamente
+      this.processFilteredData([...this.allUsers]);
+      
+      console.log(`🔥 FORZADO estado EN LÍNEA para: ${this.currentUser.displayName}`);
+    }
+  }
+
+  private async loadCurrentUser(): Promise<void> {
+    try {
+      const user = await this.auth.getCurrentUser();
+      this.currentUser = user;
+      this.setupDisplayedColumns(); // Reconfigurar columnas según rol
+      console.log('👤 Usuario actual cargado:', user?.displayName, user?.uid);
+    } catch (error) {
+      console.error('❌ Error cargando usuario actual:', error);
+    }
+  }
+
+  private async loadAvailableTrainers(): Promise<void> {
+    if (this.currentUser?.role !== 'admin') return;
+
+    try {
+      const trainersSnapshot = await this.db
+        .collection('users')
+        .where('role', '==', 'trainer')
+        .where('isActive', '==', true)
+        .get();
+
+      this.availableTrainers = trainersSnapshot.docs.map(doc => ({
+        uid: doc.id,
+        displayName: doc.data()['displayName'] || 'Sin nombre',
+        email: doc.data()['email'] || 'Sin email'
+      }));
+
+      console.log('👨‍💼 Entrenadores cargados:', this.availableTrainers.length);
+    } catch (error) {
+      console.error('❌ Error cargando entrenadores:', error);
+    }
+  }
+
+  private async loadUsersData(): Promise<void> {
+    try {
+      this.isLoading = true;
+      console.log('👥 Iniciando carga de usuarios con listener tiempo real...');
+      
+      // 🔥 CORREGIDO: Remover filtro isActive que causa problemas
+      // Solo filtrar por role = user
+      const usersSub = this.db
+        .collection('users')
+        .where('role', '==', 'user')
+        .onSnapshot(async (usersSnapshot) => {
+          console.log(`👥 Detectados ${usersSnapshot.docs.length} usuarios`);
+          const allUsersData: UserTableData[] = [];
+
+          for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data();
+            
+            // 🔥 FILTRO MANUAL: Solo incluir usuarios activos o sin campo isActive
+            const isActive = userData['isActive'];
+            if (isActive === false) {
+              console.log(`🚫 Usuario inactivo excluido: ${userData['displayName']}`);
+              continue; // Saltar usuarios marcados como inactivos
+            }
+            
+            console.log(`✅ Procesando usuario: ${userData['displayName']} (${userData['email']})`);
+            
+            // Obtener estadísticas del usuario
+            const statsDoc = await this.db.collection('userStats').doc(userDoc.id).get();
+            const statsData = statsDoc.exists ? statsDoc.data() : {};
+
+            // Manejo correcto de fechas Firebase
+            let lastActiveAt = userData['lastActiveAt'];
+            
+            if (!lastActiveAt && statsData?.['lastActiveAt']) {
+              lastActiveAt = statsData['lastActiveAt'];
+            }
+            
+            if (!lastActiveAt && userData['createdAt']) {
+              lastActiveAt = userData['createdAt'];
+            }
+
+            // Convertir Timestamp de Firebase a Date
+            let finalDate: Date;
+            if (lastActiveAt && typeof lastActiveAt.toDate === 'function') {
+              finalDate = lastActiveAt.toDate();
+            } else if (lastActiveAt instanceof Date) {
+              finalDate = lastActiveAt;
+            } else {
+              finalDate = new Date(0);
+            }
+
+            // Obtener nombre del entrenador asignado
+            let assignedTrainerName = '';
+            if (userData['assignedTrainer']) {
+              const trainer = this.availableTrainers.find(t => t.uid === userData['assignedTrainer']);
+              assignedTrainerName = trainer?.displayName || 'Entrenador no encontrado';
+            }
+
+            const user: UserTableData = {
+              // Propiedades de UserStats
+              uid: userDoc.id,
+              displayName: userData['displayName'] || 'Sin nombre',
+              email: userData['email'] || 'Sin email',
+              lastCriticalError: statsData?.['lastCriticalError'] || null,
+              totalCriticalErrors: statsData?.['totalCriticalErrors'] || 0,
+              lastErrorType: statsData?.['lastErrorType'] || '',
+              lastExercise: statsData?.['lastExercise'] || '',
+              lastSessionId: statsData?.['lastSessionId'] || '',
+              accuracy: statsData?.['accuracy'] || 0,
+              weeklyGoalProgress: statsData?.['weeklyGoalProgress'] || 0,
+              totalWorkouts: statsData?.['totalWorkouts'] || 0,
+              totalHours: statsData?.['totalHours'] || 0,
+              averageAccuracy: statsData?.['averageAccuracy'] || statsData?.['accuracy'] || 0,
+              weeklyStreak: statsData?.['weeklyStreak'] || 0,
+              improvementRate: statsData?.['improvementRate'] || 0,
+              lastSessionDurationSeconds: statsData?.['lastSessionDurationSeconds'] || 0,
+              totalSeconds: statsData?.['totalSeconds'] || 0,
+              lastActiveAt: finalDate,
+              assignedTrainer: userData['assignedTrainer'] || undefined,
+              
+              // Propiedades adicionales de UserTableData
+              status: userData['status'] || 'active',
+              assignedTrainerName,
+              createdAt: userData['createdAt']?.toDate ? userData['createdAt'].toDate() : new Date(),
+              statusText: '',
+              statusColor: '',
+              lastActiveText: '',
+              isUpdating: false,
+              isUpdatingTrainer: false
+            };
+
+            // Agregar textos de estado
+            const statusInfo = this.getUserStatus(user);
+            user.statusText = statusInfo.statusText;
+            user.statusColor = statusInfo.statusColor;
+            user.lastActiveText = this.getLastActiveText(user.lastActiveAt);
+
+            // Debug específico para campos de estado
+            console.log(`📊 Usuario: ${user.displayName}`);
+            console.log(`  - Estado: ${user.statusText} (${user.statusColor})`);
+            console.log(`  - Última actividad: ${user.lastActiveText}`);
+            console.log(`  - lastActiveAt: ${user.lastActiveAt}`);
+            console.log(`  - status: ${user.status}`);
+
+            allUsersData.push(user);
+            console.log(`✅ Usuario agregado: ${user.displayName} - Total workouts: ${user.totalWorkouts}`);
+          }
+
+          this.allUsers = allUsersData;
+          
+          // 🔥 FORZAR ESTADO ONLINE DEL USUARIO ACTUAL DESPUÉS DE CARGAR
+          this.forceCurrentUserOnlineStatus();
+          
+          this.processFilteredData(this.allUsers);
+          
+          // Actualizar métricas
+          this.loadMetrics();
+          
+          console.log('👥 Usuarios cargados en tiempo real:', this.allUsers.length);
+          console.log('📊 Usuarios en dataSource:', this.dataSource.data.length);
+          this.isLoading = false;
+        }, (error) => {
+          console.error('❌ Error en listener de usuarios:', error);
+          this.showErrorMessage('Error cargando usuarios');
+          this.isLoading = false;
+        });
+
+      // Agregar la suscripción para limpiarla en ngOnDestroy
+      this.subscriptions.add(() => usersSub());
+      
+    } catch (error) {
+      console.error('❌ Error configurando listener de usuarios:', error);
+      this.showErrorMessage('Error cargando usuarios');
+      this.isLoading = false;
+    }
+  }
+
+  private loadMetrics(): void {
+    try {
+      this.totalUsers = this.allUsers.length;
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      this.activeUsersToday = this.allUsers.filter(user => 
+        user.lastActiveAt && user.lastActiveAt >= today
+      ).length;
+
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      this.newUsersThisMonth = this.allUsers.filter(user =>
+        user.createdAt && user.createdAt >= startOfMonth
+      ).length;
+
+      this.totalWorkoutsCompleted = this.allUsers.reduce(
+        (total, user) => total + (user.totalWorkouts || 0), 0
+      );
+
+      console.log('📊 Métricas calculadas:', {
+        total: this.totalUsers,
+        activeToday: this.activeUsersToday,
+        newMonth: this.newUsersThisMonth,
+        workouts: this.totalWorkoutsCompleted
+      });
+    } catch (error) {
+      console.error('❌ Error calculando métricas:', error);
+    }
+  }
+
+  // ===============================================================================
+  // 🔍 BÚSQUEDA Y FILTROS
+  // ===============================================================================
+  private setupSearchDebounce(): void {
+    // Se maneja directamente en el template con ngModel y método applySearch
+  }
+
+  applySearch(): void {
     let filteredUsers = [...this.allUsers];
 
-    if (searchTerm && searchTerm.trim()) {
-      const term = searchTerm.toLowerCase().trim();
+    if (this.searchTerm && this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase().trim();
       filteredUsers = filteredUsers.filter(user =>
         user.displayName?.toLowerCase().includes(term) ||
-        user.email?.toLowerCase().includes(term)
+        user.email?.toLowerCase().includes(term) ||
+        user.assignedTrainerName?.toLowerCase().includes(term)
       );
-      console.log(`🔍 Filtrados ${filteredUsers.length} de ${this.allUsers.length} usuarios`);
+    }
+
+    this.applyAdditionalFilters(filteredUsers);
+  }
+
+  private applyAdditionalFilters(users: UserTableData[]): void {
+    let filteredUsers = [...users];
+
+    // Filtro por estado
+    if (this.statusFilter) {
+      filteredUsers = filteredUsers.filter(user => user.status === this.statusFilter);
+    }
+
+    // Filtro por entrenador
+    if (this.trainerFilter) {
+      if (this.trainerFilter === 'unassigned') {
+        filteredUsers = filteredUsers.filter(user => !user.assignedTrainer);
+      } else {
+        filteredUsers = filteredUsers.filter(user => user.assignedTrainer === this.trainerFilter);
+      }
+    }
+
+    // Filtro por fechas
+    if (this.dateRangeStart) {
+      filteredUsers = filteredUsers.filter(user =>
+        user.createdAt && user.createdAt >= this.dateRangeStart!
+      );
+    }
+
+    if (this.dateRangeEnd) {
+      const endDate = new Date(this.dateRangeEnd);
+      endDate.setHours(23, 59, 59, 999);
+      filteredUsers = filteredUsers.filter(user =>
+        user.createdAt && user.createdAt <= endDate
+      );
     }
 
     this.processFilteredData(filteredUsers);
   }
 
+  applyFilters(): void {
+    this.applySearch(); // Aplica búsqueda y filtros juntos
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.applySearch();
+  }
+
+  clearAllFilters(): void {
+    this.searchTerm = '';
+    this.statusFilter = '';
+    this.trainerFilter = '';
+    this.dateRangeStart = null;
+    this.dateRangeEnd = null;
+    this.processFilteredData(this.allUsers);
+  }
+
+  resetDateFilters(): void {
+    this.dateRangeStart = null;
+    this.dateRangeEnd = null;
+    this.applyFilters();
+  }
+
+  toggleAdvancedFilters(): void {
+    this.showAdvancedFilters = !this.showAdvancedFilters;
+  }
+
+  hasActiveFilters(): boolean {
+    return !!(this.searchTerm || this.statusFilter || this.trainerFilter || 
+              this.dateRangeStart || this.dateRangeEnd);
+  }
+
+  private processFilteredData(filteredUsers: UserTableData[]): void {
+    this.dataSource.data = filteredUsers;
+    if (this.paginator) {
+      this.paginator.firstPage();
+    }
+  }
+
+  // ===============================================================================
+  // 🎛️ CONFIGURACIÓN DE TABLA
+  // ===============================================================================
   private setupTablePagination(): void {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
     
-    // ✅ Filtro personalizado que busca en múltiples campos
     this.dataSource.filterPredicate = (data: UserTableData, filter: string) => {
       const searchStr = filter.toLowerCase();
       return (
@@ -247,442 +592,357 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
     };
   }
 
-// 🚨 ARREGLO loadUsersData() - SIN toDate
-private async loadUsersData(): Promise<void> {
-  try {
-    this.isLoading = true;
-    
-    const usersSnapshot = await this.db.collection('users')
-      .where('role', '==', 'user')
-      .get();
-
-    const usersPromises = usersSnapshot.docs.map(async (userDoc) => {
-      const userData = userDoc.data();
-      const statsDoc = await this.db.collection('userStats').doc(userDoc.id).get();
-      const statsData = statsDoc.exists ? statsDoc.data() : {};
-
-      // 🚨 ARREGLO: Manejo correcto de fechas Firebase
-      let lastActiveAt = userData['lastActiveAt'];
-      
-      if (!lastActiveAt && statsData?.['lastActiveAt']) {
-        lastActiveAt = statsData['lastActiveAt'];
-      }
-      
-      if (!lastActiveAt && userData['createdAt']) {
-        lastActiveAt = userData['createdAt'];
-      }
-
-      // Convertir Timestamp de Firebase a Date
-      let finalDate: Date;
-      if (lastActiveAt && lastActiveAt.toDate) {
-        finalDate = lastActiveAt.toDate();
-      } else if (lastActiveAt instanceof Date) {
-        finalDate = lastActiveAt;
-      } else {
-        finalDate = new Date(0);
-      }
-
-      const userStats: UserStats = {
-        uid: userDoc.id,
-        displayName: userData['displayName'] || 'Usuario sin nombre',
-        email: userData['email'],
-        assignedTrainer: userData['assignedTrainer'],
-        lastActiveAt: finalDate,
-        
-        lastCriticalError: statsData?.['lastCriticalError'] || null,
-        totalCriticalErrors: statsData?.['totalCriticalErrors'] || 0,
-        lastErrorType: statsData?.['lastErrorType'] || '',
-        lastExercise: statsData?.['lastExercise'] || '',
-        lastSessionId: statsData?.['lastSessionId'] || '',
-        accuracy: statsData?.['averageAccuracy'] || 0,
-        totalWorkouts: statsData?.['totalWorkouts'] || 0,
-        totalHours: statsData?.['totalHours'] || 0,
-        averageAccuracy: statsData?.['averageAccuracy'] || 0,
-        weeklyStreak: statsData?.['weeklyStreak'] || 0,
-        improvementRate: statsData?.['improvementRate'] || 0,
-        lastSessionDurationSeconds: statsData?.['lastSessionDurationSeconds'] || 0,
-        totalSeconds: statsData?.['totalSeconds'] || 0
-      };
-
-      return userStats;
-    });
-
-    this.allUsers = await Promise.all(usersPromises);
-    this.processUsersData();
-    this.calculateMetrics();
-    
-  } catch (error) {
-    console.error('❌ Error cargando usuarios:', error);
-    this.showErrorMessage('Error cargando lista de usuarios');
-  } finally {
-    this.isLoading = false;
-  }
-}
-
-  private async loadAvailableTrainers(): Promise<void> {
-    try {
-      const trainersSnapshot = await this.db.collection('users')
-        .where('role', 'in', ['trainer', 'admin'])
-        .get();
-
-      this.availableTrainers = trainersSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          uid: doc.id,
-          displayName: data['displayName'] || 'Entrenador sin nombre',
-          email: data['email']
-        };
-      });
-    } catch (error) {
-      console.error('❌ Error cargando entrenadores:', error);
-    }
-  }
-
-  private processUsersData(): void {
-    const tableData: UserTableData[] = this.allUsers.map(user => {
-      const { statusText, statusColor } = this.getUserStatus(user);
-      const trainerName = this.getTrainerName(user.assignedTrainer);
-      
-      return {
-        ...user,
-        statusText,
-        statusColor,
-        lastActiveText: this.getLastActiveText(user.lastActiveAt), // Ya maneja undefined
-        assignedTrainerName: trainerName
-      };
-    });
-
-    this.dataSource.data = tableData;
-  }
-
-  private calculateMetrics(): void {
-    this.totalUsers = this.allUsers.length;
-    
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    // 🚨 ARREGLO: Verificar lastActiveAt sin toDate
-    this.activeUsersToday = this.allUsers.filter(user => {
-      if (!user.lastActiveAt) return false;
-      
-      // Ya es Date, no necesita conversión
-      return user.lastActiveAt >= todayStart;
-    }).length;
-    
-    this.usersWithoutTrainer = this.allUsers.filter(user => 
-      !user.assignedTrainer || user.assignedTrainer === ''
-    ).length;
-    
-    this.totalWorkoutsAllUsers = this.allUsers.reduce((sum, user) => 
-      sum + (user.totalWorkouts || 0), 0
-    );
-  }
-
-  private processFilteredData(users: UserStats[]): void {
-    const tableData: UserTableData[] = users.map(user => {
-      const { statusText, statusColor } = this.getUserStatus(user);
-      const trainerName = this.getTrainerName(user.assignedTrainer);
-      
-      return {
-        ...user,
-        statusText,
-        statusColor,
-        lastActiveText: this.getLastActiveText(user.lastActiveAt), // Ya maneja undefined
-        assignedTrainerName: trainerName
-      };
-    });
-
-    this.dataSource.data = tableData;
-  }
-
-  // ✅ ACCIONES DE FILTROS
-  applyFilters(): void {
-    let filteredUsers = [...this.allUsers];
-    
-    const trainerFilter = this.filterForm.get('trainerFilter')?.value;
-    const activityFilter = this.filterForm.get('activityFilter')?.value;
-    
-    // Filtro por entrenador
-    if (trainerFilter && trainerFilter !== 'all') {
-      if (trainerFilter === 'unassigned') {
-        filteredUsers = filteredUsers.filter(user => !user.assignedTrainer);
-      } else {
-        filteredUsers = filteredUsers.filter(user => user.assignedTrainer === trainerFilter);
-      }
-    }
-    
-    // Filtro por actividad
-    if (activityFilter && activityFilter !== 'all') {
-      const now = new Date();
-      
-      switch (activityFilter) {
-        case 'today':
-          const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          filteredUsers = filteredUsers.filter(user => 
-            user.lastActiveAt && user.lastActiveAt >= todayStart
-          );
-          break;
-        case 'week':
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          filteredUsers = filteredUsers.filter(user => 
-            user.lastActiveAt && user.lastActiveAt >= weekAgo
-          );
-          break;
-        case 'month':
-          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          filteredUsers = filteredUsers.filter(user => 
-            user.lastActiveAt && user.lastActiveAt >= monthAgo
-          );
-          break;
-        case 'inactive':
-          const weekAgoForInactive = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          filteredUsers = filteredUsers.filter(user => 
-            !user.lastActiveAt || user.lastActiveAt < weekAgoForInactive
-          );
-          break;
-      }
-    }
-    
-    this.processFilteredData(filteredUsers);
-  }
-
-  clearFilters(): void {
-    this.filterForm.reset({
-      searchText: '',
-      statusFilter: 'all',
-      trainerFilter: 'all',
-      activityFilter: 'all',
-      dateRange: null
-    });
-    this.processUsersData();
-  }
-
-  refreshData(): void {
-    this.loadUsersData();
-  }
-
-  exportData(): void {
-    console.log('📊 Exportar datos de usuarios');
-    this.showSuccessMessage('Función de exportación en desarrollo');
-  }
-
-  // ✅ ACCIONES DE USUARIO INDIVIDUALES
-  async assignTrainer(userId: string, trainerId: string): Promise<void> {
-    try {
-      const trainerName = this.availableTrainers.find(t => t.uid === trainerId)?.displayName || '';
-      
-      await this.db.collection('users').doc(userId).update({
-        assignedTrainer: trainerId || null,
-        assignedTrainerName: trainerName,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      // También actualizar userStats
-      await this.db.collection('userStats').doc(userId).update({
-        assignedTrainer: trainerId || null,
-        assignedTrainerName: trainerName,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      this.showSuccessMessage('Entrenador asignado correctamente');
-      this.loadUsersData(); // Recargar datos
-    } catch (error) {
-      console.error('❌ Error asignando entrenador:', error);
-      this.showErrorMessage('Error asignando entrenador');
-    }
-  }
-
-  viewUserDetail(userId: string): void {
-    console.log('👁️ Ver detalles del usuario:', userId);
-    this.showSuccessMessage('Navegación a detalles en desarrollo');
-  }
-
-  editUser(userId: string): void {
-    console.log('✏️ Editar usuario:', userId);
-    this.showSuccessMessage('Función de edición en desarrollo');
-  }
-
-  viewUserStats(userId: string): void {
-    console.log('📊 Ver estadísticas del usuario:', userId);
-    this.showSuccessMessage('Modal de estadísticas en desarrollo');
-  }
-
-  async deleteUser(userId: string): Promise<void> {
-    if (confirm('¿Estás seguro de desactivar este usuario?')) {
-      try {
-        await this.db.collection('users').doc(userId).update({
-          isActive: false,
-          deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        this.showSuccessMessage('Usuario desactivado correctamente');
-        this.loadUsersData();
-      } catch (error) {
-        console.error('❌ Error desactivando usuario:', error);
-        this.showErrorMessage('Error desactivando usuario');
-      }
-    }
-  }
-
-  async resetUserPassword(userId: string): Promise<void> {
-    if (confirm('¿Enviar email de reseteo de contraseña a este usuario?')) {
-      console.log('Resetear contraseña del usuario:', userId);
-      this.showSuccessMessage('Función de reseteo en desarrollo');
-    }
-  }
-
+  // ===============================================================================
+  // 👤 ACCIONES DE USUARIO
+  // ===============================================================================
   async createUser(): Promise<void> {
     if (this.createUserForm.invalid) {
-      console.error('❌ Formulario inválido');
       this.markFormGroupTouched(this.createUserForm);
       return;
     }
 
     const formData = this.createUserForm.value;
-    console.log('👤 Iniciando creación de usuario via Cloud Function:', formData.email);
-    
-    this.isLoading = true;
+    this.isCreatingUser = true;
 
     try {
-      // 🚨 CAMBIO PRINCIPAL: Usar AuthService.createUserForWeb (Cloud Functions)
-      // En lugar de Firebase Auth directo
       await this.auth.createUserForWeb({
         email: formData.email,
         password: formData.password,
         displayName: formData.displayName,
         role: 'user',
-        assignedTrainer: formData.assignedTrainer
+        assignedTrainer: formData.assignedTrainer || null
       });
 
-      // 🚨 PASO 2: Limpiar formulario y mostrar éxito
       this.createUserForm.reset();
-      this.showCreateForm = false;
+      this.showCreateUserForm = false;
+      this.showSuccessMessage('Usuario creado exitosamente');
       
-      console.log('🎉 Usuario creado exitosamente via Cloud Function');
-
-      // 🚨 PASO 3: Recargar datos para mostrar el nuevo usuario
+      // Recargar datos
       await this.loadUsersData();
+      await this.loadMetrics();
       
     } catch (error: any) {
-      console.error('❌ Error al crear usuario:', error);
-      
-      // El AuthService ya maneja y muestra los errores específicos
-      // No necesitamos manejar errores aquí porque ya están manejados en createUserForWeb
-      
+      console.error('❌ Error creando usuario:', error);
+      this.showErrorMessage(error.message || 'Error creando usuario');
     } finally {
-      this.isLoading = false;
+      this.isCreatingUser = false;
     }
   }
 
-  // ✅ MÉTODOS DE CONTROL DEL FORMULARIO
   toggleCreateUserForm(): void {
-    this.showCreateForm = !this.showCreateForm;
-    console.log('👤 Toggle crear usuario:', this.showCreateForm);
-  }
-
-  openCreateUserDialog(): void {
-    // Expandir/contraer la sección de crear usuario
-    const createSection = document.querySelector('.create-user-section') as HTMLElement;
-    if (createSection) {
-      createSection.style.display = createSection.style.display === 'none' ? 'block' : 'none';
+    this.showCreateUserForm = !this.showCreateUserForm;
+    if (!this.showCreateUserForm) {
+      this.createUserForm.reset();
     }
   }
 
-  onSearchChange(event: any): void {
-    const searchValue = event.target.value;
-    console.log('🔍 Búsqueda input:', searchValue);
-    this.applySearch(searchValue);
+  cancelCreateUser(): void {
+    this.showCreateUserForm = false;
+    this.createUserForm.reset();
   }
 
-  onTrainerFilterChange(): void {
-    console.log('👨‍💼 Filtro entrenador cambiado');
-    this.applyFilters();
-  }
+  async updateAssignedTrainer(user: UserTableData, newTrainerId: string): Promise<void> {
+    if (user.isUpdatingTrainer) return;
 
-  onActivityFilterChange(): void {
-    console.log('📅 Filtro actividad cambiado');
-    this.applyFilters();
-  }
+    user.isUpdatingTrainer = true;
+    
+    try {
+      const trainerName = newTrainerId 
+        ? (this.availableTrainers.find(t => t.uid === newTrainerId)?.displayName || '')
+        : '';
 
-  // 3. ARREGLAR getUserStatus() - Estado del usuario mejorado
-private getUserStatus(user: UserStats): { statusText: string; statusColor: string } {
-  if (!user.lastActiveAt || user.lastActiveAt.getTime() === new Date(0).getTime()) {
-    return { statusText: 'Nunca conectado', statusColor: 'warn' };
-  }
+      await this.db.collection('users').doc(user.uid).update({
+        assignedTrainer: newTrainerId || null,
+        assignedTrainerName: trainerName,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
 
-  const now = new Date();
-  const diffMs = now.getTime() - user.lastActiveAt.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  
-  // 🚨 ARREGLO: Considerar usuarios recién creados como activos
-  if (diffDays === 0) {
-    if (diffHours < 1) {
-      return { statusText: 'Recién creado', statusColor: 'primary' };
-    } else {
-      return { statusText: 'Activo hoy', statusColor: 'primary' };
+      // Actualizar también userStats si existe
+      const statsDoc = await this.db.collection('userStats').doc(user.uid).get();
+      if (statsDoc.exists) {
+        await this.db.collection('userStats').doc(user.uid).update({
+          assignedTrainer: newTrainerId || null,
+          assignedTrainerName: trainerName,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+
+      // Actualizar localmente
+      user.assignedTrainer = newTrainerId || undefined;
+      user.assignedTrainerName = trainerName;
+
+      this.showSuccessMessage('Entrenador asignado correctamente');
+    } catch (error) {
+      console.error('❌ Error asignando entrenador:', error);
+      this.showErrorMessage('Error asignando entrenador');
+    } finally {
+      user.isUpdatingTrainer = false;
     }
   }
-  
-  if (diffDays === 1) return { statusText: 'Activo ayer', statusColor: 'accent' };
-  if (diffDays <= 7) return { statusText: `Hace ${diffDays} días`, statusColor: 'accent' };
-  if (diffDays <= 30) return { statusText: `Hace ${diffDays} días`, statusColor: 'warn' };
-  
-  return { statusText: 'Inactivo', statusColor: 'warn' };
-}
 
- // 4. ARREGLAR getLastActiveText() - Mostrar fecha correcta
-private getLastActiveText(lastActive: Date | undefined): string {
-  if (!lastActive || lastActive.getTime() === new Date(0).getTime()) {
-    return 'Nunca';
+  async toggleUserStatus(user: UserTableData): Promise<void> {
+    if (user.isUpdating) return;
+
+    const newStatus = user.status === 'active' ? 'inactive' : 'active';
+    const actionText = newStatus === 'active' ? 'activar' : 'desactivar';
+
+    if (!confirm(`¿Estás seguro de ${actionText} este usuario?`)) {
+      return;
+    }
+
+    user.isUpdating = true;
+
+    try {
+      await this.db.collection('users').doc(user.uid).update({
+        status: newStatus,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Actualizar localmente
+      user.status = newStatus;
+      const statusInfo = this.getUserStatus(user);
+      user.statusText = statusInfo.statusText;
+      user.statusColor = statusInfo.statusColor;
+
+      this.showSuccessMessage(`Usuario ${actionText === 'activar' ? 'activado' : 'desactivado'} correctamente`);
+    } catch (error) {
+      console.error(`❌ Error ${actionText === 'activar' ? 'activando' : 'desactivando'} usuario:`, error);
+      this.showErrorMessage(`Error ${actionText === 'activar' ? 'activando' : 'desactivando'} usuario`);
+    } finally {
+      user.isUpdating = false;
+    }
   }
-  
-  const now = new Date();
-  const diffMs = now.getTime() - lastActive.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  
-  // 🚨 ARREGLO: Manejo mejorado de fechas recientes
-  if (diffMinutes < 1) return 'Ahora mismo';
-  if (diffMinutes < 60) return `Hace ${diffMinutes} min`;
-  if (diffHours < 1) return 'Hace menos de 1 hora';
-  if (diffHours < 24) return `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
-  if (diffDays === 0) return 'Hoy';
-  if (diffDays === 1) return 'Ayer';
-  if (diffDays <= 7) return `Hace ${diffDays} días`;
-  
-  // Para fechas más antiguas, mostrar fecha formateada
-  return lastActive.toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-}
 
+  viewUserDetails(user: UserTableData): void {
+    console.log('👁️ Ver detalles del usuario:', user.uid);
+    this.showSuccessMessage('Modal de detalles en desarrollo');
+  }
 
-  private getTrainerName(trainerId: string | undefined): string {
-    if (!trainerId) return 'Sin asignar';
-    const trainer = this.availableTrainers.find(t => t.uid === trainerId);
-    return trainer?.displayName || 'Entrenador desconocido';
+  editUser(user: UserTableData): void {
+    console.log('✏️ Editar usuario:', user.uid);
+    this.showSuccessMessage('Modal de edición en desarrollo');
+  }
+
+  async resetUserPassword(user: UserTableData): Promise<void> {
+    if (!confirm('¿Enviar email de reseteo de contraseña a este usuario?')) {
+      return;
+    }
+
+    try {
+      // Usar Firebase Auth para enviar email de reset
+      await firebase.auth().sendPasswordResetEmail(user.email!);
+      this.showSuccessMessage('Email de reseteo enviado correctamente');
+    } catch (error: any) {
+      console.error('❌ Error enviando reset de contraseña:', error);
+      this.showErrorMessage('Error enviando email de reseteo');
+    }
+  }
+
+  async deleteUser(user: UserTableData): Promise<void> {
+    if (!confirm('¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    user.isUpdating = true;
+
+    try {
+      // Marcar como eliminado en lugar de eliminar físicamente
+      await this.db.collection('users').doc(user.uid).update({
+        isActive: false,
+        deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Remover de la lista local
+      this.allUsers = this.allUsers.filter(u => u.uid !== user.uid);
+      this.applySearch();
+      await this.loadMetrics();
+
+      this.showSuccessMessage('Usuario eliminado correctamente');
+    } catch (error) {
+      console.error('❌ Error eliminando usuario:', error);
+      this.showErrorMessage('Error eliminando usuario');
+    } finally {
+      user.isUpdating = false;
+    }
+  }
+
+  // ===============================================================================
+  // 📊 ACCIONES GENERALES
+  // ===============================================================================
+  async refreshData(): Promise<void> {
+    // El listener ya maneja las actualizaciones automáticamente
+    // Solo necesitamos mostrar el mensaje
+    this.showSuccessMessage('Datos actualizándose automáticamente');
+  }
+
+  exportData(): void {
+    try {
+      const csvContent = this.generateCSVContent();
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `usuarios-fitnova-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      this.showSuccessMessage('Datos exportados correctamente');
+    } catch (error) {
+      console.error('❌ Error exportando datos:', error);
+      this.showErrorMessage('Error exportando datos');
+    }
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard']);
+  }
+
+  // ===============================================================================
+  // 🛠️ MÉTODOS AUXILIARES
+  // ===============================================================================
+  private getUserStatus(user: UserTableData): { statusText: string; statusColor: string } {
+    // 🔥 PRIORIDAD MÁXIMA: Si es el usuario actual, SIEMPRE EN LÍNEA
+    if (this.currentUser && user.uid.trim() === this.currentUser.uid.trim()) {      console.log(`🔥 Usuario actual detectado: ${user.displayName} - FORZANDO EN LÍNEA`);
+      return { statusText: 'EN LÍNEA', statusColor: 'primary' };
+    }
+
+    // Si el usuario está explícitamente bloqueado
+    if (user.status === 'blocked') {
+      return { statusText: 'BLOQUEADO', statusColor: 'warn' };
+    }
+
+    // Si el usuario está marcado como inactivo
+    if (user.status === 'inactive') {
+      return { statusText: 'INACTIVO', statusColor: 'warn' };
+    }
+
+    // Si no hay fecha de última actividad, es un usuario nuevo
+    if (!user.lastActiveAt || user.lastActiveAt.getTime() === new Date(0).getTime()) {
+      return { statusText: 'NUNCA CONECTADO', statusColor: 'accent' };
+    }
+
+    const now = new Date();
+    const diffMs = now.getTime() - user.lastActiveAt.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    // Estados en tiempo real basados en última actividad para otros usuarios
+    if (diffMinutes < 5) return { statusText: 'EN LÍNEA', statusColor: 'primary' };
+    if (diffMinutes < 30) return { statusText: 'HACE ' + diffMinutes + ' MIN', statusColor: 'primary' };
+    if (diffHours < 1) return { statusText: 'HACE MENOS DE 1H', statusColor: 'primary' };
+    if (diffHours < 24) return { statusText: 'HACE ' + diffHours + 'H', statusColor: 'accent' };
+    if (diffDays === 1) return { statusText: 'HACE 1 DÍA', statusColor: 'accent' };
+    if (diffDays <= 7) return { statusText: 'HACE ' + diffDays + ' DÍAS', statusColor: 'accent' };
+    if (diffDays <= 30) return { statusText: 'HACE ' + diffDays + ' DÍAS', statusColor: 'warn' };
+    
+    return { statusText: 'INACTIVO', statusColor: 'warn' };
+  }
+
+  async forceUpdateActivity(): Promise<void> {
+    try {
+      await this.updateCurrentUserActivity();
+      this.showSuccessMessage('Tu estado ha sido actualizado a "EN LÍNEA"');
+    } catch (error) {
+      console.error('❌ Error forzando actualización de actividad:', error);
+      this.showErrorMessage('No se pudo actualizar tu estado');
+    }
+  }
+  private getLastActiveText(lastActive: Date | undefined): string {
+    if (!lastActive || lastActive.getTime() === new Date(0).getTime()) {
+      return 'Nunca';
+    }
+    
+    const now = new Date();
+    const diffMs = now.getTime() - lastActive.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    // Texto más detallado para última actividad
+    if (diffMinutes < 1) return 'Ahora mismo';
+    if (diffMinutes < 60) return `Hace ${diffMinutes} min`;
+    if (diffHours < 24) return `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+    if (diffDays === 1) return 'Ayer';
+    if (diffDays <= 30) return `Hace ${diffDays} días`;
+    
+    // Para fechas muy antiguas, mostrar fecha exacta
+    return this.formatDate(lastActive);
+  }
+
+  getUserInitials(name: string): string {
+    if (!name) return 'U';
+    return name.split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  }
+
+  formatDate(date: Date): string {
+    if (!date) return 'N/A';
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  }
+
+  formatMinutes(totalHours: number): string {
+    if (!totalHours || totalHours === 0) return '0h';
+    
+    const hours = Math.floor(totalHours);
+    const minutes = Math.floor((totalHours % 1) * 60);
+    
+    if (hours === 0) return `${minutes}min`;
+    if (minutes === 0) return `${hours}h`;
+    return `${hours}h ${minutes}min`;
+  }
+
+  private generateCSVContent(): string {
+    const headers = [
+      'Nombre',
+      'Email',
+      'Estado',
+      'Última Actividad',
+      'Entrenamientos',
+      'Minutos Totales',
+      'Precisión Promedio',
+      'Entrenador Asignado',
+      'Fecha Creación'
+    ];
+
+    const rows = this.allUsers.map(user => [
+      `"${user.displayName}"`,
+      `"${user.email}"`,
+      `"${user.statusText}"`,
+      `"${user.lastActiveText}"`,
+      user.totalWorkouts || 0,
+      user.totalHours || 0,
+      user.averageAccuracy ? `${user.averageAccuracy}%` : 'N/A',
+      `"${user.assignedTrainerName || 'Sin asignar'}"`,
+      `"${this.formatDate(user.createdAt)}"`
+    ]);
+
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.keys(formGroup.controls).forEach(key => {
       const control = formGroup.get(key);
-      if (control) {
-        control.markAsTouched();
-        if (control instanceof FormGroup) {
-          this.markFormGroupTouched(control);
-        }
-      }
+      control?.markAsTouched();
     });
   }
 
-
-
-  // ✅ MENSAJES
+  // ===============================================================================
+  // 📨 MENSAJES Y NOTIFICACIONES
+  // ===============================================================================
   private showSuccessMessage(message: string): void {
     this.snackBar.open(message, 'Cerrar', {
       duration: 3000,
@@ -694,6 +954,13 @@ private getLastActiveText(lastActive: Date | undefined): string {
     this.snackBar.open(message, 'Cerrar', {
       duration: 5000,
       panelClass: ['error-snackbar']
+    });
+  }
+
+  private showWarningMessage(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 4000,
+      panelClass: ['warning-snackbar']
     });
   }
 }
