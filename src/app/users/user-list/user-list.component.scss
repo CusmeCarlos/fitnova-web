@@ -592,31 +592,38 @@
             &.actions-cell {
               text-align: center;
 
-              button {
-                border-radius: 8px;
-                margin: 0 0.25rem;
+              .view-details-button {
+                border-radius: 12px;
+                padding: 0.5rem 1rem;
+                font-weight: 500;
+                font-size: 0.875rem;
+                background: linear-gradient(135deg, var(--accent-blue) 0%, #1e40af 100%);
+                color: white;
+                border: none;
+                box-shadow: var(--shadow-sm);
                 transition: all 0.3s ease;
 
-                &[color="primary"] {
-                  background: rgba(59, 130, 246, 0.15);
-                  color: var(--accent-blue);
-                  border: 1px solid rgba(59, 130, 246, 0.3);
-
-                  &:hover {
-                    background: rgba(59, 130, 246, 0.25);
-                    transform: scale(1.05);
-                  }
+                &:hover:not(:disabled) {
+                  transform: translateY(-1px);
+                  box-shadow: var(--shadow-md);
                 }
 
-                &.delete-action {
-                  background: rgba(239, 68, 68, 0.15);
-                  color: var(--accent-red);
-                  border: 1px solid rgba(239, 68, 68, 0.3);
+                &:disabled {
+                  background: var(--text-muted);
+                  color: var(--text-secondary);
+                  transform: none;
+                  box-shadow: none;
+                }
 
-                  &:hover {
-                    background: rgba(239, 68, 68, 0.25);
-                    transform: scale(1.05);
-                  }
+                mat-icon {
+                  margin-right: 0.5rem;
+                  font-size: 1rem;
+                  width: 1rem;
+                  height: 1rem;
+                }
+
+                span {
+                  font-size: 0.875rem;
                 }
               }
             }

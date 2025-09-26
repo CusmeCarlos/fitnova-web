@@ -29,6 +29,7 @@ import { Router } from '@angular/router';
 import { DashboardService, UserStats } from '../../core/dashboard.service';
 import { User } from '../../interfaces/user.interface';
 import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
+import { UserDetailsModalComponent } from '../user-details-modal/user-details-modal.component';
 
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
@@ -144,17 +145,12 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
   async ngOnInit(): Promise<void> {
     try {
       await this.loadCurrentUser();
+      // CAMBIO: Cargar entrenadores ANTES que usuarios
       await this.loadAvailableTrainers();
-      
-      // 🔥 ACTUALIZAR ÚLTIMA ACTIVIDAD DEL USUARIO ACTUAL
       await this.updateCurrentUserActivity();
-      
-      this.loadUsersData(); // Sin await porque ahora es un listener
+      this.loadUsersData(); // Ahora los entrenadores ya están cargados
       this.setupSearchDebounce();
-      
-      // 🔥 TIMER PARA MANTENER USUARIO ACTUAL ONLINE
       this.setupOnlineStatusTimer();
-      
     } catch (error) {
       console.error('❌ Error inicializando componente:', error);
       this.showErrorMessage('Error cargando datos');
@@ -360,12 +356,23 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
               finalDate = new Date(0);
             }
 
-            // Obtener nombre del entrenador asignado
-            let assignedTrainerName = '';
-            if (userData['assignedTrainer']) {
-              const trainer = this.availableTrainers.find(t => t.uid === userData['assignedTrainer']);
-              assignedTrainerName = trainer?.displayName || 'Entrenador no encontrado';
-            }
+           // En lugar de buscar en availableTrainers, consultar Firebase:
+              let assignedTrainerName = '';
+              if (userData['assignedTrainer']) {
+                try {
+                  const trainerDoc = await this.db.collection('users').doc(userData['assignedTrainer']).get();
+                  if (trainerDoc.exists) {
+                    assignedTrainerName = trainerDoc.data()?.['displayName'] || 'Entrenador sin nombre';
+                  } else {
+                    assignedTrainerName = 'Entrenador no encontrado';
+                  }
+                } catch (error) {
+                  console.error('Error obteniendo entrenador:', error);
+                  assignedTrainerName = 'Error cargando entrenador';
+                }
+              } else {
+                assignedTrainerName = 'Sin asignar';
+              }
 
             const user: UserTableData = {
               // Propiedades de UserStats
@@ -714,8 +721,26 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   viewUserDetails(user: UserTableData): void {
-    console.log('👁️ Ver detalles del usuario:', user.uid);
-    this.showSuccessMessage('Modal de detalles en desarrollo');
+    const dialogRef = this.dialog.open(UserDetailsModalComponent, {
+      width: '800px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'user-details-modal-panel',
+      disableClose: false,
+      data: {
+        user: user,
+        availableTrainers: this.availableTrainers,
+        currentUserRole: this.currentUser?.role
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.action === 'updated') {
+        console.log('👤 Usuario actualizado desde modal');
+        // Los datos se actualizarán automáticamente por el listener
+        this.showSuccessMessage('Usuario actualizado correctamente');
+      }
+    });
   }
 
   editUser(user: UserTableData): void {
@@ -808,7 +833,8 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
   // ===============================================================================
   private getUserStatus(user: UserTableData): { statusText: string; statusColor: string } {
     // 🔥 PRIORIDAD MÁXIMA: Si es el usuario actual, SIEMPRE EN LÍNEA
-    if (this.currentUser && user.uid.trim() === this.currentUser.uid.trim()) {      console.log(`🔥 Usuario actual detectado: ${user.displayName} - FORZANDO EN LÍNEA`);
+    if (this.currentUser && user.uid === this.currentUser.uid) {
+      console.log(`🔥 Usuario actual detectado: ${user.displayName} - FORZANDO EN LÍNEA`);
       return { statusText: 'EN LÍNEA', statusColor: 'primary' };
     }
 
@@ -845,15 +871,6 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
     return { statusText: 'INACTIVO', statusColor: 'warn' };
   }
 
-  async forceUpdateActivity(): Promise<void> {
-    try {
-      await this.updateCurrentUserActivity();
-      this.showSuccessMessage('Tu estado ha sido actualizado a "EN LÍNEA"');
-    } catch (error) {
-      console.error('❌ Error forzando actualización de actividad:', error);
-      this.showErrorMessage('No se pudo actualizar tu estado');
-    }
-  }
   private getLastActiveText(lastActive: Date | undefined): string {
     if (!lastActive || lastActive.getTime() === new Date(0).getTime()) {
       return 'Nunca';

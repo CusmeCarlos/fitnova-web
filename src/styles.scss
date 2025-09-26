@@ -281,3 +281,226 @@ html, body {
     border-radius: 12px;
   }
 }
+
+// ===============================================================================
+// 🪟 ESTILOS GLOBALES MODAL PREMIUM - AGREGAR AL FINAL DE styles.scss
+// ===============================================================================
+
+// Override del contenedor del modal para fondo transparente
+.user-details-modal-panel {
+  .mat-mdc-dialog-container {
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 28px !important;
+    overflow: hidden !important;
+    max-width: 95vw !important;
+    max-height: 95vh !important;
+  }
+  
+  .mat-mdc-dialog-surface {
+    border-radius: 28px !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+// Overlay premium con blur
+.cdk-overlay-backdrop {
+  &.cdk-overlay-backdrop-showing {
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(12px) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+}
+
+// Override de Material Design para el modal
+.user-details-modal-panel {
+  // Tabs premium
+  .mat-mdc-tab-group {
+    --mdc-tab-indicator-active-indicator-color: #3b82f6;
+    --mdc-tab-indicator-active-indicator-height: 3px;
+    
+    .mat-mdc-tab-header {
+      .mat-mdc-tab-list {
+        .mdc-tab {
+          --mdc-tab-text-label-color-default: #64748b;
+          --mdc-tab-text-label-color-active: #3b82f6;
+          
+          .mdc-tab__text-label {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.875rem;
+          }
+          
+          &:hover {
+            background: rgba(59, 130, 246, 0.1) !important;
+          }
+          
+          &.mdc-tab--active {
+            background: rgba(59, 130, 246, 0.15) !important;
+          }
+        }
+      }
+    }
+  }
+  
+  // Form fields premium
+  .mat-mdc-form-field {
+    --mdc-filled-text-field-container-color: rgba(30, 41, 59, 0.8);
+    --mdc-filled-text-field-focus-label-text-color: #3b82f6;
+    --mdc-filled-text-field-hover-label-text-color: #94a3b8;
+    --mdc-filled-text-field-label-text-color: #94a3b8;
+    --mdc-filled-text-field-input-text-color: #f8fafc;
+    --mdc-filled-text-field-caret-color: #3b82f6;
+    
+    .mat-mdc-form-field-error {
+      color: #ef4444 !important;
+      font-weight: 500;
+    }
+    
+    .mat-mdc-select-arrow {
+      color: #64748b !important;
+    }
+  }
+  
+  // Buttons premium
+  .mat-mdc-raised-button {
+    --mdc-filled-button-container-elevation: 0;
+    --mdc-filled-button-focus-container-elevation: 0;
+    --mdc-filled-button-hover-container-elevation: 0;
+    --mdc-filled-button-pressed-container-elevation: 0;
+    
+    &.mat-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important;
+      border: none !important;
+      box-shadow: 0 8px 25px -8px rgba(59, 130, 246, 0.4) !important;
+      
+      &:hover {
+        box-shadow: 0 12px 35px -8px rgba(59, 130, 246, 0.6) !important;
+      }
+    }
+    
+    &.mat-accent {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      border: none !important;
+      box-shadow: 0 8px 25px -8px rgba(16, 185, 129, 0.4) !important;
+      
+      &:hover {
+        box-shadow: 0 12px 35px -8px rgba(16, 185, 129, 0.6) !important;
+      }
+    }
+    
+    &.mat-warn {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+      border: none !important;
+      box-shadow: 0 8px 25px -8px rgba(239, 68, 68, 0.4) !important;
+      
+      &:hover {
+        box-shadow: 0 12px 35px -8px rgba(239, 68, 68, 0.6) !important;
+      }
+    }
+  }
+  
+  .mat-mdc-button {
+    --mdc-text-button-label-text-color: #cbd5e1;
+    border-radius: 14px !important;
+    font-weight: 600 !important;
+    
+    &:hover {
+      --mdc-text-button-label-text-color: #f8fafc;
+      background: rgba(71, 85, 105, 0.8) !important;
+    }
+  }
+  
+  .mat-mdc-icon-button {
+    --mdc-icon-button-icon-color: #94a3b8;
+    
+    &:hover {
+      --mdc-icon-button-icon-color: #f8fafc;
+      background: rgba(51, 65, 85, 0.8) !important;
+    }
+  }
+  
+  // Snackbar messages
+  .mat-mdc-snack-bar-container {
+    &.success-snackbar {
+      --mdc-snackbar-container-color: #10b981 !important;
+      --mdc-snackbar-supporting-text-color: white !important;
+    }
+    
+    &.error-snackbar {
+      --mdc-snackbar-container-color: #ef4444 !important;
+      --mdc-snackbar-supporting-text-color: white !important;
+    }
+    
+    &.warning-snackbar {
+      --mdc-snackbar-container-color: #f59e0b !important;
+      --mdc-snackbar-supporting-text-color: #1e293b !important;
+    }
+  }
+  
+  // Select dropdowns
+  .mat-mdc-select-panel {
+    background: rgba(30, 41, 59, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(148, 163, 184, 0.2) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+    
+    .mat-mdc-option {
+      color: #f8fafc !important;
+      
+      &:hover {
+        background: rgba(59, 130, 246, 0.2) !important;
+      }
+      
+      &.mdc-list-item--selected {
+        background: rgba(59, 130, 246, 0.3) !important;
+        color: white !important;
+      }
+    }
+  }
+  
+  // Spinners
+  .mat-mdc-progress-spinner {
+    --mdc-circular-progress-active-indicator-color: white;
+  }
+  
+  // Dividers
+  .mat-divider {
+    border-top-color: rgba(148, 163, 184, 0.1) !important;
+  }
+}
+
+// Animación de entrada del modal
+.user-details-modal-panel {
+  animation: modalFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+// Efectos de hover globales para el modal
+.user-details-modal-panel {
+  * {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  // Efecto glow en elementos interactivos
+  button:hover,
+  .mat-mdc-form-field:hover,
+  .clickable:hover {
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
+  }
+}

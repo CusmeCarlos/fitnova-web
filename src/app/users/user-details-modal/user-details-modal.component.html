@@ -1,0 +1,367 @@
+<!-- src/app/users/user-details-modal/user-details-modal.component.html -->
+<div class="user-modal-container">
+  
+    <!-- Header del Modal -->
+    <div class="modal-header">
+      <div class="user-header-info">
+        <div class="user-avatar-large">
+          {{getUserInitials(data.user.displayName)}}
+        </div>
+        <div class="user-main-info">
+          <h2 class="user-name">{{data.user.displayName}}</h2>
+          <p class="user-email">{{data.user.email}}</p>
+          <div class="status-badge" 
+               [ngClass]="{
+                 'status-active': data.user.statusColor === 'primary',
+                 'status-inactive': data.user.statusColor === 'warn',
+                 'status-moderate': data.user.statusColor === 'accent'
+               }">
+            <div class="status-dot"></div>
+            <span>{{data.user.statusText}}</span>
+          </div>
+        </div>
+      </div>
+      
+      <button mat-icon-button (click)="close()" class="close-button">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  
+    <!-- Contenido del Modal con Tabs -->
+    <div class="modal-content">
+      <mat-tab-group class="user-tabs" [selectedIndex]="0">
+        
+        <!-- Tab 1: Detalles del Usuario -->
+        <mat-tab label="Detalles" class="details-tab">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              
+              <!-- Stats Cards -->
+              <div class="stats-grid">
+                <div class="stat-card">
+                  <mat-icon class="stat-icon">fitness_center</mat-icon>
+                  <div class="stat-content">
+                    <span class="stat-value">{{data.user.totalWorkouts}}</span>
+                    <span class="stat-label">Entrenamientos</span>
+                  </div>
+                </div>
+                
+                <div class="stat-card">
+                  <mat-icon class="stat-icon">schedule</mat-icon>
+                  <div class="stat-content">
+                    <span class="stat-value">{{formatHours(data.user.totalHours)}}</span>
+                    <span class="stat-label">Tiempo Total</span>
+                  </div>
+                </div>
+                
+                <div class="stat-card">
+                  <mat-icon class="stat-icon">target</mat-icon>
+                  <div class="stat-content">
+                    <span class="stat-value">{{data.user.averageAccuracy}}%</span>
+                    <span class="stat-label">Precisión</span>
+                  </div>
+                </div>
+                
+                <div class="stat-card">
+                  <mat-icon class="stat-icon">warning</mat-icon>
+                  <div class="stat-content">
+                    <span class="stat-value">{{data.user.totalCriticalErrors}}</span>
+                    <span class="stat-label">Errores Críticos</span>
+                  </div>
+                </div>
+              </div>
+  
+              <!-- Información Detallada -->
+              <div class="detail-info">
+                <div class="info-item">
+                  <mat-icon>person</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Usuario ID</span>
+                    <span class="info-value">{{data.user.uid}}</span>
+                  </div>
+                </div>
+                
+                <div class="info-item">
+                  <mat-icon>email</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Email</span>
+                    <span class="info-value">{{data.user.email}}</span>
+                  </div>
+                </div>
+                
+                <div class="info-item">
+                  <mat-icon>calendar_today</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Fecha de Registro</span>
+                    <span class="info-value">{{formatDate(data.user.createdAt)}}</span>
+                  </div>
+                </div>
+                
+                <div class="info-item">
+                  <mat-icon>schedule</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Última Actividad</span>
+                    <span class="info-value">{{data.user.lastActiveText}}</span>
+                  </div>
+                </div>
+                
+                <div class="info-item" *ngIf="data.user.assignedTrainerName">
+                  <mat-icon>fitness_center</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Entrenador Asignado</span>
+                    <span class="info-value">{{data.user.assignedTrainerName}}</span>
+                  </div>
+                </div>
+              </div>
+  
+            </div>
+          </ng-template>
+        </mat-tab>
+  
+        <!-- Tab 2: Editar Usuario -->
+        <mat-tab label="Editar" class="edit-tab">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              
+              <div class="edit-actions" *ngIf="!isEditing">
+                <button mat-raised-button 
+                        color="primary" 
+                        (click)="enableEditing()"
+                        class="action-button">
+                  <mat-icon>edit</mat-icon>
+                  Editar Información
+                </button>
+              </div>
+  
+              <!-- Formulario de Edición -->
+              <form [formGroup]="editForm" *ngIf="isEditing" class="edit-form">
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Nombre Completo</mat-label>
+                    <input matInput formControlName="displayName" placeholder="Nombre del usuario">
+                    <mat-icon matSuffix>person</mat-icon>
+                    <mat-error *ngIf="editForm.get('displayName')?.hasError('required')">
+                      El nombre es requerido
+                    </mat-error>
+                    <mat-error *ngIf="editForm.get('displayName')?.hasError('minlength')">
+                      Mínimo 2 caracteres
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+  
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Email</mat-label>
+                    <input matInput type="email" formControlName="email" placeholder="usuario@ejemplo.com">
+                    <mat-icon matSuffix>email</mat-icon>
+                    <mat-error *ngIf="editForm.get('email')?.hasError('required')">
+                      El email es requerido
+                    </mat-error>
+                    <mat-error *ngIf="editForm.get('email')?.hasError('email')">
+                      Email inválido
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+  
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Estado</mat-label>
+                    <mat-select formControlName="status">
+                      <mat-option value="active">Activo</mat-option>
+                      <mat-option value="inactive">Inactivo</mat-option>
+                      <mat-option value="blocked">Bloqueado</mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>toggle_on</mat-icon>
+                  </mat-form-field>
+                </div>
+  
+                <div class="form-row" *ngIf="data.currentUserRole === 'admin'">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Entrenador Asignado</mat-label>
+                    <mat-select formControlName="assignedTrainer">
+                      <mat-option value="">Sin asignar</mat-option>
+                      <mat-option *ngFor="let trainer of data.availableTrainers" 
+                                 [value]="trainer.uid">
+                        {{trainer.displayName}}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>fitness_center</mat-icon>
+                  </mat-form-field>
+                </div>
+  
+                <!-- Botones del Formulario -->
+                <div class="form-actions">
+                  <button mat-button 
+                          type="button" 
+                          (click)="cancelEditing()"
+                          [disabled]="isUpdating">
+                    Cancelar
+                  </button>
+                  
+                  <button mat-raised-button 
+                          color="primary"
+                          (click)="saveChanges()"
+                          [disabled]="editForm.invalid || isUpdating">
+                    <mat-spinner diameter="20" *ngIf="isUpdating"></mat-spinner>
+                    <span *ngIf="!isUpdating">Guardar Cambios</span>
+                    <span *ngIf="isUpdating">Guardando...</span>
+                  </button>
+                </div>
+              </form>
+  
+            </div>
+          </ng-template>
+        </mat-tab>
+  
+        <!-- Tab 3: Cambiar Contraseña -->
+        <mat-tab label="Contraseña" class="password-tab">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              
+              <div class="password-actions" *ngIf="!isChangingPassword">
+                <button mat-raised-button 
+                        color="accent" 
+                        (click)="enablePasswordChange()"
+                        class="action-button">
+                  <mat-icon>lock_reset</mat-icon>
+                  Cambiar Contraseña
+                </button>
+                <p class="password-note">
+                  Se establecerá una nueva contraseña temporal para el usuario
+                </p>
+              </div>
+  
+              <!-- Formulario de Cambio de Contraseña -->
+              <form [formGroup]="passwordForm" *ngIf="isChangingPassword" class="password-form">
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Nueva Contraseña</mat-label>
+                    <input matInput 
+                           type="password" 
+                           formControlName="newPassword" 
+                           placeholder="Mínimo 6 caracteres">
+                    <mat-icon matSuffix>lock</mat-icon>
+                    <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('required')">
+                      La contraseña es requerida
+                    </mat-error>
+                    <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('minlength')">
+                      Mínimo 6 caracteres
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+  
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Confirmar Contraseña</mat-label>
+                    <input matInput 
+                           type="password" 
+                           formControlName="confirmPassword" 
+                           placeholder="Repetir contraseña">
+                    <mat-icon matSuffix>lock_outline</mat-icon>
+                    <mat-error *ngIf="passwordForm.get('confirmPassword')?.hasError('required')">
+                      Confirma la contraseña
+                    </mat-error>
+                    <mat-error *ngIf="passwordForm.hasError('passwordMismatch')">
+                      Las contraseñas no coinciden
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+  
+                <!-- Botones del Formulario -->
+                <div class="form-actions">
+                  <button mat-button 
+                          type="button" 
+                          (click)="cancelPasswordChange()"
+                          [disabled]="isUpdating">
+                    Cancelar
+                  </button>
+                  
+                  <button mat-raised-button 
+                          color="accent"
+                          (click)="changePassword()"
+                          [disabled]="passwordForm.invalid || isUpdating">
+                    <mat-spinner diameter="20" *ngIf="isUpdating"></mat-spinner>
+                    <span *ngIf="!isUpdating">Cambiar Contraseña</span>
+                    <span *ngIf="isUpdating">Cambiando...</span>
+                  </button>
+                </div>
+              </form>
+  
+            </div>
+          </ng-template>
+        </mat-tab>
+  
+        <!-- Tab 4: Acciones -->
+        <mat-tab label="Acciones" class="actions-tab">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              
+              <!-- Acción: Activar/Desactivar -->
+              <div class="action-item">
+                <div class="action-info">
+                  <mat-icon class="action-icon toggle">toggle_on</mat-icon>
+                  <div class="action-content">
+                    <h4>{{data.user.status === 'active' ? 'Desactivar' : 'Activar'}} Usuario</h4>
+                    <p>{{data.user.status === 'active' ? 'El usuario no podrá acceder al sistema' : 'El usuario podrá acceder normalmente'}}</p>
+                  </div>
+                </div>
+                <button mat-raised-button 
+                        [color]="data.user.status === 'active' ? 'warn' : 'primary'"
+                        (click)="toggleUserStatus()"
+                        [disabled]="isUpdating"
+                        class="action-button">
+                  <mat-spinner diameter="20" *ngIf="isUpdating"></mat-spinner>
+                  <span *ngIf="!isUpdating">
+                    {{data.user.status === 'active' ? 'Desactivar' : 'Activar'}}
+                  </span>
+                </button>
+              </div>
+  
+              <mat-divider></mat-divider>
+  
+              <!-- Información de Estado -->
+              <div class="status-info">
+                <h4>Estado Actual del Usuario</h4>
+                <div class="status-details">
+                  <div class="status-item">
+                    <span class="status-label">Estado:</span>
+                    <div class="status-badge" 
+                         [ngClass]="{
+                           'status-active': data.user.status === 'active',
+                           'status-inactive': data.user.status === 'inactive',
+                           'status-blocked': data.user.status === 'blocked'
+                         }">
+                      <div class="status-dot"></div>
+                      <span>{{data.user.status === 'active' ? 'Activo' : data.user.status === 'inactive' ? 'Inactivo' : 'Bloqueado'}}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="status-item">
+                    <span class="status-label">Última actividad:</span>
+                    <span class="status-value">{{data.user.lastActiveText}}</span>
+                  </div>
+                  
+                  <div class="status-item">
+                    <span class="status-label">Registrado:</span>
+                    <span class="status-value">{{formatDate(data.user.createdAt)}}</span>
+                  </div>
+                </div>
+              </div>
+  
+            </div>
+          </ng-template>
+        </mat-tab>
+  
+      </mat-tab-group>
+    </div>
+  
+    <!-- Footer del Modal -->
+    <div class="modal-footer">
+      <button mat-button (click)="close()">
+        Cerrar
+      </button>
+    </div>
+  
+  </div>
