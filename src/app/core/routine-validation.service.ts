@@ -193,55 +193,159 @@ export class RoutineValidationService {
     return await this.processQueryResults(snapshot, filter);
   }
 
-  // ✅ PROCESAR RESULTADOS DE CONSULTA
-  private async processQueryResults(snapshot: firebase.firestore.QuerySnapshot, filter?: RoutineValidationFilter): Promise<AIGeneratedRoutine[]> {
-    const routines: AIGeneratedRoutine[] = [];
+  // AGREGAR ESTE MÉTODO AL RoutineValidationService
+// (src/app/core/routine-validation.service.ts)
 
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
+// ✅ ACTUALIZAR RUTINA - NUEVO MÉTODO
+async updateRoutine(updatedRoutine: AIGeneratedRoutine): Promise<boolean> {
+  try {
+    console.log('💾 Actualizando rutina en Firebase:', updatedRoutine.id);
+
+    // Buscar el documento en la colección correcta
+    const routineRef = await this.findRoutineDocument(updatedRoutine.id);
+    if (!routineRef) {
+      throw new Error('Rutina no encontrada para actualizar');
+    }
+
+    // Preparar datos para actualizar
+    const updateData = {
+      routine: {
+        name: updatedRoutine.routine.name,
+        description: updatedRoutine.routine.description,
+        difficulty: updatedRoutine.routine.difficulty,
+        duration: updatedRoutine.routine.duration,
+        estimatedCalories: updatedRoutine.routine.estimatedCalories,
+        focusAreas: updatedRoutine.routine.focusAreas,
+        exercises: updatedRoutine.routine.exercises
+      },
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+      lastModifiedBy: 'trainer' // Identificar que fue modificado por entrenador
+    };
+
+    // Actualizar en Firebase
+    await routineRef.update(updateData);
+
+    console.log('✅ Rutina actualizada exitosamente en Firebase');
+
+    // Actualizar la rutina en memoria local para reflejar cambios inmediatamente
+    const currentRoutines = this.routinesSubject.value;
+    const updatedRoutines = currentRoutines.map(routine => 
+      routine.id === updatedRoutine.id ? updatedRoutine : routine
+    );
+    this.routinesSubject.next(updatedRoutines);
+
+    return true;
+
+  } catch (error) {
+    console.error('❌ Error actualizando rutina en Firebase:', error);
+    this.showError('Error actualizando rutina en Firebase');
+    return false;
+  }
+}
+
+// REEMPLAZAR el método processQueryResults en routine-validation.service.ts
+
+private async processQueryResults(snapshot: firebase.firestore.QuerySnapshot, filter?: RoutineValidationFilter): Promise<AIGeneratedRoutine[]> {
+  const routines: AIGeneratedRoutine[] = [];
+
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+    
+    // ✅ OBTENER DATOS DEL USUARIO - MEJORADO
+    let userDisplayName = 'Usuario';
+    let userEmail = '';
+    
+    try {
+      const uid = data['uid'] || data['userId'];
+      console.log('🔍 Buscando usuario con UID:', uid);
       
-      // ✅ OBTENER DATOS DEL USUARIO
-      let userDisplayName = 'Usuario Desconocido';
-      let userEmail = '';
-      
-      try {
-        const userDoc = await this.db.collection('users').doc(data['uid']).get();
+      if (uid) {
+        const userDoc = await this.db.collection('users').doc(uid).get();
+        console.log('👤 Usuario encontrado:', userDoc.exists, userDoc.data());
+        
         if (userDoc.exists) {
           const userData = userDoc.data();
-          userDisplayName = userData?.['displayName'] || userData?.['email'] || 'Usuario';
-          userEmail = userData?.['email'] || '';
+          
+          // Priorizar displayName, luego email, luego crear nombre del email
+          if (userData?.['displayName'] && userData['displayName'] !== '') {
+            userDisplayName = userData['displayName'];
+          } else if (userData?.['email']) {
+            userEmail = userData['email'];
+            // Crear nombre del email: "juan.perez@gmail.com" → "Juan Perez"
+            const emailPart = userData['email'].split('@')[0];
+            userDisplayName = emailPart
+              .split(/[._-]/)
+              .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+              .join(' ');
+          }
+          
+          if (userData?.['email']) {
+            userEmail = userData['email'];
+          }
+          
+          console.log('✅ Datos de usuario procesados:', { userDisplayName, userEmail });
+        } else {
+          console.warn('⚠️ Usuario no encontrado en colección users para UID:', uid);
+          
+          // Fallback: buscar en el baseProfile de la rutina
+          if (data['baseProfile']) {
+            if (data['baseProfile']['email']) {
+              userEmail = data['baseProfile']['email'];
+              const emailPart = userEmail.split('@')[0];
+              userDisplayName = emailPart
+                .split(/[._-]/)
+                .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+                .join(' ');
+            }
+            
+            if (data['baseProfile']['displayName']) {
+              userDisplayName = data['baseProfile']['displayName'];
+            }
+          }
         }
-      } catch (error) {
-        console.warn('Error obteniendo datos de usuario:', error);
       }
-
-      const routine: AIGeneratedRoutine = {
-        id: doc.id,
-        uid: data['uid'] || data['userId'], // Fallback si uid no existe
-        userId: data['uid'] || data['userId'], // Para compatibilidad
-        generatedAt: data['generatedAt'],
-        baseProfile: data['baseProfile'] || {},
-        routine: data['routine'] || {},
-        status: data['status'] || 'pending_approval',
-        trainerNotes: data['trainerNotes'],
-        approvedBy: data['approvedBy'],
-        approvedAt: data['approvedAt'],
-        rejectionReason: data['rejectionReason'],
-        aiConfidence: data['aiConfidence'] || 0,
-        needsTrainerApproval: data['needsTrainerApproval'],
-        adaptationLevel: data['adaptationLevel'] || 'medium',
-        userDisplayName,
-        userEmail
-      };
-
-      // ✅ APLICAR FILTROS LOCALMENTE SI ES NECESARIO
-      if (this.passesLocalFilters(routine, filter)) {
-        routines.push(routine);
+    } catch (error) {
+      console.error('❌ Error obteniendo datos de usuario:', error);
+      
+      // Último intento: extraer del email si está en los datos de la rutina
+      if (data['userEmail']) {
+        userEmail = data['userEmail'];
+        const emailPart = userEmail.split('@')[0];
+        userDisplayName = emailPart
+          .split(/[._-]/)
+          .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+          .join(' ');
       }
     }
 
-    return routines;
+    const routine: AIGeneratedRoutine = {
+      id: doc.id,
+      uid: data['uid'] || data['userId'],
+      userId: data['uid'] || data['userId'],
+      generatedAt: data['generatedAt'],
+      baseProfile: data['baseProfile'] || {},
+      routine: data['routine'] || {},
+      status: data['status'] || 'pending_approval',
+      trainerNotes: data['trainerNotes'],
+      approvedBy: data['approvedBy'],
+      approvedAt: data['approvedAt'],
+      rejectionReason: data['rejectionReason'],
+      aiConfidence: data['aiConfidence'] || 0,
+      needsTrainerApproval: data['needsTrainerApproval'],
+      adaptationLevel: data['adaptationLevel'] || 'medium',
+      userDisplayName,
+      userEmail
+    };
+
+    // ✅ APLICAR FILTROS LOCALMENTE SI ES NECESARIO
+    if (this.passesLocalFilters(routine, filter)) {
+      routines.push(routine);
+    }
   }
+
+  console.log('📋 Rutinas procesadas con usuarios:', routines.map(r => ({ id: r.id, user: r.userDisplayName, email: r.userEmail })));
+  return routines;
+}
 
   // ✅ FILTROS LOCALES
   private passesLocalFilters(routine: AIGeneratedRoutine, filter?: RoutineValidationFilter): boolean {

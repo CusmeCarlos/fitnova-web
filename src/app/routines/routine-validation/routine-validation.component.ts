@@ -1,9 +1,9 @@
 // src/app/routines/routine-validation/routine-validation.component.ts
-// 🤖 ROUTINE VALIDATION COMPONENT - DASHBOARD PARA TRAINERS
+// 🤖 ROUTINE VALIDATION COMPONENT - PREMIUM FINZENAPP NIVEL EXACTO
 
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormControl } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatSortModule, MatSort } from '@angular/material/sort';
@@ -22,11 +22,16 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatListModule } from '@angular/material/list';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 
 import { RoutineValidationService, AIGeneratedRoutine, RoutineValidationFilter, ValidationMetrics, RoutineValidationAction } from '../../core/routine-validation.service';
 import { AuthService } from '../../core/auth.service';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { RoutineDetailsModalComponent, RoutineDetailsModalData } from '../routine-details-modal/routine-details-modal.component';
 
 @Component({
   selector: 'app-routine-validation',
@@ -53,10 +58,19 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
     MatTooltipModule,
     MatExpansionModule,
     MatSlideToggleModule,
-    MatListModule
+    MatListModule,
+    MatSnackBarModule,
+    RouterModule
   ],
   templateUrl: './routine-validation.component.html',
-  styleUrls: ['./routine-validation.component.scss']
+  styleUrls: ['./routine-validation.component.scss'],
+  animations: [
+    trigger('slideDown', [
+      state('void', style({ height: '0', opacity: 0, overflow: 'hidden' })),
+      state('*', style({ height: '*', opacity: 1, overflow: 'hidden' })),
+      transition('void <=> *', animate('300ms cubic-bezier(0.4, 0, 0.2, 1)'))
+    ])
+  ]
 })
 export class RoutineValidationComponent implements OnInit, OnDestroy {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -73,6 +87,7 @@ export class RoutineValidationComponent implements OnInit, OnDestroy {
     'aiConfidence',
     'adaptationLevel',
     'generatedAt',
+    'status',
     'actions'
   ];
 
@@ -82,6 +97,7 @@ export class RoutineValidationComponent implements OnInit, OnDestroy {
   currentUser: any = null;
   selectedRoutine: AIGeneratedRoutine | null = null;
   showFilters = false;
+  showPreview = false;
 
   // ✅ FORMULARIOS
   filterForm: FormGroup;
@@ -91,20 +107,23 @@ export class RoutineValidationComponent implements OnInit, OnDestroy {
   private metricsSubscription?: Subscription;
   private authSubscription?: Subscription;
   private loadingSubscription?: Subscription;
+  private searchSubscription?: Subscription;
 
   constructor(
     private routineValidationService: RoutineValidationService,
     private authService: AuthService,
     private dialog: MatDialog,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private snackBar: MatSnackBar
   ) {
     this.filterForm = this.createFilterForm();
   }
 
   ngOnInit(): void {
-    console.log('🤖 RoutineValidationComponent iniciado');
+    console.log('🤖 RoutineValidationComponent iniciado - Premium FinZenApp');
     this.initializeSubscriptions();
     this.loadInitialData();
+    this.setupSearchSubscription();
   }
 
   ngOnDestroy(): void {
@@ -112,9 +131,13 @@ export class RoutineValidationComponent implements OnInit, OnDestroy {
     this.metricsSubscription?.unsubscribe();
     this.authSubscription?.unsubscribe();
     this.loadingSubscription?.unsubscribe();
+    this.searchSubscription?.unsubscribe();
   }
 
-  // ✅ INICIALIZAR SUSCRIPCIONES
+  // ===============================================================================
+  // 🔄 INICIALIZACIÓN Y SUSCRIPCIONES
+  // ===============================================================================
+
   private initializeSubscriptions(): void {
     // Suscripción a rutinas
     this.routinesSubscription = this.routineValidationService.routines$.subscribe(
@@ -154,7 +177,6 @@ export class RoutineValidationComponent implements OnInit, OnDestroy {
     );
   }
 
-  // ✅ CARGAR DATOS INICIALES
   private async loadInitialData(): Promise<void> {
     try {
       await this.routineValidationService.refreshData();
@@ -163,19 +185,32 @@ export class RoutineValidationComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ✅ CREAR FORMULARIO DE FILTROS
   private createFilterForm(): FormGroup {
     return this.fb.group({
-      status: ['pending_approval'],
-      difficulty: ['all'],
-      adaptationLevel: ['all'],
-      searchTerm: [''],
-      dateStart: [null],
-      dateEnd: [null]
+      status: new FormControl('pending_approval'),
+      difficulty: new FormControl('all'),
+      adaptationLevel: new FormControl('all'),
+      searchTerm: new FormControl(''),
+      dateStart: new FormControl(null),
+      dateEnd: new FormControl(null)
     });
   }
 
-  // ✅ APLICAR FILTROS
+  private setupSearchSubscription(): void {
+    this.searchSubscription = this.filterForm.get('searchTerm')?.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged()
+      )
+      .subscribe(() => {
+        this.applyFilters();
+      });
+  }
+
+  // ===============================================================================
+  // 🔍 FILTROS Y BÚSQUEDA
+  // ===============================================================================
+
   async applyFilters(): Promise<void> {
     const formValue = this.filterForm.value;
     
@@ -194,7 +229,6 @@ export class RoutineValidationComponent implements OnInit, OnDestroy {
     await this.routineValidationService.loadPendingRoutines(filter);
   }
 
-  // ✅ LIMPIAR FILTROS
   async clearFilters(): Promise<void> {
     this.filterForm.reset({
       status: 'pending_approval',
@@ -208,174 +242,458 @@ export class RoutineValidationComponent implements OnInit, OnDestroy {
     await this.routineValidationService.loadPendingRoutines();
   }
 
-  // ✅ APROBAR RUTINA
+  clearSearch(): void {
+    this.filterForm.get('searchTerm')?.setValue('');
+  }
+
+  toggleFilters(): void {
+    this.showFilters = !this.showFilters;
+  }
+
+  // ===============================================================================
+  // 🎯 FILTROS RÁPIDOS
+  // ===============================================================================
+
+  async showPendingOnly(): Promise<void> {
+    this.filterForm.get('status')?.setValue('pending_approval');
+    await this.applyFilters();
+  }
+
+  async showApprovedOnly(): Promise<void> {
+    this.filterForm.get('status')?.setValue('approved');
+    await this.applyFilters();
+  }
+
+  async showRejectedOnly(): Promise<void> {
+    this.filterForm.get('status')?.setValue('rejected');
+    await this.applyFilters();
+  }
+
+  async showAllRoutines(): Promise<void> {
+    this.filterForm.get('status')?.setValue('all');
+    await this.applyFilters();
+  }
+
+  // ===============================================================================
+  // ⚡ ACCIONES DE RUTINAS - MÉTODOS RÁPIDOS DESDE LA TABLA
+  // ===============================================================================
+
   async approveRoutine(routine: AIGeneratedRoutine): Promise<void> {
     if (!this.currentUser?.uid) {
-      console.error('No hay usuario autenticado');
+      this.showError('No hay usuario autenticado');
       return;
     }
 
-    const notes = prompt('Notas del entrenador (opcional):');
-    
-    const action: RoutineValidationAction = {
-      routineId: routine.id,
-      action: 'approve',
-      trainerNotes: notes || '',
-      trainerId: this.currentUser.uid,
-      trainerName: this.currentUser.displayName || this.currentUser.email || 'Entrenador'
-    };
+    // Confirmación rápida
+    const confirmApproval = confirm(`¿Estás seguro de que quieres aprobar la rutina "${this.getRoutineName(routine)}"?`);
+    if (!confirmApproval) return;
 
-    const success = await this.routineValidationService.approveRoutine(action);
-    if (success) {
-      console.log('✅ Rutina aprobada exitosamente');
+    try {
+      const action: RoutineValidationAction = {
+        routineId: routine.id,
+        action: 'approve',
+        trainerNotes: 'Aprobación rápida desde tabla',
+        trainerId: this.currentUser.uid,
+        trainerName: this.currentUser.displayName || this.currentUser.email || 'Entrenador'
+      };
+
+      const success = await this.routineValidationService.approveRoutine(action);
+      if (success) {
+        this.showSuccess('✅ Rutina aprobada exitosamente');
+        await this.refreshData();
+      }
+    } catch (error) {
+      console.error('Error aprobando rutina:', error);
+      this.showError('Error al aprobar la rutina');
     }
   }
 
-  // ✅ RECHAZAR RUTINA
   async rejectRoutine(routine: AIGeneratedRoutine): Promise<void> {
     if (!this.currentUser?.uid) {
-      console.error('No hay usuario autenticado');
+      this.showError('No hay usuario autenticado');
       return;
     }
 
     const reason = prompt('Razón del rechazo (requerido):');
     if (!reason || reason.trim() === '') {
-      alert('Debe especificar una razón para el rechazo');
+      this.showError('Debe especificar una razón para el rechazo');
       return;
     }
 
-    const notes = prompt('Notas adicionales (opcional):');
-    
-    const action: RoutineValidationAction = {
-      routineId: routine.id,
-      action: 'reject',
-      rejectionReason: reason,
-      trainerNotes: notes || '',
-      trainerId: this.currentUser.uid,
-      trainerName: this.currentUser.displayName || this.currentUser.email || 'Entrenador'
-    };
+    try {
+      const action: RoutineValidationAction = {
+        routineId: routine.id,
+        action: 'reject',
+        rejectionReason: reason,
+        trainerNotes: 'Rechazo rápido desde tabla',
+        trainerId: this.currentUser.uid,
+        trainerName: this.currentUser.displayName || this.currentUser.email || 'Entrenador'
+      };
 
-    const success = await this.routineValidationService.rejectRoutine(action);
-    if (success) {
-      console.log('❌ Rutina rechazada exitosamente');
+      const success = await this.routineValidationService.rejectRoutine(action);
+      if (success) {
+        this.showSuccess('❌ Rutina rechazada exitosamente');
+        await this.refreshData();
+      }
+    } catch (error) {
+      console.error('Error rechazando rutina:', error);
+      this.showError('Error al rechazar la rutina');
     }
   }
 
-  // ✅ VER DETALLES DE RUTINA
+  // ===============================================================================
+  // 👁️ MODAL DE DETALLES PREMIUM
+  // ===============================================================================
+
   viewRoutineDetails(routine: AIGeneratedRoutine): void {
     this.selectedRoutine = routine;
-    console.log('👁️ Viendo detalles de rutina:', routine);
+    console.log('👁️ Abriendo modal de detalles para rutina:', routine);
     
-    // Aquí podrías abrir un modal con más detalles
-    // this.dialog.open(RoutineDetailsComponent, { data: routine });
+    // Abrir modal premium con detalles de la rutina
+    const dialogRef = this.dialog.open(RoutineDetailsModalComponent, {
+      data: {
+        routine: routine,
+        mode: 'edit'
+      } as RoutineDetailsModalData,
+      width: '1200px',
+      maxWidth: '95vw',
+      maxHeight: '95vh',
+      panelClass: ['routine-details-modal-panel'],
+      disableClose: false,
+      autoFocus: false,
+      restoreFocus: true
+    });
+
+    // Manejar resultado del modal
+    dialogRef.afterClosed().subscribe(result => {
+      console.log('🔄 Modal cerrado con resultado:', result);
+      
+      if (result) {
+        if (result.action === 'approved') {
+          this.showSuccess(`✅ Rutina "${this.getRoutineName(routine)}" aprobada exitosamente`);
+        } else if (result.action === 'rejected') {
+          this.showSuccess(`❌ Rutina "${this.getRoutineName(routine)}" rechazada`);
+        }
+        
+        // Refrescar datos si hubo cambios
+        this.refreshData();
+      }
+      
+      this.selectedRoutine = null;
+    });
   }
 
-  // ✅ REFRESCAR DATOS
+  // ===============================================================================
+  // 🔄 ACCIONES GENERALES
+  // ===============================================================================
+
   async refreshData(): Promise<void> {
-    await this.routineValidationService.refreshData();
+    try {
+      await this.routineValidationService.refreshData();
+      this.showSuccess('📊 Datos actualizados');
+    } catch (error) {
+      console.error('Error refrescando datos:', error);
+      this.showError('Error al actualizar los datos');
+    }
   }
 
-  // ✅ FILTROS RÁPIDOS
-  async showPendingOnly(): Promise<void> {
-    this.filterForm.patchValue({ status: 'pending_approval' });
-    await this.applyFilters();
+  async exportRoutines(): Promise<void> {
+    try {
+      console.log('📄 Exportando rutinas...');
+      const routines = this.dataSource.data;
+      
+      if (routines.length === 0) {
+        this.showError('No hay rutinas para exportar');
+        return;
+      }
+      
+      const csvData = this.convertToCSV(routines);
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `rutinas-validacion-${new Date().toISOString().split('T')[0]}.csv`;
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      window.URL.revokeObjectURL(url);
+      
+      this.showSuccess(`📄 ${routines.length} rutinas exportadas exitosamente`);
+    } catch (error) {
+      console.error('Error exportando rutinas:', error);
+      this.showError('Error al exportar las rutinas');
+    }
   }
 
-  async showApprovedOnly(): Promise<void> {
-    this.filterForm.patchValue({ status: 'approved' });
-    await this.applyFilters();
+  // ===============================================================================
+  // 🎨 HELPERS PARA DISPLAY - ADAPTADOS A TU ESTRUCTURA
+  // ===============================================================================
+
+  getUserInitials(email: string): string {
+    if (!email) return 'U';
+    const parts = email.split('@')[0].split('.');
+    return parts.map(part => part.charAt(0).toUpperCase()).join('').slice(0, 2);
   }
 
-  async showRejectedOnly(): Promise<void> {
-    this.filterForm.patchValue({ status: 'rejected' });
-    await this.applyFilters();
+  // ✅ HELPERS PARA ACCEDER A DATOS ANIDADOS
+  getRoutineName(routine: AIGeneratedRoutine): string {
+    return routine.routine?.name || 'Rutina Personalizada';
   }
 
-  async showAllRoutines(): Promise<void> {
-    this.filterForm.patchValue({ status: 'all' });
-    await this.applyFilters();
+  getRoutineDescription(routine: AIGeneratedRoutine): string {
+    return routine.routine?.description || routine.baseProfile?.primaryGoals?.[0] || 'Objetivo general';
   }
 
-  // ✅ UTILIDADES DE FORMATO
-  formatDate(timestamp: any): string {
-    if (!timestamp) return 'No disponible';
-    
-    let date: Date;
-    if (timestamp.toDate) {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else {
-      date = new Date(timestamp);
+  getRoutineDifficulty(routine: AIGeneratedRoutine): string {
+    return routine.routine?.difficulty || 'intermediate';
+  }
+
+  getRoutineDuration(routine: AIGeneratedRoutine): string {
+    const duration = routine.routine?.duration;
+    if (duration) {
+      return `${duration} min`;
+    }
+    return '45 min';
+  }
+
+  getRoutineExercises(routine: AIGeneratedRoutine): any[] {
+    return routine.routine?.exercises || [];
+  }
+
+  getUserDisplayName(routine: AIGeneratedRoutine): string {
+    // Priorizar diferentes fuentes de nombre del usuario
+    if (routine.userDisplayName && routine.userDisplayName !== 'Usuario Desconocido') {
+      return routine.userDisplayName;
     }
     
-    return date.toLocaleDateString('es-ES', {
+    // Si tenemos email, extraer nombre de la parte antes del @
+    if (routine.userEmail) {
+      const emailParts = routine.userEmail.split('@')[0];
+      // Convertir guiones/puntos en espacios y capitalizar
+      const nameFromEmail = emailParts
+        .split(/[._-]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+      return nameFromEmail;
+    }
+    
+    // Si tiene información en baseProfile
+    if (routine.baseProfile?.physicalCapacity?.name) {
+      return routine.baseProfile.physicalCapacity.name;
+    }
+    
+    // Último recurso
+    return 'Usuario';
+  }
+
+  getUserEmail(routine: AIGeneratedRoutine): string {
+    return routine.userEmail || '';
+  }
+
+  getDifficultyClass(difficulty: string): string {
+    switch (difficulty?.toLowerCase()) {
+      case 'beginner': return 'beginner';
+      case 'intermediate': return 'intermediate';
+      case 'advanced': return 'advanced';
+      default: return 'intermediate';
+    }
+  }
+
+  getDifficultyLabel(difficulty: string): string {
+    switch (difficulty?.toLowerCase()) {
+      case 'beginner': return 'Principiante';
+      case 'intermediate': return 'Intermedio';
+      case 'advanced': return 'Avanzado';
+      default: return 'Intermedio';
+    }
+  }
+
+  getAdaptationClass(level: string): string {
+    switch (level?.toLowerCase()) {
+      case 'low': return 'low';
+      case 'medium': return 'medium';
+      case 'high': return 'high';
+      default: return 'medium';
+    }
+  }
+
+  getAdaptationLabel(level: string): string {
+    switch (level?.toLowerCase()) {
+      case 'low': return 'Bajo';
+      case 'medium': return 'Medio';
+      case 'high': return 'Alto';
+      default: return 'Medio';
+    }
+  }
+
+  getStatusClass(status: string): string {
+    switch (status) {
+      case 'pending_approval': return 'pending';
+      case 'approved': return 'approved';
+      case 'rejected': return 'rejected';
+      default: return 'pending';
+    }
+  }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'pending_approval': return 'Pendiente';
+      case 'approved': return 'Aprobada';
+      case 'rejected': return 'Rechazada';
+      default: return 'Pendiente';
+    }
+  }
+
+  getConfidencePercentage(confidence: number): number {
+    if (!confidence && confidence !== 0) return 0;
+    
+    // Si el valor ya está en porcentaje (mayor a 1), devolverlo como está
+    if (confidence > 1) {
+      return Math.round(confidence);
+    }
+    
+    // Si está en decimal (0.75), convertir a porcentaje
+    return Math.round(confidence * 100);
+  }
+
+  getConfidenceClass(confidence: number): string {
+    const percentage = this.getConfidencePercentage(confidence);
+    if (percentage >= 80) return 'high';
+    if (percentage >= 60) return 'medium';
+    return 'low';
+  }
+
+  getExercisesCount(exercises: any[]): number {
+    return exercises?.length || 0;
+  }
+
+  getExerciseTypes(exercises: any[]): string {
+    if (!exercises || exercises.length === 0) return 'Sin ejercicios';
+    
+    const types = exercises.map(ex => ex.muscleGroup || ex.type || ex.category).filter(Boolean);
+    const uniqueTypes = [...new Set(types)];
+    
+    if (uniqueTypes.length <= 2) {
+      return uniqueTypes.join(', ');
+    }
+    
+    return `${uniqueTypes.slice(0, 2).join(', ')} +${uniqueTypes.length - 2}`;
+  }
+
+  getDateText(date: any): string {
+    if (!date) return 'Sin fecha';
+    
+    const dateObj = date.toDate ? date.toDate() : new Date(date);
+    return dateObj.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric',
+      year: 'numeric'
+    });
+  }
+
+  getTimeText(date: any): string {
+    if (!date) return '';
+    
+    const dateObj = date.toDate ? date.toDate() : new Date(date);
+    return dateObj.toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit'
     });
   }
 
-  formatDuration(minutes: number): string {
-    if (!minutes) return '0 min';
-    
-    if (minutes < 60) {
-      return `${minutes} min`;
+  getExerciseIcon(type: string): string {
+    switch (type?.toLowerCase()) {
+      case 'cardio': return 'directions_run';
+      case 'strength': return 'fitness_center';
+      case 'flexibility': return 'self_improvement';
+      case 'balance': return 'accessibility';
+      default: return 'fitness_center';
     }
-    
+  }
+
+  getAverageTimeFormatted(): string {
+    const minutes = this.metrics?.averageApprovalTime || 0;
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    
-    return remainingMinutes > 0 
-      ? `${hours}h ${remainingMinutes}min`
-      : `${hours}h`;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
   }
 
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'pending_approval': return 'warn';
-      case 'approved': return 'primary';
-      case 'rejected': return 'accent';
-      default: return '';
-    }
+  canApproveReject(routine: AIGeneratedRoutine): boolean {
+    return routine.status === 'pending_approval';
   }
 
-  getStatusIcon(status: string): string {
-    switch (status) {
-      case 'pending_approval': return 'schedule';
-      case 'approved': return 'check_circle';
-      case 'rejected': return 'cancel';
-      default: return 'help';
-    }
+  // ===============================================================================
+  // 🔧 UTILITIES
+  // ===============================================================================
+
+  private convertToCSV(routines: AIGeneratedRoutine[]): string {
+    const headers = [
+      'Usuario',
+      'Email',
+      'Rutina',
+      'Descripción',
+      'Dificultad',
+      'Duración',
+      'Ejercicios',
+      'Confianza IA',
+      'Adaptación',
+      'Estado',
+      'Fecha Generada',
+      'Entrenador',
+      'Notas'
+    ];
+
+    const rows = routines.map(routine => [
+      this.getUserDisplayName(routine),
+      this.getUserEmail(routine),
+      this.getRoutineName(routine),
+      this.getRoutineDescription(routine),
+      this.getDifficultyLabel(this.getRoutineDifficulty(routine)),
+      this.getRoutineDuration(routine),
+      this.getExercisesCount(this.getRoutineExercises(routine)).toString(),
+      `${this.getConfidencePercentage(routine.aiConfidence || 0)}%`,
+      this.getAdaptationLabel(routine.adaptationLevel || 'medium'),
+      this.getStatusLabel(routine.status),
+      this.getDateText(routine.generatedAt),
+      routine.approvedBy || '',
+      routine.trainerNotes || ''
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    return csvContent;
   }
 
-  getDifficultyColor(difficulty: string): string {
-    switch (difficulty) {
-      case 'beginner': return 'primary';
-      case 'intermediate': return 'accent';
-      case 'advanced': return 'warn';
-      default: return '';
-    }
+  private showSuccess(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 4000,
+      panelClass: ['success-snackbar'],
+      horizontalPosition: 'end',
+      verticalPosition: 'top'
+    });
   }
 
-  getAdaptationColor(level: string): string {
-    switch (level) {
-      case 'low': return 'primary';
-      case 'medium': return 'accent';
-      case 'high': return 'warn';
-      default: return '';
-    }
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 6000,
+      panelClass: ['error-snackbar'],
+      horizontalPosition: 'end',
+      verticalPosition: 'top'
+    });
   }
 
-  getConfidenceColor(confidence: number): string {
-    if (confidence >= 80) return 'primary';
-    if (confidence >= 60) return 'accent';
-    return 'warn';
-  }
+  // ===============================================================================
+  // 📊 COMPUTED PROPERTIES (para el template)
+  // ===============================================================================
 
-  // ✅ GETTERS PARA MÉTRICAS
   get totalPendingRoutines(): number {
     return this.metrics?.totalPending || 0;
   }
@@ -389,95 +707,6 @@ export class RoutineValidationComponent implements OnInit, OnDestroy {
   }
 
   get averageApprovalTime(): string {
-    const time = this.metrics?.averageApprovalTime || 0;
-    if (time < 60) {
-      return `${time} min`;
-    }
-    const hours = Math.floor(time / 60);
-    const minutes = time % 60;
-    return `${hours}h ${minutes}min`;
-  }
-
-  get routinesToday(): number {
-    return this.metrics?.routinesToday || 0;
-  }
-
-  get routinesThisWeek(): number {
-    return this.metrics?.routinesThisWeek || 0;
-  }
-
-  get averageAIConfidence(): number {
-    return this.metrics?.averageAIConfidence || 0;
-  }
-
-  // ✅ MÉTODOS DE NAVEGACIÓN Y ACCIONES
-  trackByRoutineId(index: number, item: AIGeneratedRoutine): string {
-    return item.id;
-  }
-
-  isCurrentUserTrainer(): boolean {
-    return this.currentUser?.role === 'trainer' || this.currentUser?.role === 'admin';
-  }
-
-  canApproveReject(routine: AIGeneratedRoutine): boolean {
-    return routine.status === 'pending_approval' && this.isCurrentUserTrainer();
-  }
-
-  // ✅ EXPORTAR DATOS (OPCIONAL)
-  exportToCSV(): void {
-    const data = this.dataSource.data;
-    const csvContent = this.convertToCSV(data);
-    this.downloadCSV(csvContent, 'rutinas-validacion.csv');
-  }
-
-  private convertToCSV(data: AIGeneratedRoutine[]): string {
-    const headers = [
-      'ID',
-      'Usuario',
-      'Email',
-      'Rutina',
-      'Dificultad', 
-      'Duración',
-      'Ejercicios',
-      'Confianza IA',
-      'Adaptación',
-      'Estado',
-      'Generada',
-      'Notas Entrenador'
-    ];
-
-    const rows = data.map(routine => [
-      routine.id,
-      routine.userDisplayName || '',
-      routine.userEmail || '',
-      routine.routine.name || '',
-      routine.routine.difficulty || '',
-      routine.routine.duration || 0,
-      routine.routine.exercises?.length || 0,
-      routine.aiConfidence || 0,
-      routine.adaptationLevel || '',
-      routine.status || '',
-      this.formatDate(routine.generatedAt),
-      routine.trainerNotes || ''
-    ]);
-
-    return [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
-  }
-
-  private downloadCSV(content: string, filename: string): void {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', filename);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    return this.getAverageTimeFormatted();
   }
 }

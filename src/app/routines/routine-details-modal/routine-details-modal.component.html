@@ -1,0 +1,746 @@
+<!-- src/app/routines/routine-details-modal/routine-details-modal.component.html -->
+<!-- 🤖 MODAL DETALLES RUTINA PREMIUM - NIVEL FINZENAPP EXACTO -->
+
+<div class="routine-details-modal" [@fadeIn]>
+
+  <!-- =============================================================================== -->
+  <!-- 🏆 HEADER PREMIUM CON AVATAR Y STATUS -->
+  <!-- =============================================================================== -->
+  <div class="modal-header">
+    <div class="header-content">
+      <div class="routine-info">
+        <div class="routine-avatar">
+          <mat-icon>fitness_center</mat-icon>
+        </div>
+        <div class="routine-details">
+          <h2 class="routine-title">{{ data.routine.routine.name || 'Rutina Personalizada' }}</h2>
+          <div class="routine-meta">
+            <span class="user-info">
+              <mat-icon>person</mat-icon>
+              {{ userName }} ({{ userEmail }})
+            </span>
+            <span class="generated-date">
+              <mat-icon>schedule</mat-icon>
+              {{ generatedDate }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-badges">
+          <div class="status-chip" [ngClass]="data.routine.status">
+            <mat-icon>{{ data.routine.status === 'pending_approval' ? 'schedule' : 
+                              data.routine.status === 'approved' ? 'check_circle' : 'cancel' }}</mat-icon>
+            <span>{{ data.routine.status === 'pending_approval' ? 'Pendiente' : 
+                     data.routine.status === 'approved' ? 'Aprobada' : 'Rechazada' }}</span>
+          </div>
+          
+          <div class="confidence-badge" *ngIf="data.routine.aiConfidence">
+            <mat-icon>psychology</mat-icon>
+            <span>{{ getConfidencePercentage() }}% IA</span>
+          </div>
+        </div>
+
+        <button mat-icon-button 
+                class="close-button"
+                (click)="onClose()"
+                matTooltip="Cerrar modal">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Indicador de cambios -->
+    <div class="changes-indicator" *ngIf="hasChanges" [@slideIn]>
+      <mat-icon>edit</mat-icon>
+      <span>Tienes cambios sin guardar</span>
+      <button mat-button (click)="saveChanges()" [disabled]="saving">
+        <mat-spinner diameter="20" *ngIf="saving"></mat-spinner>
+        <mat-icon *ngIf="!saving">save</mat-icon>
+        <span>Guardar</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- =============================================================================== -->
+  <!-- 📑 TABS PREMIUM MATERIAL DESIGN -->
+  <!-- =============================================================================== -->
+  <div class="modal-content">
+    <mat-tab-group [(selectedIndex)]="selectedTab" 
+                   (selectedTabChange)="onTabChange($event.index)"
+                   class="premium-tabs">
+
+      <!-- =============================================================================== -->
+      <!-- 📊 TAB 1: INFORMACIÓN GENERAL -->
+      <!-- =============================================================================== -->
+      <mat-tab label="Información General">
+        <div class="tab-content general-tab" [@fadeIn]>
+          
+          <!-- Stats Cards -->
+          <div class="stats-cards">
+            <div class="stat-card duration">
+              <div class="stat-icon">
+                <mat-icon>schedule</mat-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ data.routine.routine.duration || 45 }} min</div>
+                <div class="stat-label">Duración</div>
+              </div>
+            </div>
+
+            <div class="stat-card exercises">
+              <div class="stat-icon">
+                <mat-icon>fitness_center</mat-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ totalExercises }}</div>
+                <div class="stat-label">Ejercicios</div>
+              </div>
+            </div>
+
+            <div class="stat-card calories">
+              <div class="stat-icon">
+                <mat-icon>local_fire_department</mat-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ data.routine.routine.estimatedCalories || 0 }}</div>
+                <div class="stat-label">Calorías</div>
+              </div>
+            </div>
+
+            <div class="stat-card difficulty">
+              <div class="stat-icon">
+                <mat-icon>trending_up</mat-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value" [style.color]="getDifficultyColor(data.routine.routine.difficulty || 'intermediate')">
+                  {{ data.routine.routine.difficulty === 'beginner' ? 'Principiante' :
+                     data.routine.routine.difficulty === 'advanced' ? 'Avanzado' : 'Intermedio' }}
+                </div>
+                <div class="stat-label">Dificultad</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Formulario de información básica -->
+          <mat-card class="info-form-card">
+            <mat-card-header>
+              <div class="custom-card-title">
+                <mat-icon>edit</mat-icon>
+                Información Básica
+              </div>
+              <mat-card-subtitle>Edita los detalles principales de la rutina</mat-card-subtitle>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <form [formGroup]="routineForm" class="routine-form">
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Nombre de la rutina</mat-label>
+                    <input matInput formControlName="name" placeholder="Ej: Rutina de fuerza para principiantes">
+                    <mat-icon matSuffix>fitness_center</mat-icon>
+                    <mat-error *ngIf="routineForm.get('name')?.hasError('required')">
+                      El nombre es requerido
+                    </mat-error>
+                    <mat-error *ngIf="routineForm.get('name')?.hasError('minlength')">
+                      Mínimo 3 caracteres
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Descripción</mat-label>
+                    <textarea matInput 
+                              formControlName="description" 
+                              rows="3"
+                              placeholder="Describe los objetivos y características de esta rutina..."></textarea>
+                    <mat-icon matSuffix>description</mat-icon>
+                    <mat-error *ngIf="routineForm.get('description')?.hasError('required')">
+                      La descripción es requerida
+                    </mat-error>
+                    <mat-error *ngIf="routineForm.get('description')?.hasError('minlength')">
+                      Mínimo 10 caracteres
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row two-cols">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Dificultad</mat-label>
+                    <mat-select formControlName="difficulty">
+                      <mat-option value="beginner">
+                        <div class="difficulty-option beginner">
+                          <mat-icon>trending_down</mat-icon>
+                          <span>Principiante</span>
+                        </div>
+                      </mat-option>
+                      <mat-option value="intermediate">
+                        <div class="difficulty-option intermediate">
+                          <mat-icon>trending_flat</mat-icon>
+                          <span>Intermedio</span>
+                        </div>
+                      </mat-option>
+                      <mat-option value="advanced">
+                        <div class="difficulty-option advanced">
+                          <mat-icon>trending_up</mat-icon>
+                          <span>Avanzado</span>
+                        </div>
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Duración (minutos)</mat-label>
+                    <input matInput 
+                           type="number" 
+                           formControlName="duration" 
+                           min="15" 
+                           max="120">
+                    <mat-icon matSuffix>schedule</mat-icon>
+                    <mat-error *ngIf="routineForm.get('duration')?.hasError('min')">
+                      Mínimo 15 minutos
+                    </mat-error>
+                    <mat-error *ngIf="routineForm.get('duration')?.hasError('max')">
+                      Máximo 120 minutos
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Calorías estimadas</mat-label>
+                    <input matInput 
+                           type="number" 
+                           formControlName="estimatedCalories" 
+                           min="0">
+                    <mat-icon matSuffix>local_fire_department</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <!-- Áreas de enfoque -->
+                <div class="form-row">
+                  <div class="focus-areas-section">
+                    <h4>Áreas de enfoque</h4>
+                    <div class="focus-chips">
+                      <mat-chip-listbox>
+                        <mat-chip-option *ngFor="let area of data.routine.routine?.focusAreas || []"
+                                         [value]="area"
+                                         selected>
+                          {{ area }}
+                        </mat-chip-option>
+                      </mat-chip-listbox>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Información del perfil del usuario -->
+          <mat-card class="profile-info-card" *ngIf="data.routine.baseProfile">
+            <mat-card-header>
+              <div class="custom-card-title">
+                <mat-icon>person</mat-icon>
+                Perfil del Usuario
+              </div>
+              <mat-card-subtitle>Información utilizada para generar la rutina</mat-card-subtitle>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <div class="profile-grid">
+                <div class="profile-item">
+                  <div class="profile-label">Nivel de fitness</div>
+                  <div class="profile-value">{{ data.routine.baseProfile.fitnessLevel || 'No especificado' }}</div>
+                </div>
+                
+                <div class="profile-item">
+                  <div class="profile-label">Objetivos principales</div>
+                  <div class="profile-value">
+                    <mat-chip-listbox>
+                      <mat-chip-option *ngFor="let goal of data.routine.baseProfile.primaryGoals || []" 
+                                       selected disabled>
+                        {{ goal }}
+                      </mat-chip-option>
+                    </mat-chip-listbox>
+                  </div>
+                </div>
+                
+                <div class="profile-item" *ngIf="data.routine.baseProfile && data.routine.baseProfile.medicalLimitations && data.routine.baseProfile.medicalLimitations.length > 0">
+                  <div class="profile-label">Limitaciones médicas</div>
+                  <div class="profile-value">
+                    <mat-chip-listbox>
+                      <mat-chip-option *ngFor="let limitation of data.routine.baseProfile.medicalLimitations" 
+                                       selected disabled color="warn">
+                        {{ limitation }}
+                      </mat-chip-option>
+                    </mat-chip-listbox>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- =============================================================================== -->
+      <!-- 🏋️ TAB 2: EJERCICIOS -->
+      <!-- =============================================================================== -->
+      <mat-tab label="Ejercicios">
+        <div class="tab-content exercises-tab" [@fadeIn]>
+          
+          <!-- Header de ejercicios -->
+          <div class="exercises-header">
+            <div class="exercises-title">
+              <h3>
+                <mat-icon>fitness_center</mat-icon>
+                Lista de Ejercicios ({{ totalExercises }})
+              </h3>
+              <p>Edita, reorganiza o agrega nuevos ejercicios a la rutina</p>
+            </div>
+            
+            <button mat-raised-button 
+                    color="primary" 
+                    (click)="addExercise()"
+                    class="add-exercise-btn">
+              <mat-icon>add</mat-icon>
+              <span>Agregar Ejercicio</span>
+            </button>
+          </div>
+
+          <!-- Lista de ejercicios -->
+          <form [formGroup]="exercisesForm">
+            <div formArrayName="exercises" class="exercises-list">
+              
+              <mat-card *ngFor="let exercise of exercisesArray.controls; let i = index" 
+                        class="exercise-card"
+                        [formGroupName]="i">
+                
+                <mat-card-header>
+                  <div class="exercise-header-content">
+                    <div class="exercise-number">{{ i + 1 }}</div>
+                    <div class="exercise-title-section">
+                      <mat-form-field appearance="outline" class="exercise-name-field">
+                        <mat-label>Nombre del ejercicio</mat-label>
+                        <input matInput formControlName="name" placeholder="Ej: Sentadillas con peso corporal">
+                        <mat-error *ngIf="exercise.get('name')?.hasError('required')">
+                          El nombre es requerido
+                        </mat-error>
+                      </mat-form-field>
+                    </div>
+                    
+                    <div class="exercise-actions">
+                      <button mat-icon-button 
+                              (click)="moveExerciseUp(i)"
+                              [disabled]="i === 0"
+                              matTooltip="Mover arriba">
+                        <mat-icon>keyboard_arrow_up</mat-icon>
+                      </button>
+                      
+                      <button mat-icon-button 
+                              (click)="moveExerciseDown(i)"
+                              [disabled]="i === exercisesArray.length - 1"
+                              matTooltip="Mover abajo">
+                        <mat-icon>keyboard_arrow_down</mat-icon>
+                      </button>
+                      
+                      <button mat-icon-button 
+                              (click)="duplicateExercise(i)"
+                              matTooltip="Duplicar ejercicio">
+                        <mat-icon>content_copy</mat-icon>
+                      </button>
+                      
+                      <button mat-icon-button 
+                              color="warn"
+                              (click)="removeExercise(i)"
+                              [disabled]="exercisesArray.length <= 1"
+                              matTooltip="Eliminar ejercicio">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <div class="exercise-form">
+                    
+                    <!-- Primera fila: Tipo y grupo muscular -->
+                    <div class="form-row two-cols">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Tipo de ejercicio</mat-label>
+                        <mat-select formControlName="type">
+                          <mat-option value="strength">
+                            <div class="exercise-type-option">
+                              <mat-icon>fitness_center</mat-icon>
+                              <span>Fuerza</span>
+                            </div>
+                          </mat-option>
+                          <mat-option value="cardio">
+                            <div class="exercise-type-option">
+                              <mat-icon>directions_run</mat-icon>
+                              <span>Cardio</span>
+                            </div>
+                          </mat-option>
+                          <mat-option value="flexibility">
+                            <div class="exercise-type-option">
+                              <mat-icon>self_improvement</mat-icon>
+                              <span>Flexibilidad</span>
+                            </div>
+                          </mat-option>
+                          <mat-option value="balance">
+                            <div class="exercise-type-option">
+                              <mat-icon>accessibility</mat-icon>
+                              <span>Equilibrio</span>
+                            </div>
+                          </mat-option>
+                        </mat-select>
+                        <mat-icon matSuffix [style.color]="getMuscleGroupColor(exercise.get('type')?.value)">
+                          {{ getTypeIcon(exercise.get('type')?.value) }}
+                        </mat-icon>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Grupo muscular</mat-label>
+                        <mat-select formControlName="muscleGroup">
+                          <mat-option value="pecho">Pecho</mat-option>
+                          <mat-option value="espalda">Espalda</mat-option>
+                          <mat-option value="hombros">Hombros</mat-option>
+                          <mat-option value="brazos">Brazos</mat-option>
+                          <mat-option value="piernas">Piernas</mat-option>
+                          <mat-option value="gluteos">Glúteos</mat-option>
+                          <mat-option value="core">Core</mat-option>
+                          <mat-option value="cuerpo-completo">Cuerpo completo</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+
+                    <!-- Segunda fila: Sets, reps, duración -->
+                    <div class="form-row three-cols">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Series</mat-label>
+                        <input matInput 
+                               type="number" 
+                               formControlName="sets" 
+                               min="1" 
+                               max="10">
+                        <mat-icon matSuffix>repeat</mat-icon>
+                        <mat-error *ngIf="exercise.get('sets')?.hasError('min')">
+                          Mínimo 1 serie
+                        </mat-error>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Repeticiones</mat-label>
+                        <input matInput 
+                               type="number" 
+                               formControlName="reps" 
+                               min="1" 
+                               max="50">
+                        <mat-icon matSuffix>refresh</mat-icon>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Duración (seg)</mat-label>
+                        <input matInput 
+                               type="number" 
+                               formControlName="duration" 
+                               min="0">
+                        <mat-icon matSuffix>timer</mat-icon>
+                      </mat-form-field>
+                    </div>
+
+                    <!-- Tercera fila: Descanso, equipo, dificultad -->
+                    <div class="form-row three-cols">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Descanso (seg)</mat-label>
+                        <input matInput 
+                               type="number" 
+                               formControlName="restTime" 
+                               min="15" 
+                               max="300">
+                        <mat-icon matSuffix>pause</mat-icon>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Equipo</mat-label>
+                        <mat-select formControlName="equipment">
+                          <mat-option value="ninguno">Sin equipo</mat-option>
+                          <mat-option value="mancuernas">Mancuernas</mat-option>
+                          <mat-option value="barra">Barra</mat-option>
+                          <mat-option value="banda-elastica">Banda elástica</mat-option>
+                          <mat-option value="kettlebell">Kettlebell</mat-option>
+                          <mat-option value="maquina">Máquina</mat-option>
+                          <mat-option value="otro">Otro</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Dificultad</mat-label>
+                        <mat-select formControlName="difficulty">
+                          <mat-option value="beginner">Principiante</mat-option>
+                          <mat-option value="intermediate">Intermedio</mat-option>
+                          <mat-option value="advanced">Avanzado</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+
+                    <!-- Instrucciones -->
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Instrucciones de ejecución</mat-label>
+                        <textarea matInput 
+                                  formControlName="instructions" 
+                                  rows="2"
+                                  placeholder="Describe la técnica correcta para realizar este ejercicio..."></textarea>
+                        <mat-icon matSuffix>description</mat-icon>
+                      </mat-form-field>
+                    </div>
+
+                    <!-- Notas adicionales -->
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Notas adicionales</mat-label>
+                        <textarea matInput 
+                                  formControlName="notes" 
+                                  rows="1"
+                                  placeholder="Modificaciones, progresiones, etc..."></textarea>
+                        <mat-icon matSuffix>note</mat-icon>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </form>
+
+          <!-- Estado vacío -->
+          <div class="no-exercises" *ngIf="exercisesArray.length === 0">
+            <mat-icon>fitness_center</mat-icon>
+            <h3>No hay ejercicios</h3>
+            <p>Agrega al menos un ejercicio para completar la rutina</p>
+            <button mat-raised-button color="primary" (click)="addExercise()">
+              <mat-icon>add</mat-icon>
+              Agregar primer ejercicio
+            </button>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- =============================================================================== -->
+      <!-- ✅ TAB 3: VALIDACIÓN -->
+      <!-- =============================================================================== -->
+      <mat-tab label="Validación">
+        <div class="tab-content validation-tab" [@fadeIn]>
+          
+          <!-- Resumen de la rutina -->
+          <mat-card class="validation-summary">
+            <mat-card-header>
+              <div class="custom-card-title">
+                <mat-icon>assessment</mat-icon>
+                Resumen de Validación
+              </div>
+              <mat-card-subtitle>Revisa los detalles antes de aprobar o rechazar</mat-card-subtitle>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <div class="summary-grid">
+                <div class="summary-item">
+                  <div class="summary-icon">
+                    <mat-icon>person</mat-icon>
+                  </div>
+                  <div class="summary-content">
+                    <div class="summary-label">Usuario</div>
+                    <div class="summary-value">{{ userName }}</div>
+                    <div class="summary-detail">{{ userEmail }}</div>
+                  </div>
+                </div>
+
+                <div class="summary-item">
+                  <div class="summary-icon">
+                    <mat-icon>fitness_center</mat-icon>
+                  </div>
+                  <div class="summary-content">
+                    <div class="summary-label">Rutina</div>
+                    <div class="summary-value">{{ data.routine.routine.name || 'Sin nombre' }}</div>
+                    <div class="summary-detail">{{ totalExercises }} ejercicios • {{ data.routine.routine.duration || 45 }} min</div>
+                  </div>
+                </div>
+
+                <div class="summary-item">
+                  <div class="summary-icon">
+                    <mat-icon>psychology</mat-icon>
+                  </div>
+                  <div class="summary-content">
+                    <div class="summary-label">Confianza IA</div>
+                    <div class="summary-value">{{ getConfidencePercentage() }}%</div>
+                    <div class="summary-detail" 
+                         [ngClass]="getConfidencePercentage() >= 80 ? 'high-confidence' : 
+                                    getConfidencePercentage() >= 60 ? 'medium-confidence' : 'low-confidence'">
+                      {{ getConfidencePercentage() >= 80 ? 'Alta confianza' : 
+                         getConfidencePercentage() >= 60 ? 'Confianza media' : 'Baja confianza' }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="summary-item">
+                  <div class="summary-icon">
+                    <mat-icon>schedule</mat-icon>
+                  </div>
+                  <div class="summary-content">
+                    <div class="summary-label">Generada</div>
+                    <div class="summary-value">{{ generatedDate.split(' ')[0] }}</div>
+                    <div class="summary-detail">{{ generatedDate.split(' ')[1] }}</div>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Formulario de validación -->
+          <form [formGroup]="validationForm" class="validation-form">
+            
+            <!-- Acción de validación -->
+            <mat-card class="validation-actions-card">
+              <mat-card-header>
+                <div class="custom-card-title">
+                  <mat-icon>rule</mat-icon>
+                  Acción de Validación
+                </div>
+              </mat-card-header>
+              
+              <mat-card-content>
+                <mat-radio-group formControlName="action" class="validation-radio-group">
+                  <mat-radio-button value="approve" class="approve-option">
+                    <div class="radio-option-content">
+                      <mat-icon>check_circle</mat-icon>
+                      <div class="radio-text">
+                        <div class="radio-title">Aprobar rutina</div>
+                        <div class="radio-description">La rutina está lista para ser asignada al usuario</div>
+                      </div>
+                    </div>
+                  </mat-radio-button>
+                  
+                  <mat-radio-button value="reject" class="reject-option">
+                    <div class="radio-option-content">
+                      <mat-icon>cancel</mat-icon>
+                      <div class="radio-text">
+                        <div class="radio-title">Rechazar rutina</div>
+                        <div class="radio-description">La rutina necesita ser regenerada o modificada</div>
+                      </div>
+                    </div>
+                  </mat-radio-button>
+                </mat-radio-group>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Notas del entrenador -->
+            <mat-card class="trainer-notes-card">
+              <mat-card-header>
+                <div class="custom-card-title">
+                  <mat-icon>note</mat-icon>
+                  Notas del Entrenador
+                </div>
+                <mat-card-subtitle>Comentarios opcionales sobre la rutina</mat-card-subtitle>
+              </mat-card-header>
+              
+              <mat-card-content>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Notas y comentarios</mat-label>
+                  <textarea matInput 
+                            formControlName="trainerNotes" 
+                            rows="3"
+                            placeholder="Ej: Excelente rutina adaptada al nivel del usuario. Recomiendo enfocarse en la técnica..."></textarea>
+                  <mat-icon matSuffix>edit_note</mat-icon>
+                </mat-form-field>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Razón de rechazo (solo si se rechaza) -->
+            <mat-card class="rejection-reason-card" *ngIf="validationForm.get('action')?.value === 'reject'">
+              <mat-card-header>
+                <div class="custom-card-title">
+                  <mat-icon>error</mat-icon>
+                  Razón del Rechazo
+                </div>
+                <mat-card-subtitle>Especifica por qué se rechaza la rutina</mat-card-subtitle>
+              </mat-card-header>
+              
+              <mat-card-content>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Razón del rechazo *</mat-label>
+                  <textarea matInput 
+                            formControlName="rejectionReason" 
+                            rows="3"
+                            placeholder="Ej: Los ejercicios no son apropiados para el nivel del usuario..."
+                            required></textarea>
+                  <mat-icon matSuffix>report</mat-icon>
+                  <mat-error *ngIf="validationForm.get('rejectionReason')?.hasError('required')">
+                    La razón del rechazo es requerida
+                  </mat-error>
+                </mat-form-field>
+              </mat-card-content>
+            </mat-card>
+          </form>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+
+  <!-- =============================================================================== -->
+  <!-- 🎬 FOOTER CON ACCIONES -->
+  <!-- =============================================================================== -->
+  <div class="modal-footer">
+    <div class="footer-info">
+      <div class="changes-status" *ngIf="hasChanges">
+        <mat-icon>edit</mat-icon>
+        <span>Cambios sin guardar</span>
+      </div>
+      <div class="validation-status" *ngIf="!routineValid">
+        <mat-icon>error</mat-icon>
+        <span>Completa todos los campos requeridos</span>
+      </div>
+    </div>
+
+    <div class="footer-actions">
+      <button mat-button 
+              (click)="onClose()"
+              class="cancel-button">
+        <mat-icon>close</mat-icon>
+        <span>Cancelar</span>
+      </button>
+
+      <button mat-raised-button 
+              (click)="saveChanges()"
+              [disabled]="!hasChanges || saving || !routineValid"
+              class="save-button">
+        <mat-spinner diameter="20" *ngIf="saving"></mat-spinner>
+        <mat-icon *ngIf="!saving">save</mat-icon>
+        <span>Guardar Cambios</span>
+      </button>
+
+      <button mat-raised-button 
+              color="warn"
+              (click)="rejectRoutine()"
+              [disabled]="saving || validationForm.get('action')?.value !== 'reject' || !validationForm.get('rejectionReason')?.value"
+              class="reject-button"
+              *ngIf="canApprove">
+        <mat-spinner diameter="20" *ngIf="saving"></mat-spinner>
+        <mat-icon *ngIf="!saving">cancel</mat-icon>
+        <span>Rechazar</span>
+      </button>
+
+      <button mat-raised-button 
+              color="primary"
+              (click)="approveRoutine()"
+              [disabled]="saving || !canApprove || validationForm.get('action')?.value !== 'approve'"
+              class="approve-button"
+              *ngIf="canApprove">
+        <mat-spinner diameter="20" *ngIf="saving"></mat-spinner>
+        <mat-icon *ngIf="!saving">check_circle</mat-icon>
+        <span>Aprobar Rutina</span>
+      </button>
+    </div>
+  </div>
+
+</div>
