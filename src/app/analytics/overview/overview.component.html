@@ -1,1 +1,196 @@
-<p>overview works!</p>
+<!-- src/app/analytics/overview/overview.component.html -->
+<!-- 📊 ANALYTICS DASHBOARD ULTRA PREMIUM - NIVEL FINZENAPP EXACTO -->
+
+<div class="analytics-dashboard-container">
+  
+    <!-- ✅ HEADER ULTRA PREMIUM CON GLASSMORPHISM -->
+    <div class="premium-header">
+      <div class="header-content">
+        <div class="header-left">
+          <button mat-icon-button class="back-btn-premium" (click)="goBack()">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+          
+          <div class="header-info">
+            <h1 class="premium-title">
+              <mat-icon class="title-icon">analytics</mat-icon>
+              Dashboard Ejecutivo
+            </h1>
+            <p class="premium-subtitle">Métricas globales y análisis de efectividad del sistema</p>
+          </div>
+        </div>
+        
+        <div class="header-actions">
+          <button mat-stroked-button class="action-btn-premium" (click)="refreshAnalytics()">
+            <mat-icon>refresh</mat-icon>
+            <span>Actualizar</span>
+          </button>
+          
+          <button mat-stroked-button class="action-btn-premium" (click)="exportAnalytics()">
+            <mat-icon>file_download</mat-icon>
+            <span>Exportar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  
+    <!-- ✅ LOADING STATE PREMIUM -->
+    <div class="loading-state-premium" *ngIf="isLoading">
+      <div class="loading-content">
+        <div class="loading-spinner">
+          <mat-spinner diameter="60"></mat-spinner>
+        </div>
+        <h3>Cargando analytics ejecutivos...</h3>
+        <p>Analizando métricas globales del sistema</p>
+      </div>
+    </div>
+  
+    <!-- ✅ CONTENIDO PRINCIPAL PREMIUM -->
+    <div class="dashboard-content-premium" *ngIf="!isLoading">
+      
+      <!-- 📊 MÉTRICAS EJECUTIVAS ULTRA PREMIUM -->
+      <div class="metrics-grid-premium" *ngIf="analyticsMetrics">
+        
+        <!-- Métrica 1: Usuarios Activos -->
+        <div class="metric-card-premium users-metric">
+          <div class="metric-header">
+            <div class="metric-icon-container">
+              <mat-icon class="metric-icon">people</mat-icon>
+            </div>
+            <div class="metric-badge">{{ totalUsers }}</div>
+          </div>
+          <div class="metric-content">
+            <h3 class="metric-value">{{ totalUsers }}</h3>
+            <p class="metric-label">Total Usuarios</p>
+            <div class="metric-trend positive">
+              <mat-icon>trending_up</mat-icon>
+              <span>{{ activeUsersToday }} activos hoy</span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Métrica 2: Efectividad IA -->
+        <div class="metric-card-premium effectiveness-metric">
+          <div class="metric-header">
+            <div class="metric-icon-container">
+              <mat-icon class="metric-icon">psychology</mat-icon>
+            </div>
+            <div class="metric-badge">{{ formatPercentage(accuracyRate) }}</div>
+          </div>
+          <div class="metric-content">
+            <h3 class="metric-value">{{ formatPercentage(accuracyRate) }}</h3>
+            <p class="metric-label">Precisión IA</p>
+            <div class="metric-trend positive">
+              <mat-icon>check_circle</mat-icon>
+              <span>{{ totalDetections }} detecciones</span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Métrica 3: Engagement -->
+        <div class="metric-card-premium engagement-metric">
+          <div class="metric-header">
+            <div class="metric-icon-container">
+              <mat-icon class="metric-icon">schedule</mat-icon>
+            </div>
+            <div class="metric-badge">{{ formatDuration(averageSessionDuration) }}</div>
+          </div>
+          <div class="metric-content">
+            <h3 class="metric-value">{{ formatDuration(averageSessionDuration) }}</h3>
+            <p class="metric-label">Duración Promedio</p>
+            <div class="metric-trend positive">
+              <mat-icon>timer</mat-icon>
+              <span>Por sesión de entrenamiento</span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Métrica 4: Retención -->
+        <div class="metric-card-premium retention-metric">
+          <div class="metric-header">
+            <div class="metric-icon-container">
+              <mat-icon class="metric-icon">track_changes</mat-icon>
+            </div>
+            <div class="metric-badge">{{ formatPercentage(userRetentionRate) }}</div>
+          </div>
+          <div class="metric-content">
+            <h3 class="metric-value">{{ formatPercentage(userRetentionRate) }}</h3>
+            <p class="metric-label">Retención Usuarios</p>
+            <div class="metric-trend positive">
+              <mat-icon>group</mat-icon>
+              <span>{{ routinesCompleted }} rutinas completadas</span>
+            </div>
+          </div>
+        </div>
+  
+      </div>
+  
+      <!-- ✅ GRÁFICOS INTERACTIVOS PREMIUM -->
+      <div class="charts-grid-premium" *ngIf="analyticsMetrics">
+        
+        <!-- Gráfico 1: Métricas Globales de Uso -->
+        <div class="chart-card-premium usage-chart">
+          <div class="chart-header">
+            <h4>
+              <mat-icon>trending_up</mat-icon>
+              Métricas Globales de Uso
+            </h4>
+            <button mat-icon-button class="chart-refresh-btn" (click)="refreshAnalytics()">
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </div>
+          <div class="chart-container">
+            <canvas #usageChart></canvas>
+          </div>
+        </div>
+  
+        <!-- Gráfico 2: Efectividad de Detección IA -->
+        <div class="chart-card-premium effectiveness-chart">
+          <div class="chart-header">
+            <h4>
+              <mat-icon>psychology</mat-icon>
+              Efectividad de Detección IA
+            </h4>
+            <div class="accuracy-badge">
+              {{ formatPercentage(accuracyRate) }} precisión
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas #effectivenessChart></canvas>
+          </div>
+        </div>
+  
+        <!-- Gráfico 3: Engagement de Usuarios -->
+        <div class="chart-card-premium engagement-chart">
+          <div class="chart-header">
+            <h4>
+              <mat-icon>bar_chart</mat-icon>
+              Engagement de Usuarios
+            </h4>
+            <div class="engagement-badge">
+              {{ correctionsApplied }} correcciones aplicadas
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas #engagementChart></canvas>
+          </div>
+        </div>
+  
+      </div>
+  
+      <!-- ✅ EMPTY STATE PREMIUM -->
+      <div class="empty-state-premium" *ngIf="!analyticsMetrics && !isLoading">
+        <div class="empty-content">
+          <mat-icon class="empty-icon">analytics</mat-icon>
+          <h3>Sin datos de analytics</h3>
+          <p>No hay suficientes datos para generar métricas ejecutivas.</p>
+          <button mat-raised-button color="primary" (click)="refreshAnalytics()">
+            <mat-icon>refresh</mat-icon>
+            Intentar de nuevo
+          </button>
+        </div>
+      </div>
+  
+    </div>
+  
+  </div>

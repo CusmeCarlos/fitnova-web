@@ -1,7 +1,4 @@
-// =====================================
 // src/app/app.config.ts
-// ⚙️ CONFIGURACIÓN PRINCIPAL DE LA APP
-
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -15,8 +12,9 @@ import { AngularFireStorageModule } from '@angular/fire/compat/storage';
 import { AngularFireFunctionsModule } from '@angular/fire/compat/functions';
 
 // ✅ MATERIAL DESIGN
-import { MAT_DATE_LOCALE, DateAdapter, MAT_DATE_FORMATS } from '@angular/material/core';
+import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
@@ -41,6 +39,7 @@ export const appConfig: ApplicationConfig = {
       AngularFireFunctionsModule,
       MatSnackBarModule
     ),
+
     
     // ✅ CONFIGURACIONES REGIONALES
     { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }
