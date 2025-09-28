@@ -1,0 +1,959 @@
+<!-- src/app/shared/settings/settings.component.html -->
+<!-- ⚙️ CONFIGURACIÓN DEL SISTEMA ULTRA PREMIUM - NIVEL FINZENAPP -->
+
+<div class="settings-dashboard-container">
+  
+  <!-- ✅ HEADER ULTRA PREMIUM CON GLASSMORPHISM -->
+  <div class="premium-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button mat-icon-button class="back-btn-premium" (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        
+        <div class="header-info">
+          <h1 class="premium-title">
+            <mat-icon class="title-icon">settings</mat-icon>
+            Configuración del Sistema
+          </h1>
+          <p class="premium-subtitle">Panel de administración y configuración avanzada de FitNova</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button mat-stroked-button class="action-btn-premium" (click)="refreshSettings()">
+          <mat-icon>refresh</mat-icon>
+          <span>Actualizar</span>
+        </button>
+        
+        <button mat-stroked-button class="action-btn-premium" (click)="exportSettings()">
+          <mat-icon>file_download</mat-icon>
+          <span>Exportar</span>
+        </button>
+        
+        <button mat-stroked-button class="action-btn-premium danger" (click)="resetToDefaults()" *ngIf="isAdmin()">
+          <mat-icon>restore</mat-icon>
+          <span>Restaurar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ LOADING STATE PREMIUM -->
+  <div class="loading-state-premium" *ngIf="isLoading">
+    <div class="loading-content">
+      <div class="loading-spinner">
+        <mat-spinner diameter="60"></mat-spinner>
+      </div>
+      <h3>Cargando configuración del sistema...</h3>
+      <p>Sincronizando parámetros desde Firebase</p>
+    </div>
+  </div>
+
+  <!-- ✅ CONTENIDO PRINCIPAL CON TABS PREMIUM -->
+  <div class="settings-content-premium" *ngIf="!isLoading && systemSettings">
+    
+    <mat-tab-group class="premium-tabs" [(selectedIndex)]="selectedTabIndex" animationDuration="300ms">
+      
+      <!-- 🤖 TAB: CONFIGURACIÓN IA -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>psychology</mat-icon>
+          <span>Inteligencia Artificial</span>
+        </ng-template>
+        
+        <div class="tab-content">
+          <form [formGroup]="aiForm" class="settings-form">
+            
+            <!-- Header de sección -->
+            <div class="section-header">
+              <h3>
+                <mat-icon>smart_toy</mat-icon>
+                Configuración de Parámetros IA
+              </h3>
+              <p>Ajusta la sensibilidad y precisión de MediaPipe y GPT-4</p>
+            </div>
+
+            <!-- MediaPipe Configuration -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>visibility</mat-icon>
+                  MediaPipe Pose Detection
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Sensibilidad de Pose</mat-label>
+                    <mat-slider 
+                      min="0.1" 
+                      max="1.0" 
+                      step="0.1" 
+                      discrete
+                      formControlName="poseSensitivity">
+                    </mat-slider>
+                    <mat-hint>Valor: {{ formatPercentage(aiForm.get('poseSensitivity')?.value) }}</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Umbral de Confianza</mat-label>
+                    <mat-slider 
+                      min="0.5" 
+                      max="0.95" 
+                      step="0.05" 
+                      discrete
+                      formControlName="confidenceThreshold">
+                    </mat-slider>
+                    <mat-hint>Valor: {{ formatPercentage(aiForm.get('confidenceThreshold')?.value) }}</mat-hint>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Umbral de Detección</mat-label>
+                    <mat-slider 
+                      min="0.3" 
+                      max="0.8" 
+                      step="0.05" 
+                      discrete
+                      formControlName="detectionThreshold">
+                    </mat-slider>
+                    <mat-hint>Valor: {{ formatPercentage(aiForm.get('detectionThreshold')?.value) }}</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>FPS Máximo</mat-label>
+                    <input matInput type="number" formControlName="maxFramesPerSecond" min="15" max="60">
+                    <mat-hint>Frames por segundo para procesamiento</mat-hint>
+                  </mat-form-field>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Error Classification -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>warning</mat-icon>
+                  Clasificación de Errores
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field critical">
+                    <mat-label>Umbral Crítico</mat-label>
+                    <mat-slider 
+                      min="0.8" 
+                      max="1.0" 
+                      step="0.05" 
+                      discrete
+                      formControlName="criticalThreshold">
+                    </mat-slider>
+                    <mat-hint>Errores críticos: {{ formatPercentage(aiForm.get('criticalThreshold')?.value) }}</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field high">
+                    <mat-label>Umbral Alto</mat-label>
+                    <mat-slider 
+                      min="0.6" 
+                      max="0.8" 
+                      step="0.05" 
+                      discrete
+                      formControlName="highThreshold">
+                    </mat-slider>
+                    <mat-hint>Errores altos: {{ formatPercentage(aiForm.get('highThreshold')?.value) }}</mat-hint>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field medium">
+                    <mat-label>Umbral Medio</mat-label>
+                    <mat-slider 
+                      min="0.4" 
+                      max="0.6" 
+                      step="0.05" 
+                      discrete
+                      formControlName="mediumThreshold">
+                    </mat-slider>
+                    <mat-hint>Errores medios: {{ formatPercentage(aiForm.get('mediumThreshold')?.value) }}</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field low">
+                    <mat-label>Umbral Bajo</mat-label>
+                    <mat-slider 
+                      min="0.2" 
+                      max="0.4" 
+                      step="0.05" 
+                      discrete
+                      formControlName="lowThreshold">
+                    </mat-slider>
+                    <mat-hint>Errores bajos: {{ formatPercentage(aiForm.get('lowThreshold')?.value) }}</mat-hint>
+                  </mat-form-field>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- GPT Configuration -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>auto_awesome</mat-icon>
+                  Configuración GPT-4
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Creatividad GPT</mat-label>
+                    <mat-slider 
+                      min="0.1" 
+                      max="1.0" 
+                      step="0.1" 
+                      discrete
+                      formControlName="gptCreativity">
+                    </mat-slider>
+                    <mat-hint>Temperature: {{ formatPercentage(aiForm.get('gptCreativity')?.value) }}</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Longitud de Respuesta</mat-label>
+                    <input matInput type="number" formControlName="gptResponseLength" min="100" max="1000">
+                    <mat-hint>Tokens máximos por respuesta</mat-hint>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Auto-aprobación</mat-label>
+                    <mat-slider 
+                      min="0.75" 
+                      max="0.95" 
+                      step="0.05" 
+                      discrete
+                      formControlName="autoApprovalThreshold">
+                    </mat-slider>
+                    <mat-hint>Umbral: {{ formatPercentage(aiForm.get('autoApprovalThreshold')?.value) }}</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Intervalo de Procesamiento</mat-label>
+                    <input matInput type="number" formControlName="processingInterval" min="100" max="1000">
+                    <mat-hint>Milisegundos entre procesamiento</mat-hint>
+                  </mat-form-field>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Información de última actualización -->
+            <div class="update-info" *ngIf="systemSettings">
+              <mat-icon>schedule</mat-icon>
+              <span>
+                Última actualización: {{ formatDate(systemSettings.aiSettings.lastUpdated) }}
+                por {{ systemSettings.aiSettings.updatedBy }}
+              </span>
+            </div>
+
+            <!-- Botón guardar -->
+            <div class="form-actions">
+              <button mat-raised-button color="primary" class="save-btn" (click)="saveAISettings()" 
+                      [disabled]="aiForm.invalid">
+                <mat-icon>save</mat-icon>
+                <span>Guardar Configuración IA</span>
+              </button>
+            </div>
+            
+          </form>
+        </div>
+      </mat-tab>
+
+      <!-- 🏋️ TAB: CONFIGURACIÓN GIMNASIO -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>fitness_center</mat-icon>
+          <span>Gimnasio</span>
+        </ng-template>
+        
+        <div class="tab-content">
+          <form [formGroup]="gymForm" class="settings-form">
+            
+            <!-- Header de sección -->
+            <div class="section-header">
+              <h3>
+                <mat-icon>business</mat-icon>
+                Configuración del Gimnasio GYMSHARK
+              </h3>
+              <p>Información general y parámetros operativos del establecimiento</p>
+            </div>
+
+            <!-- Información General -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>info</mat-icon>
+                  Información General
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Nombre del Gimnasio</mat-label>
+                    <input matInput formControlName="name" required>
+                    <mat-hint>Nombre oficial del establecimiento</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Email de Contacto</mat-label>
+                    <input matInput type="email" formControlName="email" required>
+                    <mat-hint>Email principal para comunicaciones</mat-hint>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Teléfono</mat-label>
+                    <input matInput formControlName="phone" required>
+                    <mat-hint>Número de contacto principal</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field full-width">
+                    <mat-label>Dirección Completa</mat-label>
+                    <textarea matInput formControlName="address" rows="2" required></textarea>
+                    <mat-hint>Dirección física del establecimiento</mat-hint>
+                  </mat-form-field>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Configuración Operativa -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>schedule</mat-icon>
+                  Configuración Operativa
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Hora de Apertura</mat-label>
+                    <input matInput type="time" formControlName="openTime" required>
+                    <mat-hint>Horario de inicio de operaciones</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Hora de Cierre</mat-label>
+                    <input matInput type="time" formControlName="closeTime" required>
+                    <mat-hint>Horario de fin de operaciones</mat-hint>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Días de Operación</mat-label>
+                    <mat-select formControlName="operatingDays" multiple>
+                      <mat-option *ngFor="let day of operatingDaysOptions" [value]="day.value">
+                        {{ day.label }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-hint>Selecciona los días que opera el gimnasio</mat-hint>
+                  </mat-form-field>
+
+                  <div class="maintenance-toggle">
+                    <mat-slide-toggle formControlName="maintenanceMode" color="warn">
+                      <mat-icon>build</mat-icon>
+                      Modo Mantenimiento
+                    </mat-slide-toggle>
+                    <span class="toggle-hint">Suspende operaciones temporalmente</span>
+                  </div>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Capacidad y Límites -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>groups</mat-icon>
+                  Capacidad y Límites
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Máximo de Usuarios</mat-label>
+                    <input matInput type="number" formControlName="maxUsers" min="1" max="100">
+                    <mat-hint>Capacidad máxima simultánea</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Máximo de Entrenadores</mat-label>
+                    <input matInput type="number" formControlName="maxTrainers" min="1" max="20">
+                    <mat-hint>Personal técnico máximo</mat-hint>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Duración Máxima de Sesión</mat-label>
+                    <input matInput type="number" formControlName="maxSessionDuration" min="30" max="300">
+                    <mat-hint>Minutos por sesión de entrenamiento</mat-hint>
+                  </mat-form-field>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Equipamiento Disponible -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>fitness_center</mat-icon>
+                  Equipamiento Disponible
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="equipment-list">
+                  <mat-chip-listbox *ngIf="systemSettings?.gymSettings?.availableEquipment">
+                    <mat-chip-option 
+                      *ngFor="let equipment of systemSettings.gymSettings.availableEquipment" 
+                      [selectable]="false">
+                      <mat-icon>check_circle</mat-icon>
+                      {{ equipment }}
+                    </mat-chip-option>
+                  </mat-chip-listbox>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Información de última actualización -->
+            <div class="update-info" *ngIf="systemSettings">
+              <mat-icon>schedule</mat-icon>
+              <span>
+                Última actualización: {{ formatDate(systemSettings.gymSettings.lastUpdated) }}
+                por {{ systemSettings.gymSettings.updatedBy }}
+              </span>
+            </div>
+
+            <!-- Botón guardar -->
+            <div class="form-actions">
+              <button mat-raised-button color="primary" class="save-btn" (click)="saveGymSettings()" 
+                      [disabled]="gymForm.invalid">
+                <mat-icon>save</mat-icon>
+                <span>Guardar Configuración Gimnasio</span>
+              </button>
+            </div>
+            
+          </form>
+        </div>
+      </mat-tab>
+
+      <!-- 🔔 TAB: NOTIFICACIONES -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>notifications</mat-icon>
+          <span>Notificaciones</span>
+        </ng-template>
+        
+        <div class="tab-content">
+          <form [formGroup]="notificationForm" class="settings-form">
+            
+            <!-- Header de sección -->
+            <div class="section-header">
+              <h3>
+                <mat-icon>campaign</mat-icon>
+                Configuración de Notificaciones
+              </h3>
+              <p>Gestiona alertas críticas y reportes del sistema</p>
+            </div>
+
+            <!-- Alertas Críticas -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>warning</mat-icon>
+                  Alertas Críticas
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="enableCriticalAlerts" color="primary">
+                    <mat-icon>notifications_active</mat-icon>
+                    Habilitar Alertas Críticas
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Activar sistema de alertas en tiempo real</span>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="criticalAlertSound" color="accent">
+                    <mat-icon>volume_up</mat-icon>
+                    Sonido de Alerta
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Reproducir sonido para alertas críticas</span>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="criticalAlertEmail" color="primary">
+                    <mat-icon>email</mat-icon>
+                    Notificación por Email
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Enviar alertas críticas por correo</span>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="criticalAlertSMS" color="accent">
+                    <mat-icon>sms</mat-icon>
+                    Notificación por SMS
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Enviar alertas críticas por mensaje de texto</span>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Notificaciones del Sistema -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>system_update</mat-icon>
+                  Notificaciones del Sistema
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="enableSystemNotifications" color="primary">
+                    <mat-icon>notifications</mat-icon>
+                    Notificaciones del Sistema
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Recibir notificaciones generales del sistema</span>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="dailyReports" color="accent">
+                    <mat-icon>today</mat-icon>
+                    Reportes Diarios
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Resumen diario de actividad</span>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="weeklyReports" color="primary">
+                    <mat-icon>date_range</mat-icon>
+                    Reportes Semanales
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Análisis semanal de rendimiento</span>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="monthlyReports" color="accent">
+                    <mat-icon>calendar_month</mat-icon>
+                    Reportes Mensuales
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Informe ejecutivo mensual</span>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Información de última actualización -->
+            <div class="update-info" *ngIf="systemSettings">
+              <mat-icon>schedule</mat-icon>
+              <span>
+                Última actualización: {{ formatDate(systemSettings.notificationSettings.lastUpdated) }}
+                por {{ systemSettings.notificationSettings.updatedBy }}
+              </span>
+            </div>
+
+            <!-- Botón guardar -->
+            <div class="form-actions">
+              <button mat-raised-button color="primary" class="save-btn" (click)="saveNotificationSettings()" 
+                      [disabled]="notificationForm.invalid">
+                <mat-icon>save</mat-icon>
+                <span>Guardar Configuración Notificaciones</span>
+              </button>
+            </div>
+            
+          </form>
+        </div>
+      </mat-tab>
+
+      <!-- 💾 TAB: BACKUP Y DATOS -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>backup</mat-icon>
+          <span>Backup & Datos</span>
+        </ng-template>
+        
+        <div class="tab-content">
+          <form [formGroup]="backupForm" class="settings-form">
+            
+            <!-- Header de sección -->
+            <div class="section-header">
+              <h3>
+                <mat-icon>cloud_download</mat-icon>
+                Gestión de Respaldos y Datos
+              </h3>
+              <p>Configuración de backup automático y gestión de datos del sistema</p>
+            </div>
+
+            <!-- Configuración Automática -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>schedule</mat-icon>
+                  Backup Automático
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="enableAutoBackup" color="primary">
+                    <mat-icon>autorenew</mat-icon>
+                    Habilitar Backup Automático
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Crear respaldos programados automáticamente</span>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Frecuencia de Backup</mat-label>
+                    <mat-select formControlName="backupFrequency">
+                      <mat-option *ngFor="let freq of backupFrequencyOptions" [value]="freq.value">
+                        <mat-icon>schedule</mat-icon>
+                        {{ freq.label }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-hint>Con qué frecuencia crear respaldos</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Hora de Backup</mat-label>
+                    <input matInput type="time" formControlName="backupTime">
+                    <mat-hint>Hora para ejecutar backup automático</mat-hint>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Días de Retención</mat-label>
+                    <input matInput type="number" formControlName="retentionDays" min="7" max="365">
+                    <mat-hint>Días para mantener respaldos antiguos</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Ubicación de Backup</mat-label>
+                    <mat-select formControlName="backupLocation">
+                      <mat-option *ngFor="let location of backupLocationOptions" [value]="location.value">
+                        <mat-icon>cloud</mat-icon>
+                        {{ location.label }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-hint>Dónde almacenar los respaldos</mat-hint>
+                  </mat-form-field>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Contenido del Backup -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>folder</mat-icon>
+                  Contenido del Backup
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="includeUserData" color="primary">
+                    <mat-icon>people</mat-icon>
+                    Datos de Usuarios
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Incluir perfiles y datos de usuarios</span>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="includeAlerts" color="accent">
+                    <mat-icon>warning</mat-icon>
+                    Alertas y Errores
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Incluir historial de alertas críticas</span>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="includeRoutines" color="primary">
+                    <mat-icon>fitness_center</mat-icon>
+                    Rutinas de Entrenamiento
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Incluir rutinas generadas por IA</span>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="includeSettings" color="accent">
+                    <mat-icon>settings</mat-icon>
+                    Configuración del Sistema
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Incluir toda la configuración actual</span>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Tamaño Máximo (MB)</mat-label>
+                    <input matInput type="number" formControlName="maxBackupSize" min="100" max="2000">
+                    <mat-hint>Límite de tamaño por archivo de backup</mat-hint>
+                  </mat-form-field>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Estado del Último Backup -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>info</mat-icon>
+                  Estado del Backup
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="backup-status" *ngIf="systemSettings">
+                  <div class="status-item">
+                    <mat-icon [style.color]="getBackupStatusColor() === 'primary' ? '#3b82f6' : getBackupStatusColor() === 'warn' ? '#f59e0b' : '#ef4444'">
+                      {{ getBackupStatusColor() === 'primary' ? 'check_circle' : 'warning' }}
+                    </mat-icon>
+                    <span>
+                      <strong>Último Backup:</strong> 
+                      {{ formatDate(systemSettings.backupSettings.lastBackup) }}
+                    </span>
+                  </div>
+
+                  <div class="backup-actions">
+                    <button mat-raised-button color="accent" class="backup-btn" (click)="createManualBackup()">
+                      <mat-icon>backup</mat-icon>
+                      <span>Crear Backup Manual</span>
+                    </button>
+                  </div>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Información de última actualización -->
+            <div class="update-info" *ngIf="systemSettings">
+              <mat-icon>schedule</mat-icon>
+              <span>
+                Última actualización: {{ formatDate(systemSettings.backupSettings.lastUpdated) }}
+                por {{ systemSettings.backupSettings.updatedBy }}
+              </span>
+            </div>
+
+            <!-- Botón guardar -->
+            <div class="form-actions">
+              <button mat-raised-button color="primary" class="save-btn" (click)="saveBackupSettings()" 
+                      [disabled]="backupForm.invalid">
+                <mat-icon>save</mat-icon>
+                <span>Guardar Configuración Backup</span>
+              </button>
+            </div>
+            
+          </form>
+        </div>
+      </mat-tab>
+
+      <!-- 🔒 TAB: SEGURIDAD -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>security</mat-icon>
+          <span>Seguridad</span>
+        </ng-template>
+        
+        <div class="tab-content">
+          <form [formGroup]="securityForm" class="settings-form">
+            
+            <!-- Header de sección -->
+            <div class="section-header">
+              <h3>
+                <mat-icon>shield</mat-icon>
+                Configuración de Seguridad
+              </h3>
+              <p>Gestión de sesiones, contraseñas y auditoría del sistema</p>
+            </div>
+
+            <!-- Configuración de Sesiones -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>login</mat-icon>
+                  Gestión de Sesiones
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Tiempo de Sesión (min)</mat-label>
+                    <input matInput type="number" formControlName="sessionTimeout" min="15" max="480">
+                    <mat-hint>Minutos antes de cerrar sesión automáticamente</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Intentos de Login</mat-label>
+                    <input matInput type="number" formControlName="maxLoginAttempts" min="2" max="10">
+                    <mat-hint>Máximo de intentos fallidos antes de bloqueo</mat-hint>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Duración de Bloqueo (min)</mat-label>
+                    <input matInput type="number" formControlName="lockoutDuration" min="5" max="60">
+                    <mat-hint>Minutos de bloqueo tras intentos fallidos</mat-hint>
+                  </mat-form-field>
+
+                  <div class="toggle-group">
+                    <mat-slide-toggle formControlName="allowMultipleSessions" color="primary">
+                      <mat-icon>devices</mat-icon>
+                      Sesiones Múltiples
+                    </mat-slide-toggle>
+                    <span class="toggle-hint">Permitir login desde varios dispositivos</span>
+                  </div>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Políticas de Contraseñas -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>password</mat-icon>
+                  Políticas de Contraseñas
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="requirePasswordChange" color="primary">
+                    <mat-icon>update</mat-icon>
+                    Cambio Obligatorio
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Requerir cambio periódico de contraseña</span>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Días de Expiración</mat-label>
+                    <input matInput type="number" formControlName="passwordExpiryDays" min="30" max="365">
+                    <mat-hint>Días antes de expirar contraseña</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Longitud Mínima</mat-label>
+                    <input matInput type="number" formControlName="minPasswordLength" min="6" max="32">
+                    <mat-hint>Caracteres mínimos requeridos</mat-hint>
+                  </mat-form-field>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="requireSpecialChars" color="accent">
+                    <mat-icon>text_fields</mat-icon>
+                    Caracteres Especiales
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Requerir símbolos especiales en contraseña</span>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Autenticación y Auditoría -->
+            <mat-card class="config-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>verified_user</mat-icon>
+                  Autenticación y Auditoría
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="enableTwoFactor" color="primary">
+                    <mat-icon>security</mat-icon>
+                    Autenticación de Doble Factor
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Requerir verificación adicional en login</span>
+                </div>
+
+                <div class="toggle-row">
+                  <mat-slide-toggle formControlName="enableAuditLog" color="accent">
+                    <mat-icon>history</mat-icon>
+                    Registro de Auditoría
+                  </mat-slide-toggle>
+                  <span class="toggle-hint">Registrar todas las acciones del sistema</span>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Retención de Auditoría (días)</mat-label>
+                    <input matInput type="number" formControlName="auditRetentionDays" min="30" max="365">
+                    <mat-hint>Días para conservar logs de auditoría</mat-hint>
+                  </mat-form-field>
+                </div>
+                
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Información de última actualización -->
+            <div class="update-info" *ngIf="systemSettings">
+              <mat-icon>schedule</mat-icon>
+              <span>
+                Última actualización: {{ formatDate(systemSettings.securitySettings.lastUpdated) }}
+                por {{ systemSettings.securitySettings.updatedBy }}
+              </span>
+            </div>
+
+            <!-- Botón guardar -->
+            <div class="form-actions">
+              <button mat-raised-button color="primary" class="save-btn" (click)="saveSecuritySettings()" 
+                      [disabled]="securityForm.invalid">
+                <mat-icon>save</mat-icon>
+                <span>Guardar Configuración Seguridad</span>
+              </button>
+            </div>
+            
+          </form>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+
+  </div>
+
+  <!-- ✅ EMPTY STATE PREMIUM -->
+  <div class="empty-state-premium" *ngIf="!systemSettings && !isLoading">
+    <div class="empty-content">
+      <mat-icon class="empty-icon">settings</mat-icon>
+      <h3>Sin configuración disponible</h3>
+      <p>No se pudo cargar la configuración del sistema.</p>
+      <button mat-raised-button color="primary" (click)="refreshSettings()">
+        <mat-icon>refresh</mat-icon>
+        Intentar de nuevo
+      </button>
+    </div>
+  </div>
+
+</div>
