@@ -1,0 +1,150 @@
+<!-- src/app/shared/components/image-fullscreen-modal/image-fullscreen-modal.component.html -->
+<!-- 🖼️ MODAL FULLSCREEN PARA CAPTURAS DE ERRORES CRÍTICOS -->
+
+<div class="image-modal-container">
+  
+    <!-- ✅ HEADER PREMIUM -->
+    <div class="modal-header">
+      <div class="header-info">
+        <h2>
+          <mat-icon class="header-icon">camera_alt</mat-icon>
+          {{ data.title }}
+        </h2>
+        <p *ngIf="data.subtitle" class="subtitle">{{ data.subtitle }}</p>
+        <div class="capture-metadata" *ngIf="data.errorType">
+          <div class="metadata-item">
+            <mat-icon>error</mat-icon>
+            <span>{{ getErrorTypeLabel(data.errorType) }}</span>
+          </div>
+          <div class="metadata-item" *ngIf="data.exercise">
+            <mat-icon>fitness_center</mat-icon>
+            <span>{{ data.exercise }}</span>
+          </div>
+          <div class="metadata-item" *ngIf="data.timestamp">
+            <mat-icon>schedule</mat-icon>
+            <span>{{ formatTimestamp(data.timestamp) }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button mat-icon-button 
+                class="action-btn download-btn"
+                matTooltip="Descargar imagen"
+                (click)="downloadImage()">
+          <mat-icon>download</mat-icon>
+        </button>
+        
+        <button mat-icon-button 
+                class="action-btn new-tab-btn"
+                matTooltip="Abrir en nueva pestaña"
+                (click)="openInNewTab()">
+          <mat-icon>open_in_new</mat-icon>
+        </button>
+        
+        <button mat-icon-button 
+                class="action-btn close-btn"
+                matTooltip="Cerrar"
+                (click)="closeModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  
+    <!-- ✅ CONTAINER DE IMAGEN -->
+    <div class="image-container">
+      <!-- Loading state -->
+      <div class="loading-state" *ngIf="isImageLoading">
+        <mat-spinner diameter="60"></mat-spinner>
+        <p>Cargando imagen...</p>
+      </div>
+  
+      <!-- Imagen principal -->
+      <div class="image-wrapper" [class.loaded]="!isImageLoading">
+        <img [src]="data.imageUrl" 
+             [alt]="data.title"
+             class="fullscreen-image"
+             (load)="onImageLoad()"
+             (error)="onImageError($event)">
+        
+        <!-- Zoom controls -->
+        <div class="zoom-controls" *ngIf="!isImageLoading">
+          <button mat-mini-fab 
+                  class="zoom-btn"
+                  matTooltip="Acercar"
+                  (click)="zoomIn()">
+            <mat-icon>zoom_in</mat-icon>
+          </button>
+          
+          <button mat-mini-fab 
+                  class="zoom-btn"
+                  matTooltip="Alejar"
+                  (click)="zoomOut()">
+            <mat-icon>zoom_out</mat-icon>
+          </button>
+          
+          <button mat-mini-fab 
+                  class="zoom-btn"
+                  matTooltip="Tamaño original"
+                  (click)="resetZoom()">
+            <mat-icon>fullscreen</mat-icon>
+          </button>
+        </div>
+      </div>
+  
+      <!-- Error state -->
+      <div class="error-state" *ngIf="hasImageError">
+        <mat-icon class="error-icon">broken_image</mat-icon>
+        <h3>Error cargando imagen</h3>
+        <p>No se pudo cargar la captura automática</p>
+        <button mat-stroked-button (click)="retryImage()">
+          <mat-icon>refresh</mat-icon>
+          Reintentar
+        </button>
+      </div>
+    </div>
+  
+    <!-- ✅ FOOTER CON ACCIONES -->
+    <div class="modal-footer">
+      <div class="footer-info">
+        <div class="image-info" *ngIf="!isImageLoading && !hasImageError">
+          <span class="info-item">
+            <mat-icon>photo</mat-icon>
+            Captura automática de error crítico
+          </span>
+          <span class="info-item" *ngIf="data.confidence">
+            <mat-icon>psychology</mat-icon>
+            {{ (data.confidence * 100) | number:'1.0-0' }}% confianza IA
+          </span>
+        </div>
+      </div>
+      
+      <div class="footer-actions">
+        <button mat-stroked-button 
+                class="footer-btn secondary"
+                (click)="downloadImage()"
+                [disabled]="isImageLoading || hasImageError">
+          <mat-icon>download</mat-icon>
+          Descargar
+        </button>
+        
+        <button mat-stroked-button 
+                class="footer-btn secondary"
+                (click)="openInNewTab()"
+                [disabled]="isImageLoading || hasImageError">
+          <mat-icon>open_in_new</mat-icon>
+          Nueva pestaña
+        </button>
+        
+        <button mat-button 
+                class="footer-btn primary"
+                (click)="closeModal()">
+          <mat-icon>close</mat-icon>
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ✅ BACKDROP PARA CERRAR CON CLICK -->
+  <div class="modal-backdrop" (click)="closeModal()"></div>

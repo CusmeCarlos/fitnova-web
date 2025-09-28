@@ -118,132 +118,98 @@ export class AlertService {
       });
   }
 
-  // ✅ CARGAR ALERTAS CRÍTICAS - CONSULTA SIMPLE SIN ÍNDICES
-  private loadCriticalAlertsSimplified(currentUser: any): void {
-    try {
-      console.log('🚨 Cargando alertas críticas (versión simplificada)...');
-      
-      // CONSULTA SIMPLE - Solo ordenar por fecha, filtrar en cliente
-      this.db.collection('criticalAlerts')
-        .orderBy('processedAt', 'desc')
-        .limit(200)
-        .onSnapshot((snapshot) => {
-          const usersMap = this.usersMapSubject.getValue();
-          let alerts: AlertDetail[] = [];
+ // ✅ CARGAR ALERTAS CRÍTICAS REALES - SIN DATOS DE EJEMPLO
+private loadCriticalAlertsSimplified(currentUser: any): void {
+  try {
+    console.log('🚨 Cargando alertas críticas REALES desde Firebase...');
+    
+    // NOTA: Cambiar 'criticalAlerts' por el nombre correcto según tu app móvil
+    // Opciones: 'criticalAlerts', 'critical-errors', o 'criticalErrors'
+    // Verificar en Firebase Console cual está siendo usada
+    
+    this.db.collection('criticalAlerts') // ← VERIFICAR NOMBRE EN FIREBASE
+      .orderBy('timestamp', 'desc') // Usar timestamp en lugar de processedAt
+      .limit(100)
+      .onSnapshot((snapshot) => {
+        const usersMap = this.usersMapSubject.getValue();
+        let alerts: AlertDetail[] = [];
+        
+        console.log(`📥 Recibidos ${snapshot.docs.length} documentos de Firebase`);
+        
+        if (snapshot.docs.length === 0) {
+          console.log('📭 No hay alertas críticas en Firebase aún');
+        }
+        
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const user = usersMap.get(data['uid']);
           
-          snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const user = usersMap.get(data['uid']);
-            
-            // FILTRAR EN CLIENTE si es trainer (no en consulta Firestore)
-            if (currentUser.role === 'trainer') {
-              // Solo mostrar alertas de usuarios asignados a este trainer
-              if (user?.assignedTrainer !== currentUser.uid) {
-                return; // Skip esta alerta
-              }
-            }
-            
-            alerts.push({
-              id: doc.id,
-              uid: data['uid'],
-              userDisplayName: user?.displayName || 'Usuario desconocido',
-              userEmail: user?.email || '',
-              assignedTrainerName: user?.assignedTrainer || '',
-              errorType: data['errorType'],
-              exercise: data['exercise'],
-              severity: data['severity'],
-              confidence: data['confidence'],
-              timestamp: data['timestamp']?.toDate() || new Date(),
-              processedAt: data['processedAt']?.toDate() || new Date(),
-              biomechanicsData: data['biomechanicsData'],
-              affectedJoints: data['affectedJoints'] || [],
-              angles: data['angles'],
-              captureURL: data['captureURL'] || '',
-              lastSessionId: data['lastSessionId'],
-              status: data['status'] || 'unread',
-              readAt: data['readAt']?.toDate(),
-              readBy: data['readBy'],
-              resolvedAt: data['resolvedAt']?.toDate(),
-              resolvedBy: data['resolvedBy'],
-              trainerNotes: data['trainerNotes'],
-              followUpRequired: data['followUpRequired'] || false
-            });
+          console.log('📄 Documento encontrado:', {
+            id: doc.id,
+            uid: data['uid'],
+            errorType: data['errorType'],
+            captureURL: data['captureURL'] ? 'SÍ' : 'NO'
           });
           
-          console.log(`🚨 Cargadas ${alerts.length} alertas críticas (filtradas para ${currentUser.role})`);
-          this.alertsSubject.next(alerts);
-          this.calculateAlertMetrics(alerts);
+          // FILTRAR POR TRAINER si aplica
+          if (currentUser.role === 'trainer') {
+            if (user?.assignedTrainer !== currentUser.uid) {
+              console.log(`⏭️ Saltando alerta de usuario no asignado: ${data['uid']}`);
+              return;
+            }
+          }
+          
+          // MAPEAR DATOS REALES DE FIREBASE
+          const alert: AlertDetail = {
+            id: doc.id,
+            uid: data['uid'] || '',
+            userDisplayName: user?.displayName || data['userDisplayName'] || `Usuario ${data['uid']?.substring(0, 8)}`,
+            userEmail: user?.email || data['userEmail'] || '',
+            assignedTrainerName: user?.assignedTrainer || '',
+            errorType: data['errorType'] || 'unknown',
+            exercise: data['exercise'] || data['exerciseType'] || 'Ejercicio',
+            severity: data['severity'] || 'medium',
+            confidence: data['confidence'] || 0,
+            timestamp: data['timestamp']?.toDate() || data['processedAt']?.toDate() || new Date(),
+            processedAt: data['processedAt']?.toDate() || data['timestamp']?.toDate() || new Date(),
+            biomechanicsData: data['biomechanicsData'] || {},
+            affectedJoints: data['affectedJoints'] || [],
+            angles: data['angles'] || {},
+            captureURL: data['captureURL'] || '', // ← CLAVE: URL real de Firebase Storage
+            lastSessionId: data['lastSessionId'] || data['sessionId'],
+            status: data['status'] || 'unread',
+            readAt: data['readAt']?.toDate(),
+            readBy: data['readBy'],
+            resolvedAt: data['resolvedAt']?.toDate(),
+            resolvedBy: data['resolvedBy'],
+            trainerNotes: data['trainerNotes'],
+            followUpRequired: data['followUpRequired'] || false
+          };
+          
+          alerts.push(alert);
         });
         
-    } catch (error) {
-      console.error('❌ Error cargando alertas críticas:', error);
+        console.log(`✅ ${alerts.length} alertas críticas procesadas`);
+        console.log(`📸 ${alerts.filter(a => a.captureURL).length} alertas CON capturas`);
+        console.log(`📭 ${alerts.filter(a => !a.captureURL).length} alertas SIN capturas`);
+        
+        this.alertsSubject.next(alerts);
+        this.calculateAlertMetrics(alerts);
+      }, (error) => {
+        console.error('❌ Error cargando alertas desde Firebase:', error);
+        console.error('🔍 Posible causa: Nombre de colección incorrecto o reglas de Firestore');
+        // Si hay error, mostrar lista vacía (no datos de ejemplo)
+        this.alertsSubject.next([]);
+        this.calculateAlertMetrics([]);
+      });
       
-      // FALLBACK: Crear datos de ejemplo si no hay Firebase
-      this.createExampleAlerts();
-    }
+  } catch (error) {
+    console.error('❌ Error configurando listener de alertas:', error);
+    this.alertsSubject.next([]);
+    this.calculateAlertMetrics([]);
   }
+}
 
-  // ✅ DATOS DE EJEMPLO SI NO HAY FIREBASE
-  private createExampleAlerts(): void {
-    console.log('📝 Creando alertas de ejemplo...');
-    
-    const exampleAlerts: AlertDetail[] = [
-      {
-        id: 'example-1',
-        uid: 'user1',
-        userDisplayName: 'María García',
-        userEmail: 'maria@example.com',
-        errorType: 'knee_valgus',
-        exercise: 'Sentadilla',
-        severity: 'critical',
-        confidence: 0.85,
-        timestamp: new Date(),
-        processedAt: new Date(),
-        biomechanicsData: {},
-        affectedJoints: ['knee'],
-        angles: {},
-        captureURL: '',
-        status: 'unread'
-      },
-      {
-        id: 'example-2',
-        uid: 'user2',
-        userDisplayName: 'Carlos López',
-        userEmail: 'carlos@example.com',
-        errorType: 'forward_head',
-        exercise: 'Press de banca',
-        severity: 'high',
-        confidence: 0.78,
-        timestamp: new Date(Date.now() - 300000),
-        processedAt: new Date(Date.now() - 300000),
-        biomechanicsData: {},
-        affectedJoints: ['neck'],
-        angles: {},
-        captureURL: '',
-        status: 'read'
-      },
-      {
-        id: 'example-3',
-        uid: 'user3',
-        userDisplayName: 'Ana Rodríguez',
-        userEmail: 'ana@example.com',
-        errorType: 'rounded_shoulders',
-        exercise: 'Remo',
-        severity: 'medium',
-        confidence: 0.72,
-        timestamp: new Date(Date.now() - 600000),
-        processedAt: new Date(Date.now() - 600000),
-        biomechanicsData: {},
-        affectedJoints: ['shoulder'],
-        angles: {},
-        captureURL: '',
-        status: 'resolved'
-      }
-    ];
-
-    this.alertsSubject.next(exampleAlerts);
-    this.calculateAlertMetrics(exampleAlerts);
-  }
 
   // ✅ SETUP DE FILTROS AUTOMÁTICOS
   private setupFilteredAlerts(): void {
