@@ -8,7 +8,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 // ✅ SERVICIOS
-import { SettingsService, SystemSettings, AISettings, GymSettings, NotificationSettings, BackupSettings, SecuritySettings } from '../../core/settings.service';
+import { SettingsService, SystemSettings } from '../../core/settings.service';
 import { AuthService } from '../../core/auth.service';
 
 // ✅ MATERIAL DESIGN
@@ -142,16 +142,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
     // Formulario de Configuración Gimnasio
     this.gymForm = this.fb.group({
-      name: ['Gimnasio GYMSHARK', [Validators.required, Validators.minLength(3)]],
-      address: ['Cordillera del Cóndor, La Libertad, Santa Elena', [Validators.required]],
-      phone: ['+593-999-123-456', [Validators.required]],
-      email: ['info@gymshark.com', [Validators.required, Validators.email]],
-      openTime: ['06:00', [Validators.required]],
-      closeTime: ['22:00', [Validators.required]],
-      operatingDays: [['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']],
-      maxUsers: [30, [Validators.min(1), Validators.max(100)]],
-      maxTrainers: [5, [Validators.min(1), Validators.max(20)]],
-      maxSessionDuration: [120, [Validators.min(30), Validators.max(300)]],
+      name: ['GYMSHARK', Validators.required],
+      address: ['Santa Elena, Ecuador', Validators.required],
+      phone: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      openTime: ['06:00', Validators.required],
+      closeTime: ['22:00', Validators.required],
+      operatingDays: [['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'], Validators.required],
+      maxUsers: [30, [Validators.required, Validators.min(1)]],
+      maxTrainers: [5, [Validators.required, Validators.min(1)]],
+      maxSessionDuration: [120, [Validators.required, Validators.min(30)]],
       maintenanceMode: [false]
     });
 
@@ -164,33 +164,31 @@ export class SettingsComponent implements OnInit, OnDestroy {
       enableSystemNotifications: [true],
       dailyReports: [true],
       weeklyReports: [true],
-      monthlyReports: [false],
-      emailRecipients: [['admin@gymshark.com']],
-      emailTemplate: ['default']
+      monthlyReports: [false]
     });
 
     // Formulario de Backup
     this.backupForm = this.fb.group({
       enableAutoBackup: [true],
-      backupFrequency: ['daily', [Validators.required]],
-      backupTime: ['02:00', [Validators.required]],
+      backupFrequency: ['daily', Validators.required],
+      backupTime: ['02:00', Validators.required],
       retentionDays: [30, [Validators.min(7), Validators.max(365)]],
       includeUserData: [true],
       includeAlerts: [true],
       includeRoutines: [true],
       includeSettings: [true],
-      backupLocation: ['firebase', [Validators.required]],
-      maxBackupSize: [500, [Validators.min(100), Validators.max(2000)]]
+      backupLocation: ['firebase', Validators.required],
+      maxBackupSize: [500, [Validators.min(100), Validators.max(5000)]]
     });
 
     // Formulario de Seguridad
     this.securityForm = this.fb.group({
-      sessionTimeout: [120, [Validators.min(15), Validators.max(480)]],
-      maxLoginAttempts: [3, [Validators.min(2), Validators.max(10)]],
+      sessionTimeout: [120, [Validators.min(15), Validators.max(1440)]],
+      maxLoginAttempts: [3, [Validators.min(3), Validators.max(10)]],
       lockoutDuration: [15, [Validators.min(5), Validators.max(60)]],
       requirePasswordChange: [false],
       passwordExpiryDays: [90, [Validators.min(30), Validators.max(365)]],
-      minPasswordLength: [8, [Validators.min(6), Validators.max(32)]],
+      minPasswordLength: [8, [Validators.min(6), Validators.max(20)]],
       requireSpecialChars: [true],
       allowMultipleSessions: [false],
       enableTwoFactor: [false],
@@ -216,7 +214,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private loadSystemSettings(): void {
     this.isLoading = true;
 
-    // Suscribirse a configuración del sistema
     const settingsSub = this.settingsService.settings$.subscribe({
       next: (settings) => {
         if (settings) {
@@ -233,7 +230,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Suscribirse al estado de carga
     const loadingSub = this.settingsService.isLoading$.subscribe(loading => {
       this.isLoading = loading;
     });
@@ -285,9 +281,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       enableSystemNotifications: settings.notificationSettings.enableSystemNotifications,
       dailyReports: settings.notificationSettings.dailyReports,
       weeklyReports: settings.notificationSettings.weeklyReports,
-      monthlyReports: settings.notificationSettings.monthlyReports,
-      emailRecipients: settings.notificationSettings.emailRecipients,
-      emailTemplate: settings.notificationSettings.emailTemplate
+      monthlyReports: settings.notificationSettings.monthlyReports
     });
 
     // Poblar formulario backup
@@ -334,10 +328,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
     try {
       console.log('🤖 Guardando configuración de IA...');
-      
       const formValue = this.aiForm.value;
       await this.settingsService.updateAISettings(formValue, this.currentUser.email);
-      
       this.showSuccessMessage('Configuración de IA actualizada exitosamente');
       console.log('✅ Configuración IA guardada');
     } catch (error) {
@@ -354,10 +346,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
     try {
       console.log('🏋️ Guardando configuración del gimnasio...');
-      
       const formValue = this.gymForm.value;
       await this.settingsService.updateGymSettings(formValue, this.currentUser.email);
-      
       this.showSuccessMessage('Configuración del gimnasio actualizada exitosamente');
       console.log('✅ Configuración gimnasio guardada');
     } catch (error) {
@@ -374,10 +364,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
     try {
       console.log('🔔 Guardando configuración de notificaciones...');
-      
       const formValue = this.notificationForm.value;
       await this.settingsService.updateNotificationSettings(formValue, this.currentUser.email);
-      
       this.showSuccessMessage('Configuración de notificaciones actualizada exitosamente');
       console.log('✅ Configuración notificaciones guardada');
     } catch (error) {
@@ -394,10 +382,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
     try {
       console.log('💾 Guardando configuración de backup...');
-      
       const formValue = this.backupForm.value;
       await this.settingsService.updateBackupSettings(formValue, this.currentUser.email);
-      
       this.showSuccessMessage('Configuración de backup actualizada exitosamente');
       console.log('✅ Configuración backup guardada');
     } catch (error) {
@@ -414,10 +400,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
     try {
       console.log('🔒 Guardando configuración de seguridad...');
-      
       const formValue = this.securityForm.value;
       await this.settingsService.updateSecuritySettings(formValue, this.currentUser.email);
-      
       this.showSuccessMessage('Configuración de seguridad actualizada exitosamente');
       console.log('✅ Configuración seguridad guardada');
     } catch (error) {
@@ -481,6 +465,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return `${Math.round(value * 100)}%`;
   }
 
+  formatSliderLabel = (value: number): string => {
+    return `${Math.round(value * 100)}%`;
+  }
+
   formatDate(date: Date): string {
     return date.toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -491,7 +479,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     });
   }
 
-  getBackupStatusColor(): String {
+  getBackupStatusColor(): string {
     if (!this.systemSettings?.backupSettings.lastBackup) return 'warn';
     
     const daysSinceBackup = Math.floor(
