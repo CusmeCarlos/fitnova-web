@@ -1,5 +1,5 @@
 // src/app/shared/sidebar/sidebar.component.ts
-// SIDEBAR RETRÁCTIL PREMIUM COMO FINZENAPP
+// SIDEBAR RETRÁCTIL PREMIUM COMO FINZENAPP - ACTUALIZADO FASE 18
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -72,6 +72,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
       label: 'Analytics',
       icon: 'analytics',
       route: '/analytics'
+    },
+    // ✅ NUEVO ITEM - FASE 18: EQUIPAMIENTO
+    {
+      label: 'Equipamiento',
+      icon: 'fitness_center',
+      route: '/equipment'
+      // badge: 0 // Opcional: agregar contador de equipos que necesitan mantenimiento
     },
     {
       label: 'Configuración',

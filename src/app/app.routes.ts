@@ -1,4 +1,6 @@
 // src/app/app.routes.ts
+// ✅ RUTAS ACTUALIZADAS CON GESTIÓN DE EQUIPAMIENTO - FASE 18
+
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
 import { TrainerGuard } from './guards/trainer.guard';
@@ -51,6 +53,12 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () => import('./shared/settings/settings.component').then(c => c.SettingsComponent),
         title: 'Configuración - FitNova'
+      },
+      // ✅ NUEVA RUTA EQUIPMENT - COMPONENTE STANDALONE (NO ES MÓDULO)
+      {
+        path: 'equipment',
+        loadComponent: () => import('./shared/equipment/equipment.component').then(c => c.EquipmentComponent),
+        title: 'Gestión de Equipamiento - FitNova'
       }
     ]
   },
