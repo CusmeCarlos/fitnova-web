@@ -420,4 +420,127 @@ async getCurrentUserAsync(): Promise<User | null> {
       return null;
     }
   }
+
+  async createUserAndAssignMembership(userData: {
+    email: string;
+    password: string;
+    displayName: string;
+    role: 'user';
+    assignedTrainer?: string;
+  }): Promise<{ success: boolean; userId?: string; error?: string }> {
+    try {
+      console.log('👤💳 Creando usuario web y preparando asignación de membresía:', userData.email);
+      
+      // ✅ VERIFICAR PERMISOS LOCALMENTE (doble verificación)
+      const currentUser = this.currentUserSubject.value;
+      if (!currentUser || !['trainer', 'admin'].includes(currentUser.role)) {
+        throw new Error('Solo los entrenadores y administradores pueden crear usuarios');
+      }
+  
+      // ✅ PREPARAR DATOS PARA CLOUD FUNCTION
+      const functionData = {
+        email: userData.email,
+        password: userData.password,
+        displayName: userData.displayName,
+        assignedTrainer: currentUser.role === 'trainer' ? currentUser.uid : userData.assignedTrainer
+      };
+  
+      console.log('📡 Llamando Cloud Function con datos:', {
+        email: functionData.email,
+        displayName: functionData.displayName,
+        assignedTrainer: functionData.assignedTrainer,
+        callerRole: currentUser.role
+      });
+  
+      // ✅ OBTENER TOKEN DE AUTENTICACIÓN
+      const user = await this.afAuth.currentUser;
+      const idToken = user ? await user.getIdToken() : null;
+      if (!idToken) {
+        throw new Error('Token de autenticación no disponible');
+      }
+  
+      // ✅ LLAMAR CLOUD FUNCTION
+      const createUserFunction = firebase.functions().httpsCallable('createMobileUser');
+      
+      let result;
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (attempts < maxAttempts) {
+        try {
+          console.log(`📞 Intento ${attempts + 1}/${maxAttempts} - Llamando Cloud Function...`);
+          result = await createUserFunction(functionData);
+          console.log('✅ Cloud Function ejecutada exitosamente:', result.data);
+          break;
+        } catch (functionError: any) {
+          attempts++;
+          console.error(`❌ Error en intento ${attempts}:`, functionError);
+          if (attempts >= maxAttempts) {
+            throw functionError;
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+  
+      // ✅ PROCESAR RESPUESTA
+      if (result?.data?.success) {
+        const createdUserData = result.data.userData;
+        const userId = createdUserData.uid;
+        
+        console.log('🎉 Usuario creado exitosamente. UID:', userId);
+        
+        // ✅ MOSTRAR MENSAJE DE ÉXITO
+        await this.showSuccessMessage(`Usuario ${createdUserData.displayName} registrado exitosamente`);
+        
+        // ✅ RETORNAR DATOS PARA QUE EL COMPONENTE HAGA LA REDIRECCIÓN
+        return {
+          success: true,
+          userId: userId
+        };
+        
+      } else {
+        throw new Error('La Cloud Function no retornó éxito');
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Error completo al crear usuario:', error);
+      
+      let errorMessage = 'Error al crear el usuario';
+      
+      if (error.code) {
+        switch (error.code) {
+          case 'functions/unauthenticated':
+            errorMessage = 'Sesión expirada. Por favor, inicia sesión nuevamente';
+            break;
+          case 'functions/permission-denied':
+            errorMessage = 'No tienes permisos para crear usuarios';
+            break;
+          case 'functions/invalid-argument':
+            errorMessage = 'Datos del usuario inválidos';
+            break;
+          case 'functions/already-exists':
+            errorMessage = 'Ya existe un usuario con este correo electrónico';
+            break;
+          case 'functions/internal':
+            errorMessage = 'Error interno del servidor. Intenta nuevamente';
+            break;
+          case 'functions/deadline-exceeded':
+          case 'functions/unavailable':
+            errorMessage = 'Tiempo de espera agotado. Verifica tu conexión e intenta nuevamente';
+            break;
+          default:
+            errorMessage = error.message || 'Error desconocido al crear el usuario';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      await this.showErrorMessage(errorMessage);
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
 }

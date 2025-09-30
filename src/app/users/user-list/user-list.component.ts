@@ -605,37 +605,66 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
   async createUser(): Promise<void> {
     if (this.createUserForm.invalid) {
       this.markFormGroupTouched(this.createUserForm);
+      this.showErrorMessage('Por favor completa todos los campos requeridos');
       return;
     }
-
+  
     const formData = this.createUserForm.value;
     this.isCreatingUser = true;
-
+  
     try {
-      await this.auth.createUserForWeb({
+      console.log('👤 Iniciando creación de usuario:', formData.email);
+  
+      // ✅ USAR EL NUEVO MÉTODO QUE RETORNA EL userId
+      const result = await this.auth.createUserAndAssignMembership({
         email: formData.email,
         password: formData.password,
         displayName: formData.displayName,
         role: 'user',
         assignedTrainer: formData.assignedTrainer || null
       });
-
-      this.createUserForm.reset();
-      this.showCreateUserForm = false;
-      this.showSuccessMessage('Usuario creado exitosamente');
-      
-      // Recargar datos
-      await this.loadUsersData();
-      await this.loadMetrics();
-      
+  
+      if (result.success && result.userId) {
+        console.log('✅ Usuario creado exitosamente. UID:', result.userId);
+  
+        // ✅ LIMPIAR FORMULARIO
+        this.createUserForm.reset();
+        this.showCreateUserForm = false;
+  
+        // ✅ RECARGAR DATOS EN SEGUNDO PLANO (solo si los métodos existen)
+        // Como son void, solo los llamamos sin await
+        setTimeout(() => {
+          this.loadUsersData();
+          this.loadMetrics();
+        }, 100);
+  
+        // ✅ REDIRIGIR A MEMBRESÍAS CON EL userId EN LA QUERY
+        // Esto permite que el componente de membresías sepa que debe asignar plan a este usuario
+        console.log('💳 Redirigiendo a membresías para asignar plan...');
+        
+        this.router.navigate(['/membership'], {
+          queryParams: {
+            newUserId: result.userId,
+            userName: formData.displayName,
+            action: 'assign' // Indica que se debe abrir el modal de asignación
+          }
+        });
+  
+        this.showSuccessMessage(
+          `Usuario ${formData.displayName} creado. Ahora asígnale una membresía.`
+        );
+  
+      } else {
+        throw new Error(result.error || 'Error desconocido al crear usuario');
+      }
+  
     } catch (error: any) {
-      console.error('❌ Error creando usuario:', error);
+      console.error('❌ Error en createUser():', error);
       this.showErrorMessage(error.message || 'Error creando usuario');
     } finally {
       this.isCreatingUser = false;
     }
   }
-
   toggleCreateUserForm(): void {
     this.showCreateUserForm = !this.showCreateUserForm;
     if (!this.showCreateUserForm) {

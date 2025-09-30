@@ -1,0 +1,650 @@
+<!-- src/app/shared/membership/membership.component.html -->
+<!-- 💳 GESTIÓN DE MEMBRESÍAS - ULTRA PREMIUM FINZENAPP STYLE -->
+
+<div class="membership-container">
+
+    <!-- 🔙 NAVEGACIÓN ATRÁS -->
+    <div class="back-navigation">
+      <button mat-button (click)="goBack()" class="back-button">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Volver al Dashboard</span>
+      </button>
+    </div>
+  
+    <!-- ✅ HEADER CON TÍTULO -->
+    <div class="page-header">
+      <div class="page-title-section">
+        <h1 class="page-title">
+          <mat-icon>card_membership</mat-icon>
+          Gestión de Membresías
+        </h1>
+        <p class="subtitle">Administra planes y suscripciones de usuarios</p>
+      </div>
+  
+      <!-- 🚀 HEADER ACTIONS -->
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="togglePlanForm()">
+          <mat-icon>{{showPlanForm ? 'close' : 'add'}}</mat-icon>
+          <span>{{showPlanForm ? 'Cerrar' : 'Nuevo Plan'}}</span>
+        </button>
+  
+        <button mat-button (click)="checkExpiredMemberships()">
+          <mat-icon>update</mat-icon>
+          <span>Verificar Vencidas</span>
+        </button>
+  
+        <button mat-button (click)="refreshData()">
+          <mat-icon>refresh</mat-icon>
+          <span>Actualizar</span>
+        </button>
+  
+        <button mat-button (click)="exportData()">
+          <mat-icon>file_download</mat-icon>
+          <span>Exportar</span>
+        </button>
+      </div>
+    </div>
+  
+    <!-- 📊 DASHBOARD DE ESTADÍSTICAS -->
+    <div class="stats-dashboard">
+      <mat-card class="stat-card primary-card">
+        <mat-card-content>
+          <div class="stat-icon">
+            <mat-icon>card_membership</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{stats.totalActive}}</div>
+            <div class="stat-label">Membresías Activas</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+  
+      <mat-card class="stat-card success-card">
+        <mat-card-content>
+          <div class="stat-icon">
+            <mat-icon>payments</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{formatPrice(stats.monthlyRevenue)}}</div>
+            <div class="stat-label">Ingresos del Mes</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+  
+      <mat-card class="stat-card warning-card">
+        <mat-card-content>
+          <div class="stat-icon">
+            <mat-icon>schedule</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{stats.expiringSoon}}</div>
+            <div class="stat-label">Por Vencer (7 días)</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+  
+      <mat-card class="stat-card info-card">
+        <mat-card-content>
+          <div class="stat-icon">
+            <mat-icon>trending_up</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{stats.renewalRate}}%</div>
+            <div class="stat-label">Tasa de Renovación</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  
+    <!-- 📝 FORMULARIO DE PLAN (COLAPSABLE) -->
+    <div class="plan-form-section" *ngIf="showPlanForm">
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>{{editingPlan ? 'edit' : 'add'}}</mat-icon>
+            {{editingPlan ? 'Editar Plan' : 'Crear Nuevo Plan'}}
+          </mat-card-title>
+        </mat-card-header>
+  
+        <mat-card-content>
+          <form [formGroup]="planForm" class="plan-form">
+            
+            <!-- ROW 1: Información Básica -->
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Nombre del Plan</mat-label>
+                <input matInput formControlName="name" placeholder="Ej: Plan Mensual Básico">
+                <mat-icon matPrefix>label</mat-icon>
+              </mat-form-field>
+  
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Tipo de Plan</mat-label>
+                <mat-select formControlName="type">
+                  <mat-option value="monthly">Mensual</mat-option>
+                  <mat-option value="quarterly">Trimestral</mat-option>
+                  <mat-option value="semiannual">Semestral</mat-option>
+                  <mat-option value="annual">Anual</mat-option>
+                  <mat-option value="day-pass">Pase Diario</mat-option>
+                </mat-select>
+                <mat-icon matPrefix>calendar_today</mat-icon>
+              </mat-form-field>
+            </div>
+  
+            <!-- ROW 2: Descripción -->
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Descripción</mat-label>
+                <textarea matInput formControlName="description" rows="3" 
+                          placeholder="Describe los beneficios del plan"></textarea>
+                <mat-icon matPrefix>description</mat-icon>
+              </mat-form-field>
+            </div>
+  
+            <!-- ROW 3: Precio y Duración -->
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Precio (USD)</mat-label>
+                <input matInput type="number" formControlName="price" min="0" step="0.01">
+                <mat-icon matPrefix>attach_money</mat-icon>
+              </mat-form-field>
+  
+              <mat-form-field appearance="outline">
+                <mat-label>Duración (días)</mat-label>
+                <input matInput type="number" formControlName="durationDays" min="1">
+                <mat-icon matPrefix>event</mat-icon>
+              </mat-form-field>
+  
+              <mat-form-field appearance="outline">
+                <mat-label>Límite Semanal (opcional)</mat-label>
+                <input matInput type="number" formControlName="weeklyLimit" min="1">
+                <mat-icon matPrefix>repeat</mat-icon>
+              </mat-form-field>
+            </div>
+  
+            <!-- ROW 4: Configuración Adicional -->
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Ranking de Popularidad</mat-label>
+                <input matInput type="number" formControlName="popularityRank" min="0">
+                <mat-icon matPrefix>star</mat-icon>
+                <mat-hint>Mayor número = más popular</mat-hint>
+              </mat-form-field>
+  
+              <mat-form-field appearance="outline">
+                <mat-label>Máximo de Miembros</mat-label>
+                <input matInput type="number" formControlName="maxActiveMembers" min="1">
+                <mat-icon matPrefix>people</mat-icon>
+                <mat-hint>Dejar vacío para ilimitado</mat-hint>
+              </mat-form-field>
+            </div>
+  
+            <!-- ROW 5: Beneficios (Toggles) -->
+            <div class="benefits-section">
+              <h3 class="section-title">
+                <mat-icon>workspace_premium</mat-icon>
+                Beneficios Incluidos
+              </h3>
+  
+              <div class="benefits-grid">
+                <mat-slide-toggle formControlName="unlimitedAccess" color="primary">
+                  <div class="toggle-content">
+                    <mat-icon>all_inclusive</mat-icon>
+                    <span>Acceso Ilimitado</span>
+                  </div>
+                </mat-slide-toggle>
+  
+                <mat-slide-toggle formControlName="peakHourAccess" color="primary">
+                  <div class="toggle-content">
+                    <mat-icon>schedule</mat-icon>
+                    <span>Acceso Horas Pico</span>
+                  </div>
+                </mat-slide-toggle>
+  
+                <mat-slide-toggle formControlName="routineGeneration" color="primary">
+                  <div class="toggle-content">
+                    <mat-icon>smart_toy</mat-icon>
+                    <span>Rutinas IA</span>
+                  </div>
+                </mat-slide-toggle>
+  
+                <mat-slide-toggle formControlName="postureDetection" color="primary">
+                  <div class="toggle-content">
+                    <mat-icon>visibility</mat-icon>
+                    <span>Detección Postural</span>
+                  </div>
+                </mat-slide-toggle>
+  
+                <mat-slide-toggle formControlName="isActive" color="accent">
+                  <div class="toggle-content">
+                    <mat-icon>check_circle</mat-icon>
+                    <span>Plan Activo</span>
+                  </div>
+                </mat-slide-toggle>
+              </div>
+            </div>
+  
+            <!-- ACTIONS -->
+            <div class="form-actions">
+              <button mat-button type="button" (click)="togglePlanForm()">
+                <mat-icon>close</mat-icon>
+                Cancelar
+              </button>
+  
+              <button mat-raised-button color="primary" type="button" 
+                      (click)="savePlan()" [disabled]="planForm.invalid || isLoading">
+                <mat-icon>{{editingPlan ? 'save' : 'add'}}</mat-icon>
+                {{editingPlan ? 'Actualizar Plan' : 'Crear Plan'}}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  
+    <!-- 📋 TABS PRINCIPALES -->
+    <mat-tab-group class="main-tabs" animationDuration="300ms">
+      
+      <!-- ✅ TAB 1: PLANES -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>view_list</mat-icon>
+          Planes ({{plansDataSource.data.length}})
+        </ng-template>
+  
+        <div class="tab-content">
+          <!-- Buscador -->
+          <div class="search-section">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>Buscar planes</mat-label>
+              <input matInput (keyup)="applyPlanFilter($event)" placeholder="Nombre, tipo...">
+              <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+          </div>
+  
+          <!-- Tabla de Planes -->
+          <div class="table-container">
+            <table mat-table [dataSource]="plansDataSource" matSort #planSort="matSort" class="premium-table">
+  
+              <!-- Nombre -->
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Plan</th>
+                <td mat-cell *matCellDef="let plan">
+                  <div class="plan-info">
+                    <strong>{{plan.name}}</strong>
+                    <small>{{plan.description}}</small>
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Tipo -->
+              <ng-container matColumnDef="type">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+                <td mat-cell *matCellDef="let plan">
+                  <mat-chip class="type-chip">{{getTypeLabel(plan.type)}}</mat-chip>
+                </td>
+              </ng-container>
+  
+              <!-- Precio -->
+              <ng-container matColumnDef="price">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Precio</th>
+                <td mat-cell *matCellDef="let plan">
+                  <div class="price-cell">
+                    <strong>{{formatPrice(plan.price)}}</strong>
+                    <small *ngIf="plan.discount">-{{plan.discount.percentage}}% dto.</small>
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Duración -->
+              <ng-container matColumnDef="durationDays">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Duración</th>
+                <td mat-cell *matCellDef="let plan">
+                  {{plan.durationDays}} días
+                </td>
+              </ng-container>
+  
+              <!-- Beneficios -->
+              <ng-container matColumnDef="benefits">
+                <th mat-header-cell *matHeaderCellDef>Beneficios</th>
+                <td mat-cell *matCellDef="let plan">
+                  <div class="benefits-icons">
+                    <mat-icon *ngIf="plan.benefits.unlimitedAccess" 
+                              matTooltip="Acceso Ilimitado" class="benefit-icon">
+                      all_inclusive
+                    </mat-icon>
+                    <mat-icon *ngIf="plan.benefits.peakHourAccess" 
+                              matTooltip="Horas Pico" class="benefit-icon">
+                      schedule
+                    </mat-icon>
+                    <mat-icon *ngIf="plan.benefits.routineGeneration" 
+                              matTooltip="Rutinas IA" class="benefit-icon">
+                      smart_toy
+                    </mat-icon>
+                    <mat-icon *ngIf="plan.benefits.postureDetection" 
+                              matTooltip="Detección Postural" class="benefit-icon">
+                      visibility
+                    </mat-icon>
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Miembros Activos -->
+              <ng-container matColumnDef="currentActiveMembers">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Miembros</th>
+                <td mat-cell *matCellDef="let plan">
+                  <mat-chip [class.limit-reached]="plan.maxActiveMembers && plan.currentActiveMembers >= plan.maxActiveMembers">
+                    {{plan.currentActiveMembers}}
+                    <span *ngIf="plan.maxActiveMembers"> / {{plan.maxActiveMembers}}</span>
+                  </mat-chip>
+                </td>
+              </ng-container>
+  
+              <!-- Estado -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+                <td mat-cell *matCellDef="let plan">
+                  <mat-chip [class.active-status]="plan.isActive" [class.inactive-status]="!plan.isActive">
+                    {{plan.isActive ? 'Activo' : 'Inactivo'}}
+                  </mat-chip>
+                </td>
+              </ng-container>
+  
+              <!-- Acciones -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let plan">
+                  <div class="action-buttons">
+                    <button mat-icon-button (click)="editPlan(plan)" matTooltip="Editar">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+  
+                    <button mat-icon-button 
+                            (click)="togglePlanStatus(plan)" 
+                            [matTooltip]="plan.isActive ? 'Desactivar' : 'Activar'">
+                      <mat-icon>{{plan.isActive ? 'toggle_on' : 'toggle_off'}}</mat-icon>
+                    </button>
+  
+                    <button mat-icon-button 
+                            (click)="deletePlan(plan)" 
+                            matTooltip="Eliminar"
+                            color="warn">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+  
+              <tr mat-header-row *matHeaderRowDef="planColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: planColumns;"></tr>
+  
+              <!-- Row cuando no hay datos -->
+              <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell" [attr.colspan]="planColumns.length">
+                  <div class="no-data">
+                    <mat-icon>inbox</mat-icon>
+                    <p>No hay planes disponibles</p>
+                  </div>
+                </td>
+              </tr>
+            </table>
+  
+            <mat-paginator #planPaginator
+                           [pageSizeOptions]="[10, 25, 50]"
+                           showFirstLastButtons>
+            </mat-paginator>
+          </div>
+        </div>
+      </mat-tab>
+  
+      <!-- ✅ TAB 2: MEMBRESÍAS DE USUARIOS -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>people</mat-icon>
+          Membresías de Usuarios ({{membershipsDataSource.data.length}})
+        </ng-template>
+  
+        <div class="tab-content">
+          <!-- Filtros y Búsqueda -->
+          <div class="filters-section">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>Buscar membresías</mat-label>
+              <input matInput (keyup)="applyMembershipFilter($event)" placeholder="Usuario, plan...">
+              <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+  
+            <mat-form-field appearance="outline">
+              <mat-label>Filtrar por Plan</mat-label>
+              <mat-select [(value)]="selectedPlanFilter" (selectionChange)="filterByPlan($event.value)">
+                <mat-option value="all">Todos los Planes</mat-option>
+                <mat-option *ngFor="let plan of plansDataSource.data" [value]="plan.id">
+                  {{plan.name}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+  
+            <mat-form-field appearance="outline">
+              <mat-label>Filtrar por Estado</mat-label>
+              <mat-select [(value)]="selectedStatusFilter" (selectionChange)="filterByStatus($event.value)">
+                <mat-option value="all">Todos los Estados</mat-option>
+                <mat-option value="active">Activas</mat-option>
+                <mat-option value="expired">Vencidas</mat-option>
+                <mat-option value="cancelled">Canceladas</mat-option>
+                <mat-option value="pending-payment">Pago Pendiente</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+  
+          <!-- Tabla de Membresías -->
+          <div class="table-container">
+            <table mat-table [dataSource]="membershipsDataSource" matSort #membershipSort="matSort" class="premium-table">
+  
+              <!-- Usuario ID -->
+              <ng-container matColumnDef="userId">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Usuario</th>
+                <td mat-cell *matCellDef="let membership">
+                  <div class="user-cell">
+                    <mat-icon>person</mat-icon>
+                    <span>{{membership.userId.substring(0, 8)}}...</span>
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Plan -->
+              <ng-container matColumnDef="planName">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Plan</th>
+                <td mat-cell *matCellDef="let membership">
+                  <strong>{{getPlanName(membership.planId)}}</strong>
+                </td>
+              </ng-container>
+  
+              <!-- Estado -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+                <td mat-cell *matCellDef="let membership">
+                  <mat-chip [color]="getStatusColor(membership.status)">
+                    {{getStatusLabel(membership.status)}}
+                  </mat-chip>
+                </td>
+              </ng-container>
+  
+              <!-- Fecha Inicio -->
+              <ng-container matColumnDef="startDate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Inicio</th>
+                <td mat-cell *matCellDef="let membership">
+                  {{formatDate(membership.startDate)}}
+                </td>
+              </ng-container>
+  
+              <!-- Fecha Fin -->
+              <ng-container matColumnDef="endDate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Vencimiento</th>
+                <td mat-cell *matCellDef="let membership">
+                  {{formatDate(membership.endDate)}}
+                </td>
+              </ng-container>
+  
+              <!-- Días Restantes -->
+              <ng-container matColumnDef="daysRemaining">
+                <th mat-header-cell *matHeaderCellDef>Días Restantes</th>
+                <td mat-cell *matCellDef="let membership">
+                  <mat-chip 
+                    [class.days-critical]="getDaysRemaining(membership.endDate) <= 7 && getDaysRemaining(membership.endDate) > 0"
+                    [class.days-expired]="getDaysRemaining(membership.endDate) <= 0"
+                    [class.days-ok]="getDaysRemaining(membership.endDate) > 7">
+                    {{getDaysRemaining(membership.endDate)}} días
+                  </mat-chip>
+                </td>
+              </ng-container>
+  
+              <!-- Visitas -->
+              <ng-container matColumnDef="totalVisits">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Visitas</th>
+                <td mat-cell *matCellDef="let membership">
+                  <div class="visits-cell">
+                    <mat-icon>fitness_center</mat-icon>
+                    <span>{{membership.totalVisits}}</span>
+                  </div>
+                </td>
+              </ng-container>
+  
+              <!-- Acciones -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let membership">
+                  <div class="action-buttons">
+                    <button mat-icon-button 
+                            *ngIf="membership.status === 'expired' || membership.status === 'cancelled'"
+                            (click)="renewMembership(membership)" 
+                            matTooltip="Renovar"
+                            color="primary">
+                      <mat-icon>autorenew</mat-icon>
+                    </button>
+  
+                    <button mat-icon-button 
+                            (click)="viewMembershipHistory(membership)" 
+                            matTooltip="Ver Historial">
+                      <mat-icon>history</mat-icon>
+                    </button>
+  
+                    <button mat-icon-button 
+                            *ngIf="membership.status === 'active'"
+                            (click)="cancelMembership(membership)" 
+                            matTooltip="Cancelar"
+                            color="warn">
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+  
+              <tr mat-header-row *matHeaderRowDef="membershipColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: membershipColumns;"></tr>
+  
+              <!-- Row cuando no hay datos -->
+              <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell" [attr.colspan]="membershipColumns.length">
+                  <div class="no-data">
+                    <mat-icon>inbox</mat-icon>
+                    <p>No hay membresías registradas</p>
+                  </div>
+                </td>
+              </tr>
+            </table>
+  
+            <mat-paginator #membershipPaginator
+                           [pageSizeOptions]="[10, 25, 50, 100]"
+                           showFirstLastButtons>
+            </mat-paginator>
+          </div>
+        </div>
+      </mat-tab>
+  
+      <!-- ✅ TAB 3: REPORTES E INGRESOS -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>analytics</mat-icon>
+          Reportes e Ingresos
+        </ng-template>
+  
+        <div class="tab-content reports-content">
+          
+          <!-- Métricas Adicionales -->
+          <div class="additional-metrics">
+            <mat-card class="metric-detail-card">
+              <mat-card-header>
+                <mat-icon>star</mat-icon>
+                <mat-card-title>Plan Más Popular</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <h2>{{stats.mostPopularPlan}}</h2>
+                <p>Con mayor número de suscriptores activos</p>
+              </mat-card-content>
+            </mat-card>
+  
+            <mat-card class="metric-detail-card">
+              <mat-card-header>
+                <mat-icon>trending_up</mat-icon>
+                <mat-card-title>Tasa de Renovación</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <h2>{{stats.renewalRate}}%</h2>
+                <p>Usuarios que renuevan su membresía</p>
+              </mat-card-content>
+            </mat-card>
+  
+            <mat-card class="metric-detail-card">
+              <mat-card-header>
+                <mat-icon>people_outline</mat-icon>
+                <mat-card-title>Usuarios con Membresía</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <h2>{{stats.usersWithMembership}}</h2>
+                <p>Del total de usuarios registrados</p>
+              </mat-card-content>
+            </mat-card>
+  
+            <mat-card class="metric-detail-card">
+              <mat-card-header>
+                <mat-icon>inventory</mat-icon>
+                <mat-card-title>Planes Activos</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <h2>{{stats.activePlans}} / {{stats.totalPlans}}</h2>
+                <p>Planes disponibles para suscripción</p>
+              </mat-card-content>
+            </mat-card>
+          </div>
+  
+          <!-- Gráfico de Ingresos (Placeholder - puedes implementar con Chart.js) -->
+          <mat-card class="revenue-chart-card">
+            <mat-card-header>
+              <mat-icon>show_chart</mat-icon>
+              <mat-card-title>Ingresos Mensuales (Últimos 6 Meses)</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="revenue-bars">
+                <div *ngFor="let data of revenueData" class="revenue-bar-item">
+                  <div class="revenue-bar-container">
+                    <div class="revenue-bar" 
+                         [style.height]="getBarHeight(data.revenue) + '%'">
+                    </div>
+                  </div>
+                  <div class="revenue-label">{{data.month}}</div>
+                  <div class="revenue-value">{{formatPrice(data.revenue)}}</div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+  
+        </div>
+      </mat-tab>
+  
+    </mat-tab-group>
+  
+    <!-- 🔄 LOADING OVERLAY -->
+    <div class="loading-overlay" *ngIf="isLoading">
+      <mat-spinner diameter="60"></mat-spinner>
+      <p>Cargando...</p>
+    </div>
+  
+  </div>

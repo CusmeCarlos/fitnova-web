@@ -1,0 +1,1072 @@
+// src/app/shared/membership/membership.component.scss
+// 💳 ESTILOS ULTRA PREMIUM - EXACTAMENTE COMO EQUIPMENT Y ALERT-DASHBOARD
+
+// ================================================================================
+// 🎨 VARIABLES Y MIXINS
+// ================================================================================
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$success-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+$warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+$info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+
+@mixin glassmorphism {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+@mixin premium-card {
+  @include glassmorphism;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.15);
+  }
+}
+
+// ================================================================================
+// 🎯 CONTAINER PRINCIPAL
+// ================================================================================
+.membership-container {
+  padding: 2rem;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// ================================================================================
+// 🔙 NAVEGACIÓN ATRÁS
+// ================================================================================
+.back-navigation {
+  margin-bottom: 1.5rem;
+
+  .back-button {
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    mat-icon {
+      transition: transform 0.3s ease;
+    }
+
+    &:hover {
+      color: #fff;
+      background: rgba(102, 126, 234, 0.1);
+
+      mat-icon {
+        transform: translateX(-4px);
+      }
+    }
+  }
+}
+
+// ================================================================================
+// 📋 HEADER
+// ================================================================================
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+
+  .page-title-section {
+    .page-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0;
+
+      mat-icon {
+        font-size: 2.5rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    }
+
+    .subtitle {
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0.5rem 0 0 0;
+      font-size: 1rem;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+      }
+    }
+  }
+}
+
+// ================================================================================
+// 📊 ESTADÍSTICAS DASHBOARD
+// ================================================================================
+.stats-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+
+  .stat-card {
+    @include premium-card;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+
+    &.primary-card::before {
+      background: $primary-gradient;
+    }
+
+    &.success-card::before {
+      background: $success-gradient;
+    }
+
+    &.warning-card::before {
+      background: $warning-gradient;
+    }
+
+    &.info-card::before {
+      background: $info-gradient;
+    }
+
+    mat-card-content {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.5rem !important;
+
+      .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        mat-icon {
+          font-size: 2rem;
+          width: 2rem;
+          height: 2rem;
+          color: #fff;
+        }
+      }
+
+      .stat-content {
+        flex: 1;
+
+        .stat-value {
+          font-size: 2rem;
+          font-weight: 700;
+          color: #fff;
+          line-height: 1.2;
+        }
+
+        .stat-label {
+          font-size: 0.875rem;
+          color: rgba(255, 255, 255, 0.6);
+          margin-top: 0.25rem;
+        }
+      }
+    }
+
+    &.primary-card .stat-icon {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    &.success-card .stat-icon {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    &.warning-card .stat-icon {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    &.info-card .stat-icon {
+      background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+    }
+  }
+}
+
+// ================================================================================
+// 📝 FORMULARIO DE PLAN
+// ================================================================================
+.plan-form-section {
+  margin-bottom: 2rem;
+  animation: slideDown 0.3s ease;
+
+  .form-card {
+    @include premium-card;
+
+    mat-card-header {
+      background: rgba(102, 126, 234, 0.1);
+      padding: 1.5rem;
+      border-radius: 16px 16px 0 0;
+      margin: -16px -16px 1.5rem -16px;
+
+      mat-card-title {
+        color: #fff;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+
+        mat-icon {
+          color: #667eea;
+        }
+      }
+    }
+
+    mat-card-content {
+      padding: 1.5rem;
+    }
+  }
+
+  .plan-form {
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+
+      .full-width {
+        grid-column: 1 / -1;
+      }
+    }
+
+    mat-form-field {
+      width: 100%;
+
+      ::ng-deep {
+        .mat-mdc-form-field-focus-overlay {
+          background-color: rgba(102, 126, 234, 0.05);
+        }
+
+        .mat-mdc-text-field-wrapper {
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 8px;
+        }
+
+        .mdc-text-field--outlined .mdc-notched-outline__leading,
+        .mdc-text-field--outlined .mdc-notched-outline__notch,
+        .mdc-text-field--outlined .mdc-notched-outline__trailing {
+          border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+        .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+        .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+          border-color: #667eea !important;
+        }
+
+        input, textarea {
+          color: #fff;
+        }
+
+        .mat-mdc-input-element::placeholder {
+          color: rgba(255, 255, 255, 0.4);
+        }
+      }
+    }
+
+    .benefits-section {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: rgba(102, 126, 234, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(102, 126, 234, 0.1);
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #fff;
+        margin: 0 0 1.5rem 0;
+        font-size: 1.25rem;
+
+        mat-icon {
+          color: #667eea;
+        }
+      }
+
+      .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+
+        mat-slide-toggle {
+          ::ng-deep {
+            .mdc-switch {
+              &.mdc-switch--selected {
+                .mdc-switch__track {
+                  background-color: #667eea !important;
+                }
+
+                .mdc-switch__handle::after {
+                  background-color: #fff !important;
+                }
+              }
+            }
+          }
+
+          .toggle-content {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255, 255, 255, 0.8);
+
+            mat-icon {
+              font-size: 1.25rem;
+              width: 1.25rem;
+              height: 1.25rem;
+            }
+          }
+        }
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ================================================================================
+// 📑 TABS
+// ================================================================================
+.main-tabs {
+  @include premium-card;
+  padding: 0;
+
+  ::ng-deep {
+    .mat-mdc-tab-header {
+      background: rgba(102, 126, 234, 0.05);
+      border-radius: 16px 16px 0 0;
+      padding: 0 1rem;
+
+      .mat-mdc-tab-labels {
+        gap: 1rem;
+      }
+
+      .mat-mdc-tab {
+        color: rgba(255, 255, 255, 0.6);
+        min-width: 160px;
+        opacity: 1 !important;
+
+        &.mdc-tab--active {
+          color: #fff;
+        }
+
+        .mdc-tab__text-label {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+      }
+
+      .mat-mdc-tab-header-pagination {
+        display: none;
+      }
+
+      .mdc-tab-indicator__content--underline {
+        background-color: #667eea;
+        height: 3px;
+        border-radius: 3px 3px 0 0;
+      }
+    }
+
+    .mat-mdc-tab-body-wrapper {
+      padding: 2rem;
+    }
+  }
+}
+
+.tab-content {
+  min-height: 400px;
+
+  .search-section, .filters-section {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+
+    .search-field {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    mat-form-field {
+      ::ng-deep {
+        .mat-mdc-text-field-wrapper {
+          background: rgba(255, 255, 255, 0.03);
+        }
+      }
+    }
+  }
+}
+
+// ================================================================================
+// 📊 TABLAS
+// ================================================================================
+.table-container {
+  @include glassmorphism;
+  border-radius: 12px;
+  overflow: hidden;
+
+  .premium-table {
+    width: 100%;
+    background: transparent;
+
+    th {
+      background: rgba(102, 126, 234, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 600;
+      padding: 1rem;
+      border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+    }
+
+    td {
+      color: rgba(255, 255, 255, 0.8);
+      padding: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    tr:hover {
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    // Células específicas
+    .plan-info {
+      strong {
+        display: block;
+        color: #fff;
+        margin-bottom: 0.25rem;
+      }
+
+      small {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+      }
+    }
+
+    .price-cell {
+      strong {
+        display: block;
+        color: #10b981;
+        font-size: 1.1rem;
+      }
+
+      small {
+        color: #f59e0b;
+        font-size: 0.75rem;
+      }
+    }
+
+    .benefits-icons {
+      display: flex;
+      gap: 0.5rem;
+
+      .benefit-icon {
+        color: #667eea;
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      mat-icon {
+        color: #667eea;
+      }
+    }
+
+    .visits-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      mat-icon {
+        color: #10b981;
+        font-size: 1.25rem;
+      }
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.25rem;
+
+      button {
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: scale(1.1);
+        }
+      }
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: rgba(255, 255, 255, 0.5);
+
+      mat-icon {
+        font-size: 4rem;
+        width: 4rem;
+        height: 4rem;
+        margin-bottom: 1rem;
+      }
+
+      p {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  mat-paginator {
+    background: rgba(102, 126, 234, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+    ::ng-deep {
+      .mat-mdc-paginator-container {
+        padding: 0 1rem;
+      }
+
+      .mat-mdc-select-value,
+      .mat-mdc-paginator-range-label {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .mat-mdc-icon-button {
+        color: rgba(255, 255, 255, 0.6);
+
+        &:hover {
+          background: rgba(102, 126, 234, 0.1);
+        }
+
+        &[disabled] {
+          opacity: 0.3;
+        }
+      }
+    }
+  }
+}
+
+// ================================================================================
+// 🏷️ CHIPS Y BADGES
+// ================================================================================
+mat-chip {
+  &.type-chip {
+    background: rgba(102, 126, 234, 0.2) !important;
+    color: #667eea !important;
+    font-weight: 500;
+  }
+
+  &.active-status {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #10b981 !important;
+  }
+
+  &.inactive-status {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ef4444 !important;
+  }
+
+  &.limit-reached {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #f59e0b !important;
+  }
+
+  &.days-ok {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #10b981 !important;
+  }
+
+  &.days-critical {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #f59e0b !important;
+    animation: pulse 2s infinite;
+  }
+
+  &.days-expired {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ef4444 !important;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+// ================================================================================
+// 📈 REPORTES
+// ================================================================================
+.reports-content {
+  .additional-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    .metric-detail-card {
+      @include premium-card;
+      
+      mat-card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+
+        mat-icon {
+          color: #667eea;
+          font-size: 1.5rem;
+          width: 1.5rem;
+          height: 1.5rem;
+        }
+
+        mat-card-title {
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 0.875rem;
+          font-weight: 500;
+          margin: 0;
+        }
+      }
+
+      mat-card-content {
+        h2 {
+          font-size: 2rem;
+          font-weight: 700;
+          color: #fff;
+          margin: 0 0 0.5rem 0;
+        }
+
+        p {
+          color: rgba(255, 255, 255, 0.5);
+          font-size: 0.875rem;
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  .revenue-chart-card {
+    @include premium-card;
+
+    mat-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+
+      mat-icon {
+        color: #667eea;
+        font-size: 1.75rem;
+        width: 1.75rem;
+        height: 1.75rem;
+      }
+
+      mat-card-title {
+        color: #fff;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+      }
+    }
+
+    .revenue-bars {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      height: 300px;
+      padding: 1rem;
+      gap: 1rem;
+
+      .revenue-bar-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+
+        .revenue-bar-container {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+
+          .revenue-bar {
+            width: 60%;
+            background: linear-gradient(to top, #667eea, #764ba2);
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 -4px 12px rgba(102, 126, 234, 0.3);
+            min-height: 20px;
+
+            &:hover {
+              transform: scaleY(1.05);
+              box-shadow: 0 -8px 20px rgba(102, 126, 234, 0.5);
+            }
+          }
+        }
+
+        .revenue-label {
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.75rem;
+          text-transform: capitalize;
+        }
+
+        .revenue-value {
+          color: #fff;
+          font-weight: 600;
+          font-size: 0.875rem;
+        }
+      }
+    }
+  }
+}
+
+// ================================================================================
+// 🔄 LOADING OVERLAY
+// ================================================================================
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  gap: 1rem;
+
+  mat-spinner {
+    ::ng-deep circle {
+      stroke: #667eea !important;
+    }
+  }
+
+  p {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+}
+
+// ================================================================================
+// 📱 RESPONSIVE
+// ================================================================================
+@media (max-width: 1200px) {
+  .stats-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .additional-metrics {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .membership-container {
+    padding: 1rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 1rem;
+
+    .page-title-section .page-title {
+      font-size: 1.75rem;
+
+      mat-icon {
+        font-size: 1.75rem;
+        width: 1.75rem;
+        height: 1.75rem;
+      }
+    }
+
+    .header-actions {
+      width: 100%;
+      
+      button {
+        flex: 1;
+      }
+    }
+  }
+
+  .stats-dashboard {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .plan-form {
+    .form-row {
+      grid-template-columns: 1fr !important;
+    }
+
+    .benefits-section .benefits-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  .tab-content {
+    .search-section, .filters-section {
+      flex-direction: column;
+
+      .search-field {
+        width: 100%;
+        min-width: auto;
+      }
+
+      mat-form-field {
+        width: 100%;
+      }
+    }
+  }
+
+  .table-container {
+    overflow-x: auto;
+
+    .premium-table {
+      min-width: 800px;
+    }
+  }
+
+  .additional-metrics {
+    grid-template-columns: 1fr !important;
+  }
+
+  .revenue-chart-card .revenue-bars {
+    height: 200px;
+    padding: 0.5rem;
+
+    .revenue-bar-item {
+      .revenue-label,
+      .revenue-value {
+        font-size: 0.65rem;
+      }
+    }
+  }
+
+  .main-tabs ::ng-deep {
+    .mat-mdc-tab-header {
+      padding: 0 0.5rem;
+
+      .mat-mdc-tab {
+        min-width: auto;
+        padding: 0 0.75rem;
+      }
+    }
+
+    .mat-mdc-tab-body-wrapper {
+      padding: 1rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header .page-title-section .page-title {
+    font-size: 1.5rem;
+  }
+
+  .stats-dashboard .stat-card mat-card-content {
+    flex-direction: column;
+    text-align: center;
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+
+      mat-icon {
+        font-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+      }
+    }
+  }
+
+  .header-actions {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+}
+
+// ================================================================================
+// 🎨 MATERIAL DESIGN OVERRIDES
+// ================================================================================
+::ng-deep {
+  // Snackbar customization
+  .success-snackbar {
+    background: rgba(16, 185, 129, 0.9) !important;
+    color: #fff !important;
+
+    .mat-mdc-snack-bar-label {
+      color: #fff !important;
+    }
+  }
+
+  .error-snackbar {
+    background: rgba(239, 68, 68, 0.9) !important;
+    color: #fff !important;
+
+    .mat-mdc-snack-bar-label {
+      color: #fff !important;
+    }
+  }
+
+  .info-snackbar {
+    background: rgba(102, 126, 234, 0.9) !important;
+    color: #fff !important;
+
+    .mat-mdc-snack-bar-label {
+      color: #fff !important;
+    }
+  }
+
+  // Dialog backdrop
+  .cdk-overlay-dark-backdrop {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+  }
+
+  // Tooltip
+  .mat-mdc-tooltip {
+    background: rgba(0, 0, 0, 0.9) !important;
+    font-size: 0.875rem !important;
+  }
+
+  // Select panel
+  .mat-mdc-select-panel {
+    background: rgba(30, 30, 46, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    .mat-mdc-option {
+      color: rgba(255, 255, 255, 0.8);
+
+      &:hover {
+        background: rgba(102, 126, 234, 0.1);
+      }
+
+      &.mat-mdc-option-active {
+        background: rgba(102, 126, 234, 0.2);
+        color: #fff;
+      }
+    }
+  }
+
+  // Datepicker
+  .mat-datepicker-content {
+    background: rgba(30, 30, 46, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    .mat-calendar {
+      color: #fff;
+
+      .mat-calendar-header {
+        color: #fff;
+      }
+
+      .mat-calendar-body-label,
+      .mat-calendar-body-cell-content {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .mat-calendar-body-selected {
+        background: #667eea;
+        color: #fff;
+      }
+
+      .mat-calendar-body-today:not(.mat-calendar-body-selected) {
+        border-color: #667eea;
+      }
+    }
+  }
+}

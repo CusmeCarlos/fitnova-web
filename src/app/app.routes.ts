@@ -1,5 +1,5 @@
 // src/app/app.routes.ts
-// ✅ RUTAS ACTUALIZADAS CON GESTIÓN DE EQUIPAMIENTO - FASE 18
+// ✅ RUTAS ACTUALIZADAS CON MEMBRESÍAS - FASE 18b
 
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
@@ -54,11 +54,17 @@ export const routes: Routes = [
         loadComponent: () => import('./shared/settings/settings.component').then(c => c.SettingsComponent),
         title: 'Configuración - FitNova'
       },
-      // ✅ NUEVA RUTA EQUIPMENT - COMPONENTE STANDALONE (NO ES MÓDULO)
+      // ✅ EQUIPAMIENTO - FASE 18a
       {
         path: 'equipment',
         loadComponent: () => import('./shared/equipment/equipment.component').then(c => c.EquipmentComponent),
         title: 'Gestión de Equipamiento - FitNova'
+      },
+      // ✅ MEMBRESÍAS - FASE 18b (NUEVO)
+      {
+        path: 'membership',
+        loadComponent: () => import('./shared/membership/membership.component').then(c => c.MembershipComponent),
+        title: 'Gestión de Membresías - FitNova'
       }
     ]
   },

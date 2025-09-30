@@ -1,5 +1,5 @@
 // src/app/shared/sidebar/sidebar.component.ts
-// SIDEBAR RETRÁCTIL PREMIUM COMO FINZENAPP - ACTUALIZADO FASE 18
+// SIDEBAR RETRÁCTIL PREMIUM - ACTUALIZADO CON MEMBRESÍAS FASE 18b
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -42,7 +42,7 @@ interface NavigationItem {
 export class SidebarComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   currentRoute: string = '';
-  isCollapsed = false; // Estado del sidebar (collapsed/expanded)
+  isCollapsed = false;
   private subscriptions = new Subscription();
 
   navigationItems: NavigationItem[] = [
@@ -73,12 +73,17 @@ export class SidebarComponent implements OnInit, OnDestroy {
       icon: 'analytics',
       route: '/analytics'
     },
-    // ✅ NUEVO ITEM - FASE 18: EQUIPAMIENTO
+    // ✅ EQUIPAMIENTO - FASE 18a
     {
       label: 'Equipamiento',
       icon: 'fitness_center',
       route: '/equipment'
-      // badge: 0 // Opcional: agregar contador de equipos que necesitan mantenimiento
+    },
+    // ✅ MEMBRESÍAS - FASE 18b (NUEVO)
+    {
+      label: 'Membresías',
+      icon: 'card_membership',
+      route: '/membership'
     },
     {
       label: 'Configuración',
@@ -124,7 +129,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.subscriptions.add(routeSub);
   }
 
-  // Método para togglear el sidebar
   toggleSidebar(): void {
     this.isCollapsed = !this.isCollapsed;
   }
@@ -137,7 +141,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return this.currentRoute.includes(route);
   }
 
-  // Obtener saludo según la hora
   getGreeting(): string {
     const hour = new Date().getHours();
     if (hour < 12) return 'Buenos días';
