@@ -1,4 +1,4 @@
-// functions/src/index.js
+// functions/index.js
 // 🚀 CLOUD FUNCTIONS FITNOVA - CREAR USUARIOS SIN AFECTAR CONTEXTO
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
@@ -65,36 +65,13 @@ exports.createMobileUser = onCall(async (request) => {
       throw new HttpsError('invalid-argument', 'Formato de email inválido');
     }
 
-    // ✅ VALIDAR CONTRASEÑA
+    // ✅ VALIDAR LONGITUD CONTRASEÑA
     if (password.length < 6) {
       console.error('❌ Contraseña muy corta');
       throw new HttpsError('invalid-argument', 'La contraseña debe tener al menos 6 caracteres');
     }
 
-    // ✅ DETERMINAR ENTRENADOR ASIGNADO
-    let assignedTrainerId = '';
-    let assignedTrainerName = '';
-
-    if (callerRole === 'trainer') {
-      // Para trainers: auto-asignar a ellos mismos
-      assignedTrainerId = callerUid;
-      assignedTrainerName = callerData.displayName || 'Entrenador';
-      console.log('👨‍💼 Usuario será asignado al trainer:', assignedTrainerName);
-    } else if (callerRole === 'admin' && assignedTrainer) {
-      // Para admins: usar el entrenador seleccionado (si se especifica)
-      assignedTrainerId = assignedTrainer;
-      
-      // Buscar nombre del entrenador asignado
-      const trainerDoc = await db.doc(`users/${assignedTrainer}`).get();
-      if (trainerDoc.exists) {
-        assignedTrainerName = trainerDoc.data().displayName || 'Entrenador';
-      } else {
-        assignedTrainerName = 'Entrenador';
-      }
-      console.log('👨‍💼 Usuario será asignado al trainer seleccionado:', assignedTrainerName);
-    }
-
-    console.log('📋 Entrenador asignado - ID:', assignedTrainerId, 'Nombre:', assignedTrainerName);
+    console.log('✅ Datos validados correctamente');
 
     // ✅ CREAR USUARIO EN FIREBASE AUTH
     console.log('🔐 Creando usuario en Firebase Auth...');
@@ -105,139 +82,81 @@ exports.createMobileUser = onCall(async (request) => {
       emailVerified: false
     });
 
-    console.log('✅ Usuario creado en Auth con UID:', userRecord.uid);
+    console.log('✅ Usuario creado en Auth. UID:', userRecord.uid);
 
-    // ✅ CREAR DOCUMENTO EN COLECCIÓN 'users'
-    const userDocData = {
-      uid: userRecord.uid,
-      email: email,
-      displayName: displayName,
-      role: 'user', // Siempre 'user' para usuarios móvil
-      isActive: true,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-      lastActiveAt: FieldValue.serverTimestamp(),
-      createdBy: callerUid,
-      createdByRole: callerRole,
-      createdByName: callerData.displayName || '',
-      
-      // ✅ ENTRENADOR ASIGNADO
-      assignedTrainer: assignedTrainerId,
-      assignedTrainerName: assignedTrainerName,
-      
-      // ✅ CONFIGURACIÓN INICIAL
-      preferences: {
-        notifications: true,
-        language: 'es',
-        theme: 'light',
-        units: 'metric'
-      },
-      
-      // ✅ PERFIL MÓVIL BÁSICO
-      profile: {
-        height: 0,
-        weight: 0,
-        age: 0,
-        fitnessLevel: 'beginner',
-        goals: [],
-        medicalConditions: [],
-        preferredWorkoutTime: 'morning'
-      }
-    };
-
-    console.log('📄 Creando documento en colección users...');
-    await db.doc(`users/${userRecord.uid}`).set(userDocData);
-    console.log('✅ Documento users creado exitosamente');
-
-    // ✅ CREAR DOCUMENTO EN COLECCIÓN 'userStats'
-    const userStatsData = {
-      uid: newUserId,
-      
-      // ✅ ESTADÍSTICAS BÁSICAS
-      totalWorkouts: 0,
-      averageAccuracy: 0,
-      totalCriticalErrors: 0,
-      totalExerciseTime: 0,
-      totalMinutes: 0,
-      totalSeconds: 0,
-      
-      // ✅ METAS Y PROGRESO
-      weeklyGoalMinutes: 150, // Meta recomendada por OMS
-      currentStreak: 0,
-      maxStreak: 0,
-      
-      // ✅ ACTIVIDAD
-      lastActiveAt: FieldValue.serverTimestamp(),
-      isActiveToday: true,
-      lastWorkoutDate: null,
-      
-      // ✅ TIMESTAMPS
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-      
-      // ✅ MÉTRICAS POR EJERCICIO (estructura inicial vacía)
-      exerciseStats: {},
-      
-      // ✅ PROGRESO SEMANAL (estructura inicial vacía)
-      weeklyStats: {
-        currentWeek: {
-          weekStart: FieldValue.serverTimestamp(),
-          totalMinutes: 0,
-          workoutsCompleted: 0,
-          averageAccuracy: 0
-        }
-      },
-      
-      // ✅ ENTRENADOR ASIGNADO
-      assignedTrainer: assignedTrainerId,
-      assignedTrainerName: assignedTrainerName,
-      
-      // ✅ MÉTRICAS ADICIONALES
-      improvementRate: 0,
-      lastSessionDurationSeconds: 0,
-      weeklyStreak: 0
-    };
-
-    console.log('📊 Creando documento en colección userStats...');
-    await db.doc(`userStats/${userRecord.uid}`).set(userStatsData);
-    console.log('✅ Documento userStats creado exitosamente');
-
-    // ✅ ACTUALIZAR CONTADOR DEL ENTRENADOR (si aplica)
-    if (assignedTrainerId && assignedTrainerId !== '') {
+    // ✅ OBTENER NOMBRE DEL ENTRENADOR ASIGNADO
+    let assignedTrainerName = 'Sin asignar';
+    const assignedTrainerId = assignedTrainer || null;
+    
+    if (assignedTrainerId) {
       try {
-        console.log('📈 Actualizando contador del entrenador...');
-        
-        // Verificar si el entrenador ya tiene perfil de entrenador
-        const trainerRef = db.doc(`users/${assignedTrainerId}`);
-        const trainerDoc = await trainerRef.get();
-        
+        const trainerDoc = await db.doc(`users/${assignedTrainerId}`).get();
         if (trainerDoc.exists) {
-          const currentTrainerData = trainerDoc.data();
-          const currentCount = 
-          (currentTrainerData.trainerProfile && currentTrainerData.trainerProfile.totalAssignedUsers) || 0;
-                  
-          await trainerRef.update({
-            'trainerProfile.totalAssignedUsers': currentCount + 1,
-            'trainerProfile.lastAssignedUserAt': FieldValue.serverTimestamp(),
-            'trainerProfile.lastAssignedUserName': displayName,
-            updatedAt: FieldValue.serverTimestamp()
-          });
-          
-          console.log('✅ Contador del entrenador actualizado');
+          assignedTrainerName = trainerDoc.data().displayName || 'Entrenador';
         }
-      } catch (trainerError) {
-        console.warn('⚠️ Error actualizando contador del entrenador (no crítico):', trainerError);
-        // No lanzamos error porque el usuario ya fue creado exitosamente
+      } catch (error) {
+        console.warn('⚠️ No se pudo obtener nombre del entrenador:', error);
       }
     }
 
-    // ✅ RESPUESTA EXITOSA
+    // ✅ CREAR DOCUMENTO EN FIRESTORE
+    console.log('📄 Creando documento en Firestore...');
+    await db.doc(`users/${userRecord.uid}`).set({
+      uid: userRecord.uid,
+      email: email,
+      displayName: displayName,
+      role: 'user',
+      status: 'active',
+      assignedTrainer: assignedTrainerId,
+      assignedTrainerName: assignedTrainerName,
+      createdBy: callerData.displayName,
+      createdByUid: callerUid,
+      createdByRole: callerRole,
+      createdAt: FieldValue.serverTimestamp(),
+      lastActiveAt: FieldValue.serverTimestamp(),
+      emailVerified: false,
+      phoneNumber: null,
+      profileImageUrl: null,
+      age: null,
+      gender: null,
+      height: null,
+      weight: null,
+      fitnessGoals: [],
+      medicalConditions: [],
+      experience: 'beginner',
+      preferences: {
+        notifications: true,
+        darkMode: false,
+        language: 'es'
+      }
+    });
+
+    console.log('✅ Documento creado en Firestore');
+
+    // ✅ CREAR DOCUMENTO DE ESTADÍSTICAS INICIALES
+    console.log('📊 Creando estadísticas iniciales...');
+    await db.doc(`userStats/${userRecord.uid}`).set({
+      userId: userRecord.uid,
+      totalWorkouts: 0,
+      totalExercises: 0,
+      totalRepetitions: 0,
+      totalErrors: 0,
+      criticalErrors: 0,
+      totalMinutes: 0,
+      lastWorkoutDate: null,
+      streak: 0,
+      achievements: [],
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+
+    console.log('✅ Estadísticas iniciales creadas');
+
+    // ✅ RETORNAR RESPUESTA CON ÉXITO Y UID
     const response = {
       success: true,
-      userId: userRecord.uid,
-      message: 'Usuario creado exitosamente',
       userData: {
-        uid: userRecord.uid,
+        uid: userRecord.uid, // ✅ CORREGIDO: Usar userRecord.uid
         email: email,
         displayName: displayName,
         assignedTrainer: assignedTrainerId,

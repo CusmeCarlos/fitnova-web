@@ -4,7 +4,7 @@
   "description": "Cloud Functions para FitNova - Crear usuarios móvil sin afectar contexto web",
   "main": "index.js",
   "engines": {
-    "node": "18"
+    "node": "22"
   },
   "scripts": {
     "build": "tsc",
