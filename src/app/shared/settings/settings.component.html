@@ -55,226 +55,7 @@
     
     <mat-tab-group class="premium-tabs" [(selectedIndex)]="selectedTabIndex" animationDuration="300ms">
       
-      <!-- TAB 1: IA -->
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <mat-icon>psychology</mat-icon>
-          <span>Inteligencia Artificial</span>
-        </ng-template>
-        
-        <div class="tab-content">
-          <form [formGroup]="aiForm" class="settings-form">
-            
-            <div class="section-header">
-              <h3>
-                <mat-icon>smart_toy</mat-icon>
-                Configuración de Parámetros IA
-              </h3>
-              <p>Ajusta la sensibilidad y precisión de MediaPipe y GPT-4</p>
-            </div>
-
-            <!-- MediaPipe Configuration -->
-            <mat-card class="config-card">
-              <mat-card-header>
-                <mat-card-title>
-                  <mat-icon>visibility</mat-icon>
-                  MediaPipe Pose Detection
-                </mat-card-title>
-              </mat-card-header>
-              <mat-card-content>
-                
-                <div class="form-row">
-                  <div class="form-field">
-                    <label class="slider-label">Sensibilidad de Pose</label>
-                    <mat-slider 
-                      min="0.1" 
-                      max="1.0" 
-                      step="0.1" 
-                      discrete
-                      [displayWith]="formatSliderLabel">
-                      <input matSliderThumb formControlName="poseSensitivity">
-                    </mat-slider>
-                    <mat-hint>Valor: {{ formatPercentage(aiForm.get('poseSensitivity')?.value) }}</mat-hint>
-                  </div>
-
-                  <div class="form-field">
-                    <label class="slider-label">Umbral de Confianza</label>
-                    <mat-slider 
-                      min="0.5" 
-                      max="0.95" 
-                      step="0.05" 
-                      discrete
-                      [displayWith]="formatSliderLabel">
-                      <input matSliderThumb formControlName="confidenceThreshold">
-                    </mat-slider>
-                    <mat-hint>Valor: {{ formatPercentage(aiForm.get('confidenceThreshold')?.value) }}</mat-hint>
-                  </div>
-                </div>
-
-                <div class="form-row">
-                  <div class="form-field">
-                    <label class="slider-label">Umbral de Detección</label>
-                    <mat-slider 
-                      min="0.3" 
-                      max="0.8" 
-                      step="0.05" 
-                      discrete
-                      [displayWith]="formatSliderLabel">
-                      <input matSliderThumb formControlName="detectionThreshold">
-                    </mat-slider>
-                    <mat-hint>Valor: {{ formatPercentage(aiForm.get('detectionThreshold')?.value) }}</mat-hint>
-                  </div>
-
-                  <mat-form-field appearance="outline" class="form-field">
-                    <mat-label>FPS Máximo</mat-label>
-                    <input matInput type="number" formControlName="maxFramesPerSecond" min="15" max="60">
-                    <mat-hint>Frames por segundo</mat-hint>
-                  </mat-form-field>
-                </div>
-                
-              </mat-card-content>
-            </mat-card>
-
-            <!-- Error Classification -->
-            <mat-card class="config-card">
-              <mat-card-header>
-                <mat-card-title>
-                  <mat-icon>warning</mat-icon>
-                  Clasificación de Errores
-                </mat-card-title>
-              </mat-card-header>
-              <mat-card-content>
-                
-                <div class="form-row">
-                  <div class="form-field critical">
-                    <label class="slider-label">Umbral Crítico</label>
-                    <mat-slider 
-                      min="0.8" 
-                      max="1.0" 
-                      step="0.05" 
-                      discrete
-                      [displayWith]="formatSliderLabel">
-                      <input matSliderThumb formControlName="criticalThreshold">
-                    </mat-slider>
-                    <mat-hint>Errores críticos: {{ formatPercentage(aiForm.get('criticalThreshold')?.value) }}</mat-hint>
-                  </div>
-
-                  <div class="form-field high">
-                    <label class="slider-label">Umbral Alto</label>
-                    <mat-slider 
-                      min="0.6" 
-                      max="0.8" 
-                      step="0.05" 
-                      discrete
-                      [displayWith]="formatSliderLabel">
-                      <input matSliderThumb formControlName="highThreshold">
-                    </mat-slider>
-                    <mat-hint>Errores altos: {{ formatPercentage(aiForm.get('highThreshold')?.value) }}</mat-hint>
-                  </div>
-                </div>
-
-                <div class="form-row">
-                  <div class="form-field medium">
-                    <label class="slider-label">Umbral Medio</label>
-                    <mat-slider 
-                      min="0.4" 
-                      max="0.6" 
-                      step="0.05" 
-                      discrete
-                      [displayWith]="formatSliderLabel">
-                      <input matSliderThumb formControlName="mediumThreshold">
-                    </mat-slider>
-                    <mat-hint>Errores medios: {{ formatPercentage(aiForm.get('mediumThreshold')?.value) }}</mat-hint>
-                  </div>
-
-                  <div class="form-field low">
-                    <label class="slider-label">Umbral Bajo</label>
-                    <mat-slider 
-                      min="0.2" 
-                      max="0.4" 
-                      step="0.05" 
-                      discrete
-                      [displayWith]="formatSliderLabel">
-                      <input matSliderThumb formControlName="lowThreshold">
-                    </mat-slider>
-                    <mat-hint>Errores bajos: {{ formatPercentage(aiForm.get('lowThreshold')?.value) }}</mat-hint>
-                  </div>
-                </div>
-                
-              </mat-card-content>
-            </mat-card>
-
-            <!-- GPT Configuration -->
-            <mat-card class="config-card">
-              <mat-card-header>
-                <mat-card-title>
-                  <mat-icon>auto_awesome</mat-icon>
-                  Configuración GPT-4
-                </mat-card-title>
-              </mat-card-header>
-              <mat-card-content>
-                
-                <div class="form-row">
-                  <div class="form-field">
-                    <label class="slider-label">Creatividad GPT</label>
-                    <mat-slider 
-                      min="0.1" 
-                      max="1.0" 
-                      step="0.1" 
-                      discrete
-                      [displayWith]="formatSliderLabel">
-                      <input matSliderThumb formControlName="gptCreativity">
-                    </mat-slider>
-                    <mat-hint>Temperature: {{ formatPercentage(aiForm.get('gptCreativity')?.value) }}</mat-hint>
-                  </div>
-
-                  <mat-form-field appearance="outline" class="form-field">
-                    <mat-label>Longitud de Respuesta</mat-label>
-                    <input matInput type="number" formControlName="gptResponseLength" min="100" max="1000">
-                    <mat-hint>Tokens máximos</mat-hint>
-                  </mat-form-field>
-                </div>
-
-                <div class="form-row">
-                  <div class="form-field">
-                    <label class="slider-label">Auto-aprobación</label>
-                    <mat-slider 
-                      min="0.75" 
-                      max="0.95" 
-                      step="0.05" 
-                      discrete
-                      [displayWith]="formatSliderLabel">
-                      <input matSliderThumb formControlName="autoApprovalThreshold">
-                    </mat-slider>
-                    <mat-hint>Umbral: {{ formatPercentage(aiForm.get('autoApprovalThreshold')?.value) }}</mat-hint>
-                  </div>
-
-                  <mat-form-field appearance="outline" class="form-field">
-                    <mat-label>Intervalo de Procesamiento</mat-label>
-                    <input matInput type="number" formControlName="processingInterval" min="100" max="1000">
-                    <mat-hint>Milisegundos</mat-hint>
-                  </mat-form-field>
-                </div>
-                
-              </mat-card-content>
-            </mat-card>
-
-            <div class="form-actions">
-              <button mat-raised-button 
-                      type="button" 
-                      class="save-btn" 
-                      [disabled]="aiForm.invalid || isLoading"
-                      (click)="saveAISettings()">
-                <mat-icon>save</mat-icon>
-                Guardar Configuración IA
-              </button>
-            </div>
-            
-          </form>
-        </div>
-      </mat-tab>
-
-      <!-- TAB 2: GIMNASIO -->
+      
       <mat-tab>
         <ng-template mat-tab-label>
           <mat-icon>fitness_center</mat-icon>
@@ -291,7 +72,7 @@
               </h3>
               <p>Configura los datos del establecimiento GYMSHARK</p>
             </div>
-
+      
             <mat-card class="config-card">
               <mat-card-header>
                 <mat-card-title>
@@ -304,28 +85,28 @@
                 <div class="form-row">
                   <mat-form-field appearance="outline" class="form-field">
                     <mat-label>Nombre del Gimnasio</mat-label>
-                    <input matInput formControlName="name" required>
+                    <input matInput [value]="'GYMSHARK'" readonly disabled>
                     <mat-hint>Nombre comercial</mat-hint>
                   </mat-form-field>
-
+      
                   <mat-form-field appearance="outline" class="form-field">
                     <mat-label>Email</mat-label>
-                    <input matInput type="email" formControlName="email" required>
+                    <input matInput [value]="'gymshark&#64;gmail.com'" readonly disabled>
                     <mat-hint>Correo electrónico</mat-hint>
                   </mat-form-field>
                 </div>
-
+      
                 <div class="form-row">
                   <mat-form-field appearance="outline" class="form-field">
                     <mat-label>Teléfono</mat-label>
-                    <input matInput formControlName="phone" required>
+                    <input matInput [value]="'0991467751'" readonly disabled>
                     <mat-hint>Número de contacto</mat-hint>
                   </mat-form-field>
-
-                  <mat-form-field appearance="outline" class="form-field full-width">
+      
+                  <mat-form-field appearance="outline" class="form-field">
                     <mat-label>Dirección</mat-label>
-                    <textarea matInput formControlName="address" rows="2" required></textarea>
-                    <mat-hint>Dirección física</mat-hint>
+                    <input matInput [value]="'Santa Elena, La Libertad, Ecuador - Barrio Cordillera del Cóndor'" readonly disabled>
+                    <mat-hint>Ubicación física</mat-hint>
                   </mat-form-field>
                 </div>
                 

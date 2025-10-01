@@ -65,7 +65,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
   selectedTabIndex = 0;
 
   // ✅ FORMULARIOS REACTIVOS
-  aiForm!: FormGroup;
   gymForm!: FormGroup;
   notificationForm!: FormGroup;
   backupForm!: FormGroup;
@@ -124,28 +123,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // ================================================================================
 
   private initializeForms(): void {
-    // Formulario de Configuración IA
-    this.aiForm = this.fb.group({
-      poseSensitivity: [0.7, [Validators.min(0.1), Validators.max(1.0)]],
-      confidenceThreshold: [0.8, [Validators.min(0.5), Validators.max(0.95)]],
-      detectionThreshold: [0.6, [Validators.min(0.3), Validators.max(0.8)]],
-      criticalThreshold: [0.9, [Validators.min(0.8), Validators.max(1.0)]],
-      highThreshold: [0.75, [Validators.min(0.6), Validators.max(0.8)]],
-      mediumThreshold: [0.5, [Validators.min(0.4), Validators.max(0.6)]],
-      lowThreshold: [0.3, [Validators.min(0.2), Validators.max(0.4)]],
-      gptCreativity: [0.7, [Validators.min(0.1), Validators.max(1.0)]],
-      gptResponseLength: [500, [Validators.min(100), Validators.max(1000)]],
-      autoApprovalThreshold: [0.85, [Validators.min(0.75), Validators.max(0.95)]],
-      processingInterval: [200, [Validators.min(100), Validators.max(1000)]],
-      maxFramesPerSecond: [30, [Validators.min(15), Validators.max(60)]]
-    });
-
+ 
     // Formulario de Configuración Gimnasio
     this.gymForm = this.fb.group({
-      name: ['GYMSHARK', Validators.required],
-      address: ['Santa Elena, Ecuador', Validators.required],
-      phone: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
       openTime: ['06:00', Validators.required],
       closeTime: ['22:00', Validators.required],
       operatingDays: [['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'], Validators.required],
@@ -241,28 +221,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private populateForms(settings: SystemSettings): void {
     console.log('📝 Poblando formularios con configuración existente...');
 
-    // Poblar formulario IA
-    this.aiForm.patchValue({
-      poseSensitivity: settings.aiSettings.poseSensitivity,
-      confidenceThreshold: settings.aiSettings.confidenceThreshold,
-      detectionThreshold: settings.aiSettings.detectionThreshold,
-      criticalThreshold: settings.aiSettings.criticalThreshold,
-      highThreshold: settings.aiSettings.highThreshold,
-      mediumThreshold: settings.aiSettings.mediumThreshold,
-      lowThreshold: settings.aiSettings.lowThreshold,
-      gptCreativity: settings.aiSettings.gptCreativity,
-      gptResponseLength: settings.aiSettings.gptResponseLength,
-      autoApprovalThreshold: settings.aiSettings.autoApprovalThreshold,
-      processingInterval: settings.aiSettings.processingInterval,
-      maxFramesPerSecond: settings.aiSettings.maxFramesPerSecond
-    });
-
     // Poblar formulario gimnasio
     this.gymForm.patchValue({
-      name: settings.gymSettings.name,
-      address: settings.gymSettings.address,
-      phone: settings.gymSettings.phone,
-      email: settings.gymSettings.email,
       openTime: settings.gymSettings.openTime,
       closeTime: settings.gymSettings.closeTime,
       operatingDays: settings.gymSettings.operatingDays,
@@ -320,23 +280,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // 💾 MÉTODOS PARA GUARDAR CONFIGURACIÓN
   // ================================================================================
 
-  async saveAISettings(): Promise<void> {
-    if (this.aiForm.invalid || !this.currentUser) {
-      this.showErrorMessage('Formulario inválido o usuario no autenticado');
-      return;
-    }
-
-    try {
-      console.log('🤖 Guardando configuración de IA...');
-      const formValue = this.aiForm.value;
-      await this.settingsService.updateAISettings(formValue, this.currentUser.email);
-      this.showSuccessMessage('Configuración de IA actualizada exitosamente');
-      console.log('✅ Configuración IA guardada');
-    } catch (error) {
-      console.error('❌ Error guardando configuración IA:', error);
-      this.showErrorMessage('Error al guardar configuración de IA');
-    }
-  }
 
   async saveGymSettings(): Promise<void> {
     if (this.gymForm.invalid || !this.currentUser) {

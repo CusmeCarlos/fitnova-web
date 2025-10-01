@@ -1,139 +1,100 @@
 // src/app/core/settings.service.ts
-// ⚙️ SERVICIO DE CONFIGURACIÓN DEL SISTEMA - DATOS REALES FIREBASE
+// ⚙️ SERVICIO DE CONFIGURACIÓN DEL SISTEMA - SIN NG0203
 
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core'; // ❌ QUITAR inject
 import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { BehaviorSubject, Observable, combineLatest, of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { map, catchError, startWith } from 'rxjs/operators';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 
-// ✅ INTERFACES PARA CONFIGURACIÓN
+// ✅ INTERFACES (mantener todas)
 export interface SystemSettings {
-  // Configuración IA
   aiSettings: AISettings;
-  // Configuración Gimnasio
   gymSettings: GymSettings;
-  // Configuración Notificaciones
   notificationSettings: NotificationSettings;
-  // Configuración Backup
   backupSettings: BackupSettings;
-  // Configuración Seguridad
   securitySettings: SecuritySettings;
 }
 
 export interface AISettings {
-  // MediaPipe Configuration
-  poseSensitivity: number; // 0.1 - 1.0
-  confidenceThreshold: number; // 0.5 - 0.95
-  detectionThreshold: number; // 0.3 - 0.8
-  
-  // Error Classification
-  criticalThreshold: number; // 0.8 - 1.0
-  highThreshold: number; // 0.6 - 0.8
-  mediumThreshold: number; // 0.4 - 0.6
-  lowThreshold: number; // 0.2 - 0.4
-  
-  // GPT Configuration
-  gptCreativity: number; // 0.1 - 1.0 (temperature)
-  gptResponseLength: number; // 100 - 1000 tokens
-  autoApprovalThreshold: number; // 0.75 - 0.95
-  
-  // Performance
-  processingInterval: number; // 100 - 1000 ms
-  maxFramesPerSecond: number; // 15 - 60 fps
-  
+  poseSensitivity: number;
+  confidenceThreshold: number;
+  detectionThreshold: number;
+  criticalThreshold: number;
+  highThreshold: number;
+  mediumThreshold: number;
+  lowThreshold: number;
+  gptCreativity: number;
+  gptResponseLength: number;
+  autoApprovalThreshold: number;
+  processingInterval: number;
+  maxFramesPerSecond: number;
   lastUpdated: Date;
   updatedBy: string;
 }
 
 export interface GymSettings {
-  // Información del Gimnasio
   name: string;
   address: string;
   phone: string;
   email: string;
-  
-  // Horarios
-  openTime: string; // "06:00"
-  closeTime: string; // "22:00"
-  operatingDays: string[]; // ["monday", "tuesday", ...]
-  
-  // Capacidad
+  openTime: string;
+  closeTime: string;
+  operatingDays: string[];
   maxUsers: number;
   maxTrainers: number;
-  maxSessionDuration: number; // minutes
-  
-  // Configuración de Equipamiento
+  maxSessionDuration: number;
   availableEquipment: string[];
   maintenanceMode: boolean;
-  
   lastUpdated: Date;
   updatedBy: string;
 }
 
 export interface NotificationSettings {
-  // Alertas Críticas
   enableCriticalAlerts: boolean;
   criticalAlertSound: boolean;
   criticalAlertEmail: boolean;
   criticalAlertSMS: boolean;
-  
-  // Notificaciones Sistema
   enableSystemNotifications: boolean;
   dailyReports: boolean;
   weeklyReports: boolean;
   monthlyReports: boolean;
-  
-  // Configuración Email
   emailRecipients: string[];
   emailTemplate: string;
-  
   lastUpdated: Date;
   updatedBy: string;
 }
 
 export interface BackupSettings {
-  // Configuración Automática
   enableAutoBackup: boolean;
   backupFrequency: 'daily' | 'weekly' | 'monthly';
-  backupTime: string; // "02:00"
+  backupTime: string;
   retentionDays: number;
-  
-  // Configuración Manual
   includeUserData: boolean;
   includeAlerts: boolean;
   includeRoutines: boolean;
   includeSettings: boolean;
-  
-  // Almacenamiento
   backupLocation: 'firebase' | 'local' | 'cloud';
-  maxBackupSize: number; // MB
-  
+  maxBackupSize: number;
   lastBackup: Date;
   lastUpdated: Date;
   updatedBy: string;
 }
 
 export interface SecuritySettings {
-  // Configuración de Sesión
-  sessionTimeout: number; // minutes
+  sessionTimeout: number;
   maxLoginAttempts: number;
-  lockoutDuration: number; // minutes
-  
-  // Configuración de Passwords
+  lockoutDuration: number;
   requirePasswordChange: boolean;
   passwordExpiryDays: number;
   minPasswordLength: number;
   requireSpecialChars: boolean;
-  
-  // Configuración de Acceso
   allowMultipleSessions: boolean;
   enableTwoFactor: boolean;
   ipWhitelist: string[];
-  
-  // Auditoría
   enableAuditLog: boolean;
   auditRetentionDays: number;
-  
   lastUpdated: Date;
   updatedBy: string;
 }
@@ -142,18 +103,16 @@ export interface SecuritySettings {
   providedIn: 'root'
 })
 export class SettingsService {
-  private db = inject(AngularFirestore);
-  
   private settingsSubject = new BehaviorSubject<SystemSettings | null>(null);
   private isLoadingSubject = new BehaviorSubject<boolean>(false);
 
   settings$ = this.settingsSubject.asObservable();
   isLoading$ = this.isLoadingSubject.asObservable();
 
-  // Documento único para configuración global
   private readonly SETTINGS_DOC_ID = 'gymshark-config';
 
-  constructor() {
+  // ✅ CONSTRUCTOR CON INYECCIÓN (FIX NG0203)
+  constructor(private db: AngularFirestore) {
     console.log('⚙️ SettingsService inicializado');
     this.loadSystemSettings();
   }
@@ -162,7 +121,6 @@ export class SettingsService {
     this.isLoadingSubject.next(true);
     console.log('⚙️ Cargando configuración del sistema...');
 
-    // Cargar configuración desde Firebase
     this.db.collection('systemSettings').doc(this.SETTINGS_DOC_ID)
       .valueChanges({ idField: 'id' }).pipe(
         map((doc: any) => {
@@ -209,20 +167,17 @@ export class SettingsService {
         updatedBy: doc.aiSettings?.updatedBy || 'system'
       },
       gymSettings: {
-        name: doc.gymSettings?.name || 'Gimnasio GYMSHARK',
-        address: doc.gymSettings?.address || 'Cordillera del Cóndor, La Libertad, Santa Elena',
-        phone: doc.gymSettings?.phone || '+593-999-123-456',
-        email: doc.gymSettings?.email || 'info@gymshark.com',
+        name: doc.gymSettings?.name || 'GYMSHARK',
+        address: doc.gymSettings?.address || 'Santa Elena, La Libertad, Ecuador - Barrio Cordillera del Cóndor',
+        phone: doc.gymSettings?.phone || '0991467751',
+        email: doc.gymSettings?.email || 'gymshark@gmail.com',
         openTime: doc.gymSettings?.openTime || '06:00',
         closeTime: doc.gymSettings?.closeTime || '22:00',
         operatingDays: doc.gymSettings?.operatingDays || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
         maxUsers: doc.gymSettings?.maxUsers || 30,
         maxTrainers: doc.gymSettings?.maxTrainers || 5,
         maxSessionDuration: doc.gymSettings?.maxSessionDuration || 120,
-        availableEquipment: doc.gymSettings?.availableEquipment || [
-          'Mancuernas 1-40kg', 'Barras olímpicas', 'Bancos ajustables',
-          'Press de pecho', 'Jalón dorsal', 'Sentadilla guiada', 'Colchonetas'
-        ],
+        availableEquipment: doc.gymSettings?.availableEquipment || [],
         maintenanceMode: doc.gymSettings?.maintenanceMode || false,
         lastUpdated: doc.gymSettings?.lastUpdated?.toDate() || now,
         updatedBy: doc.gymSettings?.updatedBy || 'system'
@@ -236,7 +191,7 @@ export class SettingsService {
         dailyReports: doc.notificationSettings?.dailyReports ?? true,
         weeklyReports: doc.notificationSettings?.weeklyReports ?? true,
         monthlyReports: doc.notificationSettings?.monthlyReports ?? false,
-        emailRecipients: doc.notificationSettings?.emailRecipients || ['admin@gymshark.com'],
+        emailRecipients: doc.notificationSettings?.emailRecipients || [],
         emailTemplate: doc.notificationSettings?.emailTemplate || 'default',
         lastUpdated: doc.notificationSettings?.lastUpdated?.toDate() || now,
         updatedBy: doc.notificationSettings?.updatedBy || 'system'
@@ -296,20 +251,17 @@ export class SettingsService {
         updatedBy: 'system'
       },
       gymSettings: {
-        name: 'Gimnasio GYMSHARK',
-        address: 'Cordillera del Cóndor, La Libertad, Santa Elena, Ecuador',
-        phone: '+593-999-123-456',
-        email: 'info@gymshark.com',
+        name: 'GYMSHARK',
+        address: 'Santa Elena, La Libertad, Ecuador - Barrio Cordillera del Cóndor',
+        phone: '0991467751',
+        email: 'gymshark@gmail.com',
         openTime: '06:00',
         closeTime: '22:00',
         operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
         maxUsers: 30,
         maxTrainers: 5,
         maxSessionDuration: 120,
-        availableEquipment: [
-          'Mancuernas 1-40kg', 'Barras olímpicas', 'Bancos ajustables',
-          'Press de pecho', 'Jalón dorsal', 'Sentadilla guiada', 'Colchonetas'
-        ],
+        availableEquipment: [],
         maintenanceMode: false,
         lastUpdated: now,
         updatedBy: 'system'
@@ -323,7 +275,7 @@ export class SettingsService {
         dailyReports: true,
         weeklyReports: true,
         monthlyReports: false,
-        emailRecipients: ['admin@gymshark.com'],
+        emailRecipients: [],
         emailTemplate: 'default',
         lastUpdated: now,
         updatedBy: 'system'
@@ -360,35 +312,6 @@ export class SettingsService {
         updatedBy: 'system'
       }
     };
-  }
-
-  // ================================================================================
-  // 💾 MÉTODOS PARA ACTUALIZAR CONFIGURACIÓN
-  // ================================================================================
-
-  async updateAISettings(aiSettings: Partial<AISettings>, updatedBy: string): Promise<void> {
-    try {
-      console.log('🤖 Actualizando configuración de IA...', aiSettings);
-      
-      const currentSettings = this.settingsSubject.value;
-      if (!currentSettings) throw new Error('No hay configuración actual');
-
-      const updatedSettings = {
-        ...currentSettings,
-        aiSettings: {
-          ...currentSettings.aiSettings,
-          ...aiSettings,
-          lastUpdated: new Date(),
-          updatedBy
-        }
-      };
-
-      await this.saveSettings(updatedSettings);
-      console.log('✅ Configuración de IA actualizada');
-    } catch (error) {
-      console.error('❌ Error actualizando configuración IA:', error);
-      throw error;
-    }
   }
 
   async updateGymSettings(gymSettings: Partial<GymSettings>, updatedBy: string): Promise<void> {
@@ -493,17 +416,15 @@ export class SettingsService {
 
   private async saveSettings(settings: SystemSettings): Promise<void> {
     try {
-      await this.db.collection('systemSettings').doc(this.SETTINGS_DOC_ID).set(settings);
-      console.log('💾 Configuración guardada en Firebase');
+      console.log('💾 Guardando configuración en Firebase...');
+      const db = firebase.firestore();
+      await db.collection('systemSettings').doc(this.SETTINGS_DOC_ID).set(settings);
+      console.log('✅ Configuración guardada en Firebase');
     } catch (error) {
       console.error('❌ Error guardando configuración:', error);
       throw error;
     }
   }
-
-  // ================================================================================
-  // 🔄 MÉTODOS UTILITARIOS
-  // ================================================================================
 
   refreshSettings(): void {
     console.log('🔄 Refrescando configuración del sistema...');
@@ -517,7 +438,6 @@ export class SettingsService {
       const currentSettings = this.settingsSubject.value;
       if (!currentSettings) throw new Error('No hay configuración para respaldar');
 
-      // Actualizar fecha de último backup
       await this.updateBackupSettings({ 
         lastBackup: new Date() 
       }, 'manual-backup');
