@@ -1,9 +1,9 @@
 // src/app/core/analytics.service.ts
-// 📊 SERVICIO DE ANALYTICS EJECUTIVO - DATOS REALES FIREBASE
+// 📊 SERVICIO DE ANALYTICS EJECUTIVO - TIEMPO REAL COMPLETO
 
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, OnDestroy } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { BehaviorSubject, Observable, combineLatest, of } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, of, Subscription } from 'rxjs';
 import { map, catchError, startWith } from 'rxjs/operators';
 
 // ✅ INTERFACES PARA ANALYTICS
@@ -55,88 +55,114 @@ export interface AnalyticsFilter {
 @Injectable({
   providedIn: 'root'
 })
-export class AnalyticsService {
+export class AnalyticsService implements OnDestroy {
   private db = inject(AngularFirestore);
   
   private analyticsSubject = new BehaviorSubject<AnalyticsMetrics | null>(null);
   private isLoadingSubject = new BehaviorSubject<boolean>(false);
+  
+  // ✅ NUEVA: Suscripción única para limpiar
+  private mainSubscription?: Subscription;
 
   analytics$ = this.analyticsSubject.asObservable();
   isLoading$ = this.isLoadingSubject.asObservable();
 
   constructor() {
-    console.log('📊 AnalyticsService inicializado con datos reales Firebase');
-    this.loadRealTimeAnalytics();
+    console.log('📊 AnalyticsService inicializado con listeners permanentes');
+    this.initializePermanentListeners();
   }
 
-  private loadRealTimeAnalytics(): void {
-    this.isLoadingSubject.next(true);
-    console.log('📊 Iniciando carga de analytics en tiempo real...');
+  ngOnDestroy(): void {
+    console.log('🧹 Limpiando AnalyticsService...');
+    if (this.mainSubscription) {
+      this.mainSubscription.unsubscribe();
+    }
+  }
 
-    // Combinar todas las fuentes de datos reales
-    combineLatest([
-      this.getUsersData(),
-      this.getAlertsData(),
-      this.getRoutinesData()
+  // ✅ NUEVO: Listeners permanentes que se mantienen activos
+  private initializePermanentListeners(): void {
+    this.isLoadingSubject.next(true);
+    console.log('📊 Iniciando listeners permanentes de analytics...');
+
+    // ✅ Limpiar suscripción anterior si existe
+    if (this.mainSubscription) {
+      this.mainSubscription.unsubscribe();
+    }
+
+    // Combinar todas las fuentes de datos con listeners permanentes
+    this.mainSubscription = combineLatest([
+      this.getUsersDataRealTime(),
+      this.getAlertsDataRealTime(),
+      this.getRoutinesDataRealTime()
     ]).pipe(
       map(([users, alerts, routines]) => {
-        console.log('📊 Calculando métricas con datos reales:', {
+        console.log('📊 Datos actualizados en tiempo real:', {
           usuarios: users.length,
           alertas: alerts.length,
-          rutinas: routines.length
+          rutinas: routines.length,
+          timestamp: new Date().toLocaleTimeString()
         });
         return this.calculateRealMetrics(users, alerts, routines);
       }),
       catchError(error => {
-        console.error('❌ Error cargando datos reales, usando fallback:', error);
+        console.error('❌ Error en listeners de analytics:', error);
         return of(this.getFallbackMetrics());
       }),
       startWith(null)
     ).subscribe(metrics => {
       if (metrics) {
-        console.log('✅ Métricas reales calculadas:', metrics);
+        console.log('✅ Métricas actualizadas en tiempo real:', {
+          totalUsers: metrics.totalUsers,
+          activeToday: metrics.activeUsersToday,
+          timestamp: new Date().toLocaleTimeString()
+        });
         this.analyticsSubject.next(metrics);
       }
       this.isLoadingSubject.next(false);
     });
   }
 
-  private getUsersData(): Observable<any[]> {
-    return this.db.collection('users').valueChanges({ idField: 'uid' }).pipe(
+  // ✅ CORREGIDO: Listener permanente de usuarios (solo role='user')
+  private getUsersDataRealTime(): Observable<any[]> {
+    return this.db.collection('users', ref => 
+      ref.where('role', '==', 'user')
+    ).valueChanges({ idField: 'uid' }).pipe(
       map(users => {
-        console.log(`👥 ${users.length} usuarios cargados para analytics`);
+        console.log(`👥 ${users.length} usuarios actualizados (role=user)`);
         return users;
       }),
       catchError(error => {
-        console.error('❌ Error cargando usuarios:', error);
+        console.error('❌ Error en listener de usuarios:', error);
         return of([]);
       })
     );
   }
 
-  private getAlertsData(): Observable<any[]> {
+  // ✅ Listener permanente de alertas
+  private getAlertsDataRealTime(): Observable<any[]> {
     return this.db.collection('criticalAlerts', ref => 
       ref.orderBy('processedAt', 'desc').limit(1000)
     ).valueChanges({ idField: 'id' }).pipe(
       map(alerts => {
-        console.log(`🚨 ${alerts.length} alertas cargadas para analytics`);
+        console.log(`🚨 ${alerts.length} alertas actualizadas`);
         return alerts;
       }),
       catchError(error => {
-        console.error('❌ Error cargando alertas:', error);
+        console.error('❌ Error en listener de alertas:', error);
         return of([]);
       })
     );
   }
 
-  private getRoutinesData(): Observable<any[]> {
+  // ✅ Listener permanente de rutinas
+  private getRoutinesDataRealTime(): Observable<any[]> {
     return this.db.collectionGroup('routines').valueChanges({ idField: 'routineId' }).pipe(
       map(routines => {
-        console.log(`🏋️ ${routines.length} rutinas cargadas para analytics`);
+        console.log(`🏋️ ${routines.length} rutinas actualizadas`);
         return routines;
       }),
       catchError(error => {
-        console.error('❌ Error cargando rutinas:', error);
+        console.error('❌ Error en listener de rutinas:', error);
         return of([]);
       })
     );
@@ -202,7 +228,7 @@ export class AnalyticsService {
       totalUsers,
       activeUsersToday,
       activeUsersWeek,
-      totalSessions: totalDetections, // Cada alerta representa actividad de sesión
+      totalSessions: totalDetections,
       averageSessionDuration,
       
       // Efectividad de Detección IA
@@ -227,7 +253,6 @@ export class AnalyticsService {
   private calculateSessionDuration(alerts: any[]): number {
     if (alerts.length === 0) return 25;
     
-    // Calcular duración basada en la densidad de alertas por usuario
     const alertsByUser: { [key: string]: any[] } = {};
     
     alerts.forEach(alert => {
@@ -240,14 +265,12 @@ export class AnalyticsService {
     const userSessions = Object.values(alertsByUser);
     const avgAlertsPerUser = userSessions.reduce((sum, userAlerts) => sum + userAlerts.length, 0) / userSessions.length;
     
-    // Estimar duración: más alertas = sesión más larga
     return Math.round(15 + (avgAlertsPerUser * 2.5));
   }
 
   private calculateDailyActivity(alerts: any[], users: any[]): DailyActivity[] {
     const dailyData: { [key: string]: DailyActivity } = {};
     
-    // Inicializar últimos 7 días
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
@@ -261,7 +284,6 @@ export class AnalyticsService {
       };
     }
 
-    // Contar usuarios activos por día
     users.forEach(user => {
       if (user.lastActiveAt) {
         const lastActive = user.lastActiveAt.toDate ? user.lastActiveAt.toDate() : new Date(user.lastActiveAt);
@@ -273,7 +295,6 @@ export class AnalyticsService {
       }
     });
 
-    // Contar alertas por día
     alerts.forEach(alert => {
       if (alert.processedAt) {
         const alertDate = alert.processedAt.toDate ? alert.processedAt.toDate() : new Date(alert.processedAt);
@@ -281,7 +302,7 @@ export class AnalyticsService {
         
         if (dailyData[dateStr]) {
           dailyData[dateStr].detections++;
-          dailyData[dateStr].sessions++; // Cada alerta implica una sesión activa
+          dailyData[dateStr].sessions++;
         }
       }
     });
@@ -311,8 +332,8 @@ export class AnalyticsService {
         count,
         percentage: Math.round((count / total) * 100)
       }))
-      .sort((a, b) => b.count - a.count) // Ordenar por frecuencia
-      .slice(0, 6); // Mostrar solo los 6 más frecuentes
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
   }
 
   private calculateEngagementTrend(users: any[], alerts: any[]): EngagementData[] {
@@ -323,14 +344,12 @@ export class AnalyticsService {
       const weekStart = new Date(now.getTime() - (4 - index) * 7 * 24 * 60 * 60 * 1000);
       const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
       
-      // Contar usuarios activos en esa semana
       const activeUsersInWeek = users.filter(user => {
         if (!user.lastActiveAt) return false;
         const lastActive = user.lastActiveAt.toDate ? user.lastActiveAt.toDate() : new Date(user.lastActiveAt);
         return lastActive >= weekStart && lastActive <= weekEnd;
       }).length;
 
-      // Contar alertas en esa semana
       const alertsInWeek = alerts.filter(alert => {
         if (!alert.processedAt) return false;
         const alertDate = alert.processedAt.toDate ? alert.processedAt.toDate() : new Date(alert.processedAt);
@@ -338,7 +357,7 @@ export class AnalyticsService {
       }).length;
 
       const engagement = users.length > 0 ? Math.round((activeUsersInWeek / users.length) * 100) : 0;
-      const retention = Math.max(50, engagement - Math.floor(Math.random() * 10)); // Retención ligeramente menor
+      const retention = Math.max(50, engagement - Math.floor(Math.random() * 10));
 
       return {
         period: week,
@@ -408,8 +427,8 @@ export class AnalyticsService {
   }
 
   refreshAnalytics(): void {
-    console.log('🔄 Refrescando analytics en tiempo real...');
-    this.loadRealTimeAnalytics();
+    console.log('🔄 Los datos ya se actualizan automáticamente en tiempo real');
+    // Ya no es necesario recargar manualmente, los listeners están activos
   }
 
   exportAnalyticsData(): void {
@@ -423,20 +442,19 @@ export class AnalyticsService {
 
     const csvContent = this.generateCSVContent(currentData);
     
-    // Crear y descargar archivo CSV
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `analytics-fitnova-real-${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', `analytics-fitnova-${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      console.log('✅ Datos reales exportados exitosamente');
+      console.log('✅ Datos exportados exitosamente');
     }
   }
 
@@ -463,7 +481,6 @@ export class AnalyticsService {
       'Tipo Error,Cantidad,Porcentaje'
     ];
 
-    // Agregar distribución de errores
     data.errorTypeDistribution.forEach(error => {
       headers.push(`${error.type},${error.count},${error.percentage}%`);
     });

@@ -719,16 +719,16 @@
         <span>Guardar Cambios</span>
       </button>
 
-      <button mat-raised-button 
-              color="warn"
-              (click)="rejectRoutine()"
-              [disabled]="saving || validationForm.get('action')?.value !== 'reject' || !validationForm.get('rejectionReason')?.value"
-              class="reject-button"
-              *ngIf="canApprove">
-        <mat-spinner diameter="20" *ngIf="saving"></mat-spinner>
-        <mat-icon *ngIf="!saving">cancel</mat-icon>
-        <span>Rechazar</span>
-      </button>
+              <button mat-raised-button 
+                color="warn"
+                (click)="rejectRoutine()"
+                [disabled]="saving || !canApprove"
+                class="reject-button"
+                *ngIf="canApprove">
+          <mat-spinner diameter="20" *ngIf="saving"></mat-spinner>
+          <mat-icon *ngIf="!saving">cancel</mat-icon>
+          <span>Rechazar</span>
+        </button>
 
       <button mat-raised-button 
               color="primary"

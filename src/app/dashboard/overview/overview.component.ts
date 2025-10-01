@@ -18,7 +18,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
@@ -43,6 +43,7 @@ Chart.register(...registerables);
     MatFormFieldModule,
     MatDividerModule,
     MatBadgeModule,
+    MatSnackBarModule,
   ],
   templateUrl: './overview.component.html',
   styleUrls: ['./overview.component.scss']
@@ -114,21 +115,23 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     this.subscriptions.add(userSub);
   }
 
-  // ✅ CARGAR MÉTRICAS GLOBALES
+  // ✅ CORREGIDO: CARGAR MÉTRICAS GLOBALES CON LISTENER TIEMPO REAL
   private loadGlobalMetrics(): void {
     this.isLoading = true;
 
     const metricsSub = this.dashboardService.getGlobalDashboardMetrics().subscribe({
       next: (metrics) => {
-        console.log('📊 Métricas Globales cargadas:', metrics);
+        console.log('📊 Métricas Globales actualizadas en tiempo real:', metrics);
         this.globalMetrics = metrics;
         this.isLoading = false;
         this.lastUpdated = new Date();
         
-        // Inicializar gráficos globales
-        setTimeout(() => {
-          this.initializeGlobalCharts();
-        }, 100);
+        // ✅ SOLO REINICIALIZAR GRÁFICOS GLOBALES SI NO ESTÁ EN VISTA DETALLADA
+        if (!this.showUserDetail) {
+          setTimeout(() => {
+            this.initializeGlobalCharts();
+          }, 100);
+        }
       },
       error: (error) => {
         console.error('❌ Error cargando métricas globales:', error);
@@ -140,12 +143,15 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     this.subscriptions.add(metricsSub);
   }
 
-  // ✅ CARGAR LISTA DE TODOS LOS USUARIOS
+  // ✅ CORREGIDO: CARGAR USUARIOS CON LISTENER TIEMPO REAL
   private loadAllUsers(): void {
     const usersSub = this.dashboardService.getAllUsers().subscribe({
       next: (users) => {
         this.allUsers = users;
-        console.log(`👥 Cargados ${users.length} usuarios para supervisión`);
+        console.log(`👥 Usuarios actualizados en tiempo real: ${users.length} usuarios`);
+        
+        // ✅ ACTUALIZAR ÚLTIMA FECHA DE SINCRONIZACIÓN
+        this.lastUpdated = new Date();
       },
       error: (error) => {
         console.error('❌ Error cargando usuarios:', error);
@@ -169,7 +175,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
       this.initGlobalActivityChart();
       this.initGlobalAccuracyChart();
       this.initGlobalErrorsChart();
-      console.log('✅ Gráficos globales inicializados');
+      console.log('✅ Gráficos globales inicializados correctamente');
     } catch (error) {
       console.error('❌ Error inicializando gráficos globales:', error);
     }
@@ -233,7 +239,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     }
   }
 
-  // ✅ GRÁFICO DE PRECISIÓN GLOBAL
+  // ✅ GRÁFICO DE PRECISIÓN GLOBAL - CORREGIDO
   private initGlobalAccuracyChart(): void {
     if (!this.globalAccuracyChartRef?.nativeElement || !this.globalMetrics) return;
 
@@ -246,7 +252,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
         data: {
           labels: this.globalMetrics.accuracyTrendGlobal.map(day => day.date),
           datasets: [{
-            label: 'Precisión Promedio Global',
+            label: 'Precisión Promedio (%)',
             data: this.globalMetrics.accuracyTrendGlobal.map(day => day.accuracy),
             borderColor: '#4caf50',
             backgroundColor: 'rgba(76, 175, 80, 0.1)',
@@ -349,6 +355,9 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     this.isLoadingUserDetail = true;
     this.showUserDetail = true;
 
+    // ✅ DESTRUIR GRÁFICOS GLOBALES AL MOSTRAR DETALLE
+    this.destroyGlobalCharts();
+
     const userDetailSub = this.dashboardService.getUserDetailMetrics(userId).subscribe({
       next: (metrics) => {
         console.log('📊 Métricas del usuario cargadas:', metrics);
@@ -370,19 +379,29 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     this.subscriptions.add(userDetailSub);
   }
 
-  // ✅ OCULTAR VISTA DETALLADA
+  // ✅ CORREGIDO: OCULTAR VISTA DETALLADA Y REINICIALIZAR GRÁFICOS GLOBALES
   hideUserDetail(): void {
+    console.log('🔙 Ocultando vista detallada y reiniciando vista global...');
+    
     this.showUserDetail = false;
     this.selectedUserId = null;
     this.selectedUserMetrics = null;
     this.destroyUserDetailChart();
+
+    // ✅ REINICIALIZAR GRÁFICOS GLOBALES DESPUÉS DE CERRAR DETALLE
+    setTimeout(() => {
+      if (this.globalMetrics && !this.globalMetrics.isEmpty) {
+        console.log('🔄 Reinicializando gráficos globales...');
+        this.initializeGlobalCharts();
+      }
+    }, 200);
   }
 
+  // ✅ GRÁFICO DETALLADO DE USUARIO
   private initUserDetailChart(): void {
     if (!this.userDetailChartRef?.nativeElement || !this.selectedUserMetrics) return;
   
     try {
-      // ✅ DESTRUIR CHART ANTERIOR ANTES DE CREAR NUEVO
       if (this.userDetailChart) {
         this.userDetailChart.destroy();
         this.userDetailChart = null;
@@ -432,7 +451,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
               ticks: { color: '#666' }
             },
             x: {
-              grid: { color: 'rgba(0, 0, 0, 0.1)' },
+              grid: { color: 'rgba(0, 0, 0, 0.05)' },
               ticks: { color: '#666' }
             }
           }
@@ -465,6 +484,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
         this.globalErrorsChart.destroy();
         this.globalErrorsChart = null;
       }
+      console.log('🧹 Gráficos globales destruidos');
     } catch (error) {
       console.error('❌ Error limpiando gráficos globales:', error);
     }
@@ -476,6 +496,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
         this.userDetailChart.destroy();
         this.userDetailChart = null;
       }
+      console.log('🧹 Gráfico de usuario destruido');
     } catch (error) {
       console.error('❌ Error limpiando gráfico del usuario:', error);
     }
@@ -487,14 +508,51 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     
     try {
       this.isLoading = true;
-      this.loadGlobalMetrics();
-      this.loadAllUsers();
       
-      this.showSuccessMessage('Dashboard global actualizado');
+      // Los listeners ya están activos, solo necesitamos actualizar UI
+      this.lastUpdated = new Date();
+      
+      setTimeout(() => {
+        this.isLoading = false;
+        this.showSuccessMessage('Dashboard actualizado');
+      }, 500);
       
     } catch (error) {
       console.error('❌ Error refrescando dashboard global:', error);
+      this.isLoading = false;
       this.showErrorMessage('Error refrescando datos globales');
+    }
+  }
+
+  // ✅ MÉTODOS DE NAVEGACIÓN
+  navigateToUserManagement(): void {
+    console.log('👥 Navegando a gestión de usuarios...');
+    this.router.navigate(['/users/user-list']);
+  }
+
+  navigateToRoutines(): void {
+    console.log('📋 Navegando a rutinas...');
+    this.router.navigate(['/routines']);
+  }
+
+  navigateToAlerts(): void {
+    console.log('🚨 Navegando a alertas críticas...');
+    this.router.navigate(['/alerts/dashboard']);
+  }
+
+  navigateToAnalytics(): void {
+    console.log('📊 Navegando a analytics...');
+    this.router.navigate(['/analytics/overview']);
+  }
+
+  // ✅ LOGOUT
+  async logout(): Promise<void> {
+    try {
+      await this.auth.logout();
+      console.log('✅ Logout exitoso desde dashboard');
+    } catch (error) {
+      console.error('❌ Error en logout:', error);
+      this.showErrorMessage('Error al cerrar sesión');
     }
   }
 
@@ -517,6 +575,10 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     }
   }
 
+  formatPercentage(value: number): string {
+    return `${Math.round(value)}%`;
+  }
+
   getErrorTypeLabel(errorType: string): string {
     const errorLabels: { [key: string]: string } = {
       'KNEE_VALGUS': 'Valgo de rodilla',
@@ -524,7 +586,13 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
       'ROUNDED_SHOULDERS': 'Hombros redondeados',
       'EXCESSIVE_KNEE_FLEXION': 'Flexión excesiva',
       'INSUFFICIENT_DEPTH': 'Profundidad insuficiente',
-      'FORWARD_LEAN': 'Inclinación adelante'
+      'FORWARD_LEAN': 'Inclinación adelante',
+      'incorrect_form': 'Postura Incorrecta',
+      'knee_alignment': 'Alineación Rodillas',
+      'back_posture': 'Postura Espalda',
+      'elbow_angle': 'Ángulo Codos',
+      'shoulder_position': 'Posición Hombros',
+      'hip_alignment': 'Alineación Cadera'
     };
     return errorLabels[errorType] || errorType;
   }
@@ -538,33 +606,6 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     if (daysDiff === 0) return 'primary'; // Hoy
     if (daysDiff <= 3) return 'accent';   // Últimos 3 días
     return 'warn'; // Más de 3 días
-  }
-
-  // ✅ LOGOUT
-  async logout(): Promise<void> {
-    try {
-      await this.auth.logout();
-      console.log('✅ Logout exitoso desde dashboard');
-    } catch (error) {
-      console.error('❌ Error en logout:', error);
-      this.showErrorMessage('Error al cerrar sesión');
-    }
-  }
-  navigateToUserManagement(): void {
-    this.router.navigate(['/users/user-list']);
-  }
-
-  navigateToAlerts(): void {
-    console.log('🚨 Navegando al centro de alertas críticas...');
-    this.router.navigate(['/alerts/dashboard']);
-  }
-
-  navigateToRoutines(): void {
-    this.router.navigate(['/routines']); // ✅ CAMBIAR DE '/routines/routine-list' a '/routines'
-  }
-
-  navigateToAnalytics(): void {
-    this.router.navigate(['/analytics/overview']);
   }
 
   // ✅ MENSAJES

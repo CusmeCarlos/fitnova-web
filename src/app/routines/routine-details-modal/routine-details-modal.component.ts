@@ -349,6 +349,7 @@ export class RoutineDetailsModalComponent implements OnInit, OnDestroy {
     
     console.log('🎨 Repintado forzado aplicado a', titles.length, 'títulos');
   }
+  
 
   async saveChanges(): Promise<void> {
     console.log('🔄 Iniciando saveChanges...');
@@ -471,50 +472,62 @@ export class RoutineDetailsModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  async rejectRoutine(): Promise<void> {
-    const reason = this.validationForm.get('rejectionReason')?.value;
-    
-    if (!reason || reason.trim() === '') {
-      this.showError('Debe especificar una razón para el rechazo');
-      return;
-    }
+  // En routine-details-modal.component.ts
+// Reemplazar el método rejectRoutine() existente con este:
 
-    if (!this.currentUser?.uid) {
-      this.showError('No hay usuario autenticado');
-      return;
-    }
-
-    this.saving = true;
-
-    try {
-      const action: RoutineValidationAction = {
-        routineId: this.data.routine.id,
-        action: 'reject',
-        rejectionReason: reason,
-        trainerNotes: this.validationForm.get('trainerNotes')?.value || '',
-        trainerId: this.currentUser.uid,
-        trainerName: this.currentUser.displayName || this.currentUser.email || 'Entrenador'
-      };
-
-      const success = await this.routineService.rejectRoutine(action);
-      
-      if (success) {
-        this.showSuccess('Rutina rechazada exitosamente');
-        // Retornar datos actualizados al cerrar
-        this.dialogRef.close({ 
-          action: 'rejected', 
-          routine: this.data.routine,
-          changes: this.hasChanges 
-        });
-      }
-
-    } catch (error) {
-      console.error('Error rechazando rutina:', error);
-      this.showError('Error al rechazar la rutina');
-    } finally {
-      this.saving = false;
-    }
+async rejectRoutine(): Promise<void> {
+  if (!this.currentUser?.uid) {
+    this.showError('No hay usuario autenticado');
+    return;
   }
+
+  // ✅ SOLICITAR RAZÓN DEL RECHAZO AL PRESIONAR EL BOTÓN
+  const reason = prompt('Por favor especifica la razón del rechazo:\n\n(Ej: Los ejercicios no son apropiados para el nivel del usuario, faltan ejercicios de calentamiento, etc.)');
+  
+  if (!reason || reason.trim() === '') {
+    this.showError('Debe especificar una razón para el rechazo');
+    return;
+  }
+
+  // Confirmación adicional
+  const confirmReject = confirm(`¿Estás seguro de que quieres rechazar esta rutina?\n\nRazón: ${reason}`);
+  if (!confirmReject) return;
+
+  this.saving = true;
+
+  try {
+    const action: RoutineValidationAction = {
+      routineId: this.data.routine.id,
+      action: 'reject',
+      rejectionReason: reason.trim(),
+      trainerNotes: this.validationForm.get('trainerNotes')?.value || '',
+      trainerId: this.currentUser.uid,
+      trainerName: this.currentUser.displayName || this.currentUser.email || 'Entrenador'
+    };
+
+    console.log('❌ Rechazando rutina:', action);
+    
+    const success = await this.routineService.rejectRoutine(action);
+    
+    if (success) {
+      this.showSuccess('Rutina rechazada exitosamente');
+      
+      // Retornar datos actualizados al cerrar
+      this.dialogRef.close({ 
+        action: 'rejected', 
+        routine: this.data.routine,
+        changes: this.hasChanges,
+        rejectionReason: reason
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error rechazando rutina:', error);
+    this.showError('Error al rechazar la rutina');
+  } finally {
+    this.saving = false;
+  }
+}
 
   // ===============================================================================
   // 🎨 HELPERS PARA DISPLAY
