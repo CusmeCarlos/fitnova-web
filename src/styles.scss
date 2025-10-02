@@ -503,4 +503,138 @@ html, body {
   .clickable:hover {
     filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
   }
+  // ================================================================================
+// 🎨 MATERIAL DESIGN COLORS - CONFIGURACIÓN GLOBAL
+// ================================================================================
+
+// Chips con colores personalizados
+mat-chip {
+  font-weight: 600 !important;
+  
+  // Color PRIMARY (azul)
+  &.mat-primary,
+  &[color="primary"] {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #3b82f6 !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  }
+  
+  // Color ACCENT (verde)
+  &.mat-accent,
+  &[color="accent"] {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #10b981 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  }
+  
+  // Color WARN (rojo)
+  &.mat-warn,
+  &[color="warn"] {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  }
+}
+
+// Botones icon con colores visibles
+.mat-mdc-icon-button {
+  // Botón PRIMARY (azul)
+  &.mat-primary,
+  &[color="primary"] {
+    color: #3b82f6 !important;
+    
+    &:hover {
+      background: rgba(59, 130, 246, 0.1) !important;
+    }
+  }
+  
+  // Botón ACCENT (verde)
+  &.mat-accent,
+  &[color="accent"] {
+    color: #10b981 !important;
+    
+    &:hover {
+      background: rgba(16, 185, 129, 0.1) !important;
+    }
+  }
+  
+  // Botón WARN (rojo)
+  &.mat-warn,
+  &[color="warn"] {
+    color: #ef4444 !important;
+    
+    &:hover {
+      background: rgba(239, 68, 68, 0.1) !important;
+    }
+  }
+}
+
+// Botones raised con colores
+.mat-mdc-raised-button {
+  &.mat-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important;
+    color: white !important;
+  }
+  
+  &.mat-accent {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: white !important;
+  }
+  
+  &.mat-warn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: white !important;
+  }
+}
+
+// Texto en tablas y contenido
+.mat-mdc-table {
+  background: transparent !important;
+  
+  .mat-mdc-header-row {
+    background: rgba(51, 65, 85, 0.3) !important;
+  }
+  
+  .mat-mdc-header-cell {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+  }
+  
+  .mat-mdc-cell {
+    color: var(--text-primary) !important;
+  }
+  
+  .mat-mdc-row:hover {
+    background: rgba(59, 130, 246, 0.05) !important;
+  }
+}
+
+// Labels y texto en general
+.mat-mdc-form-field-label,
+.mat-mdc-select-value-text,
+.mat-mdc-option,
+label,
+span,
+p {
+  color: var(--text-primary) !important;
+}
+
+// Paginador
+.mat-mdc-paginator {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  
+  .mat-mdc-select-value,
+  .mat-mdc-paginator-range-label {
+    color: var(--text-primary) !important;
+  }
+  
+  .mat-mdc-icon-button {
+    color: var(--text-secondary) !important;
+    
+    &:hover {
+      color: var(--text-primary) !important;
+    }
+  }
+}
 }

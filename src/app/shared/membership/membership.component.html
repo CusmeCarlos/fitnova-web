@@ -178,7 +178,7 @@
             <mat-icon>card_membership</mat-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{stats.totalActive}}</div>
+            <div class="stat-value">{{formatPrice(stats.totalActive)}}</div>
             <div class="stat-label">Membresías Activas</div>
           </div>
         </mat-card-content>
@@ -190,7 +190,7 @@
             <mat-icon>payments</mat-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{formatPrice(stats.monthlyRevenue)}}</div>
+            <div class="stat-value">${{formatPrice(stats.monthlyRevenue)}}</div>
             <div class="stat-label">Ingresos del Mes</div>
           </div>
         </mat-card-content>
@@ -574,8 +574,7 @@
                 <td mat-cell *matCellDef="let membership">
                   <div class="user-cell">
                     <mat-icon>person</mat-icon>
-                    <span>{{membership.userId.substring(0, 8)}}...</span>
-                  </div>
+                    <span>{{getUserName(membership.userId)}}</span>                  </div>
                 </td>
               </ng-container>
   
@@ -617,7 +616,7 @@
               <ng-container matColumnDef="daysRemaining">
                 <th mat-header-cell *matHeaderCellDef>Días Restantes</th>
                 <td mat-cell *matCellDef="let membership">
-                  <mat-chip [color]="getDaysRemaining(membership.endDate) <= 7 ? 'warn' : 'primary'">
+                  <mat-chip color="warn">
                     {{getDaysRemaining(membership.endDate)}} días
                   </mat-chip>
                 </td>
@@ -648,14 +647,14 @@
                             *ngIf="membership.status === 'expired'"
                             (click)="renewMembership(membership)" 
                             matTooltip="Renovar"
-                            color="primary">
+                            color="accent">
                       <mat-icon>refresh</mat-icon>
                     </button>
   
                     <button mat-icon-button 
                           (click)="viewMembershipHistory(membership)" 
                           matTooltip="Ver Historial"
-                          color="accent">
+                          color="primary">
                     <mat-icon>history</mat-icon>
                   </button>
                 </div>

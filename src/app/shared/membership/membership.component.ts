@@ -6,6 +6,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router'; // ✅ AGREGAR ActivatedRoute
 import { Subscription, combineLatest } from 'rxjs';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 
 // ✅ SERVICIOS
 import { MembershipService } from '../../core/membership.service';
@@ -78,6 +80,8 @@ export class MembershipComponent implements OnInit, OnDestroy {
   // ✅ DATA SOURCES
   plansDataSource = new MatTableDataSource<MembershipPlan>([]);
   membershipsDataSource = new MatTableDataSource<UserMembership>([]);
+  users: User[] = []; // Agregar esta línea
+  usersMap: Map<string, User> = new Map(); 
 
   // ✅ COLUMNAS DE TABLAS
   planColumns: string[] = ['name', 'type', 'price', 'durationDays', 'benefits', 'currentActiveMembers', 'status', 'actions'];
@@ -592,7 +596,7 @@ export class MembershipComponent implements OnInit, OnDestroy {
 
   getStatusColor(status: string): string {
     const colors: Record<string, string> = {
-      'active': 'primary',
+      'active': 'accent',
       'expired': 'warn',
       'cancelled': 'accent',
       'pending-payment': 'warn'
@@ -609,6 +613,9 @@ export class MembershipComponent implements OnInit, OnDestroy {
     };
     return labels[status] || status;
   }
+  getUserName(userId: string): string {
+    return this.membershipService.getUserName(userId);
+  }
 
   getTypeLabel(type: string): string {
     const labels: Record<string, string> = {
@@ -622,7 +629,7 @@ export class MembershipComponent implements OnInit, OnDestroy {
   }
 
   formatPrice(price: number): string {
-    return `${price.toFixed(2)}`;
+    return Math.round(price).toString(); // Sin decimales, sin $
   }
 
   formatDate(date: Date): string {

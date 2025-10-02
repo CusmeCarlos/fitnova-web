@@ -8,6 +8,8 @@ import { map, catchError, startWith } from 'rxjs/operators';
 import { MembershipPlan, UserMembership } from '../interfaces/gym-management.interface';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
+import { User } from '../interfaces/user.interface';
+import { take } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +22,8 @@ export class MembershipService {
   plans$ = this.plansSubject.asObservable();
   memberships$ = this.membershipsSubject.asObservable();
   isLoading$ = this.isLoadingSubject.asObservable();
+  usersMap: Map<string, User> = new Map(); // Más eficiente para búsquedas
+  users: User[] = []; // Agregar al inicio con las otras propiedades
 
   constructor(private db: AngularFirestore) {
     console.log('💳 MembershipService inicializado');
@@ -151,7 +155,25 @@ export class MembershipService {
 
   private loadMemberships(): void {
     console.log('💳 Cargando membresías de usuarios desde Firebase...');
-
+  
+    // 🔥 PRIMERO: Cargar usuarios
+    this.db.collection('users', ref => ref.where('role', '==', 'user'))
+      .valueChanges({ idField: 'uid' })
+      .pipe(take(1))
+      .subscribe((users: any[]) => {
+        console.log(`👥 ${users.length} usuarios cargados en servicio`);
+        this.users = users as User[];
+        
+        // Crear mapa para búsquedas rápidas
+        this.usersMap.clear();
+        this.users.forEach(user => {
+          this.usersMap.set(user.uid, user);
+        });
+        
+        console.log('📋 Mapa de usuarios creado:', this.usersMap.size, 'usuarios');
+      });
+  
+    // 🔥 SEGUNDO: Cargar membresías
     this.db.collection('userMemberships').valueChanges({ idField: 'id' }).pipe(
       map((memberships: any[]) => {
         console.log(`✅ ${memberships.length} membresías cargadas desde Firebase`);
@@ -393,14 +415,9 @@ export class MembershipService {
         // Calcular ingresos del mes actual
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
-        const monthlyRevenue = memberships.reduce((total, m) => {
-          return total + m.paymentHistory
-            .filter(p => {
-              const paymentDate = new Date(p.date);
-              return paymentDate.getMonth() === currentMonth && 
-                     paymentDate.getFullYear() === currentYear;
-            })
-            .reduce((sum, p) => sum + p.amount, 0);
+        const monthlyRevenue = activeMemberships.reduce((total, m) => {
+          const plan = plans.find(p => p.id === m.planId);
+          return total + (plan?.price || 0);
         }, 0);
 
         // Calcular tasa de renovación
@@ -466,6 +483,11 @@ export class MembershipService {
         return monthlyData;
       })
     );
+  }
+
+  getUserName(userId: string): string {
+    const user = this.usersMap.get(userId);
+    return user?.displayName || user?.email || 'Usuario desconocido';
   }
 
   getUserMembership(userId: string): Observable<UserMembership | null> {
