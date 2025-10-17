@@ -32,7 +32,8 @@
               {
                 "glob": "**/*",
                 "input": "public"
-              }
+              },
+              "src/email-verified.html"
             ],
             "styles": [
               "src/styles.scss"

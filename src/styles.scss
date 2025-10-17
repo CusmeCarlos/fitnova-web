@@ -637,4 +637,54 @@ p {
     }
   }
 }
+// ===============================================================================
+// 🎨 PANEL DE SELECT PREMIUM - GÉNERO Y OTROS SELECTS
+// ===============================================================================
+.mat-mdc-select-panel {
+  background: var(--secondary-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  backdrop-filter: var(--glass-blur) !important;
+  box-shadow: var(--shadow-xl) !important;
+  padding: 0.5rem !important;
+
+  .mat-mdc-option {
+    border-radius: 8px !important;
+    margin: 0.25rem 0 !important;
+    padding: 0.75rem 1rem !important;
+    color: var(--text-primary) !important;
+    transition: all 0.2s ease !important;
+
+    &:hover {
+      background: rgba(59, 130, 246, 0.15) !important;
+      color: var(--accent-blue) !important;
+    }
+
+    &.mat-mdc-option-active,
+    &.mdc-list-item--selected {
+      background: rgba(59, 130, 246, 0.2) !important;
+      color: var(--accent-blue) !important;
+      font-weight: 600 !important;
+    }
+
+    .mdc-list-item__primary-text {
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.75rem !important;
+      font-size: 0.9rem !important;
+
+      mat-icon {
+        font-size: 1.25rem !important;
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+        color: var(--text-secondary) !important;
+      }
+    }
+
+    &:hover .mdc-list-item__primary-text mat-icon,
+    &.mat-mdc-option-active .mdc-list-item__primary-text mat-icon {
+      color: var(--accent-blue) !important;
+    }
+  }
+}
 }

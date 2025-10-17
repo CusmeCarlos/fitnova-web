@@ -1,0 +1,63 @@
+<!-- src/app/pages/email-verified/email-verified.component.html -->
+<div class="verification-container">
+  <div class="background-gradient"></div>
+  
+  <mat-card class="success-card">
+    <!-- Icono de éxito animado -->
+    <div class="icon-container">
+      <mat-icon class="success-icon">check_circle</mat-icon>
+    </div>
+    
+    <!-- Contenido -->
+    <div class="content">
+      <h1 class="title">¡Email Verificado! ✅</h1>
+      
+      <p class="subtitle">
+        Tu cuenta de <strong>FitNova</strong> ha sido activada exitosamente.
+      </p>
+      
+      <p class="description">
+        Ya puedes descargar la aplicación móvil y comenzar tu entrenamiento personalizado con corrección postural en tiempo real.
+      </p>
+      
+      <!-- Características -->
+      <div class="features">
+        <div class="feature-item">
+          <mat-icon>fitness_center</mat-icon>
+          <span>Rutinas Personalizadas</span>
+        </div>
+        <div class="feature-item">
+          <mat-icon>visibility</mat-icon>
+          <span>Corrección Postural</span>
+        </div>
+        <div class="feature-item">
+          <mat-icon>analytics</mat-icon>
+          <span>Seguimiento de Progreso</span>
+        </div>
+      </div>
+      
+      <!-- Botones de acción -->
+      <div class="actions">
+        <button mat-raised-button 
+                color="primary" 
+                class="download-btn"
+                (click)="downloadApp()">
+          <mat-icon>download</mat-icon>
+          Descargar App Móvil
+        </button>
+        
+        <button mat-button 
+                class="web-btn"
+                (click)="goToWebsite()">
+          Ir a la plataforma web
+        </button>
+      </div>
+      
+      <!-- Footer info -->
+      <div class="footer-info">
+        <mat-icon>help_outline</mat-icon>
+        <p>¿Necesitas ayuda? Contacta a tu entrenador</p>
+      </div>
+    </div>
+  </mat-card>
+</div>

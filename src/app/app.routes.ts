@@ -1,5 +1,5 @@
 // src/app/app.routes.ts
-// ✅ RUTAS ACTUALIZADAS CON MEMBRESÍAS - FASE 18b
+// ✅ RUTAS ACTUALIZADAS CON EMAIL VERIFICATION
 
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
@@ -17,6 +17,13 @@ export const routes: Routes = [
     path: 'auth',
     loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule),
     title: 'Autenticación - FitNova'
+  },
+
+  // ✅ NUEVA RUTA: Email Verified (sin autenticación)
+  {
+    path: 'email-verified',
+    loadComponent: () => import('./pages/email-verified/email-verified.component').then(c => c.EmailVerifiedComponent),
+    title: 'Email Verificado - FitNova'
   },
 
   {
@@ -54,13 +61,11 @@ export const routes: Routes = [
         loadComponent: () => import('./shared/settings/settings.component').then(c => c.SettingsComponent),
         title: 'Configuración - FitNova'
       },
-      // ✅ EQUIPAMIENTO - FASE 18a
       {
         path: 'equipment',
         loadComponent: () => import('./shared/equipment/equipment.component').then(c => c.EquipmentComponent),
         title: 'Gestión de Equipamiento - FitNova'
       },
-      // ✅ MEMBRESÍAS - FASE 18b (NUEVO)
       {
         path: 'membership',
         loadComponent: () => import('./shared/membership/membership.component').then(c => c.MembershipComponent),

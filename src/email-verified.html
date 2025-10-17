@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Cuenta Verificada - FitNova</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 25px;
+            background: linear-gradient(135deg, #00C851 0%, #00ff00 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 200, 81, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 25px rgba(0, 200, 81, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 200, 81, 0);
+            }
+        }
+        
+        .checkmark {
+            color: white;
+            font-size: 50px;
+            animation: checkmark 0.5s ease-out 0.3s both;
+        }
+        
+        @keyframes checkmark {
+            from {
+                transform: scale(0) rotate(-45deg);
+            }
+            to {
+                transform: scale(1) rotate(0);
+            }
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #667eea;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .gymshark-logo {
+            font-size: 40px;
+            margin: 20px 0;
+            animation: swim 2s ease-in-out infinite;
+        }
+        
+        @keyframes swim {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            50% {
+                transform: translateX(10px);
+            }
+        }
+        
+        .steps {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: left;
+        }
+        
+        .steps h3 {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .step:last-child {
+            margin-bottom: 0;
+        }
+        
+        .step-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-weight: bold;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        
+        .download-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-radius: 10px;
+        }
+        
+        .download-title {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .app-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .app-btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: white;
+        }
+        
+        .app-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .team-text {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        
+        .celebrate {
+            font-size: 30px;
+            animation: bounce 1s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .subtitle {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">
+            <div class="checkmark">✓</div>
+        </div>
+        
+        <h1>¡Cuenta Verificada!</h1>
+        <p class="subtitle">Tu email ha sido confirmado</p>
+        
+        <div class="gymshark-logo">🦈</div>
+        
+        <p class="team-text">¡Bienvenido al equipo GymShark!</p>
+        
+        <p class="message">
+            <strong>¡Felicidades!</strong> Tu cuenta de FitNova ha sido verificada exitosamente. 
+            Ya eres parte oficial de la familia fitness más grande.
+        </p>
+        
+        <div class="celebrate">🎉</div>
+        
+        <div class="steps">
+            <h3>📱 Próximos pasos:</h3>
+            <div class="step">
+                <span class="step-number">1</span>
+                <span>Descarga la app FitNova en tu móvil</span>
+            </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                <span>Inicia sesión con tu email y contraseña</span>
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                <span>Completa tu perfil fitness</span>
+            </div>
+            <div class="step">
+                <span class="step-number">4</span>
+                <span>¡Comienza tu primer entrenamiento!</span>
+            </div>
+        </div>
+        
+        <div class="download-section">
+            <p class="download-title">📲 Descarga FitNova:</p>
+            <div class="app-buttons">
+                <a href="https://play.google.com/store" class="app-btn">
+                    <span>📱</span>
+                    <span>Google Play</span>
+                </a>
+                <a href="https://apps.apple.com" class="app-btn">
+                    <span>🍎</span>
+                    <span>App Store</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>FitNova - GymShark Team</strong> 🦈</p>
+            <p style="margin-top: 8px;">Transformando vidas, un entrenamiento a la vez</p>
+            <p style="margin-top: 8px; color: #bbb;">© 2025 FitNova. Todos los derechos reservados.</p>
+        </div>
+    </div>
+
+    <script>
+        // Mostrar confeti al cargar la página
+        window.addEventListener('load', function() {
+            // Crear efecto de confeti simple
+            const colors = ['#667eea', '#764ba2', '#00C851', '#FFD700'];
+            const confettiCount = 50;
+            
+            for(let i = 0; i < confettiCount; i++) {
+                setTimeout(() => {
+                    createConfetti(colors[Math.floor(Math.random() * colors.length)]);
+                }, i * 30);
+            }
+        });
+        
+        function createConfetti(color) {
+            const confetti = document.createElement('div');
+            confetti.style.cssText = `
+                position: fixed;
+                width: 10px;
+                height: 10px;
+                background: ${color};
+                left: ${Math.random() * 100}%;
+                top: -10px;
+                opacity: ${Math.random() * 0.8 + 0.2};
+                transform: rotate(${Math.random() * 360}deg);
+                animation: fall ${Math.random() * 3 + 2}s linear;
+                z-index: 9999;
+            `;
+            
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => {
+                confetti.remove();
+            }, 5000);
+        }
+        
+        // Agregar CSS para la animación
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fall {
+                to {
+                    top: 100%;
+                    transform: rotate(720deg);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Detectar si es móvil y cambiar los enlaces de descarga
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            const playBtn = document.querySelector('.app-btn[href*="play.google.com"]');
+            const appBtn = document.querySelector('.app-btn[href*="apps.apple.com"]');
+            
+            // Por ahora son links de ejemplo, actualiza con los reales cuando publiques
+            if (playBtn) playBtn.href = 'https://play.google.com/store/apps/details?id=com.fitnova.app';
+            if (appBtn) appBtn.href = 'https://apps.apple.com/app/fitnova/id123456789';
+        }
+    </script>
+</body>
+</html>

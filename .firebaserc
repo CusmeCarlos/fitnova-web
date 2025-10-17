@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "fitnova-app"
+  },
+  "targets": {},
+  "etags": {
+    "fitnova-app": {
+      "extensionInstances": {
+        "firestore-send-email": "8c83ae6b7c4396002604500b327ead62576daf35e1e9b3b47db5f98bd581ee55"
+      }
+    }
   }
 }

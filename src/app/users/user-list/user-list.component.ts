@@ -187,6 +187,8 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
       displayName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]], // ✅ NUEVO
+      gender: ['', Validators.required], // ✅ NUEVO
       assignedTrainer: ['']
     });
   }
@@ -620,6 +622,8 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
         email: formData.email,
         password: formData.password,
         displayName: formData.displayName,
+        phoneNumber: formData.phoneNumber, // ✅ NUEVO
+        gender: formData.gender,
         role: 'user',
         assignedTrainer: formData.assignedTrainer || null
       });

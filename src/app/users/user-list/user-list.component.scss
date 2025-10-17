@@ -882,3 +882,365 @@
   --mdc-snackbar-container-color: var(--accent-yellow) !important;
   --mdc-snackbar-supporting-text-color: var(--bg-dark) !important;
 }
+// ===============================================================================
+// ✨ FORMULARIO PREMIUM DE CREAR USUARIO
+// ===============================================================================
+.create-user-form-premium {
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  box-shadow: var(--shadow-xl);
+  margin-bottom: 2rem;
+  overflow: hidden;
+  animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // 🎨 HEADER PREMIUM
+  .form-header-premium {
+    background: linear-gradient(135deg, var(--accent-blue) 0%, #1e40af 100%);
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+    .header-icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+
+      mat-icon {
+        font-size: 2rem;
+        width: 2rem;
+        height: 2rem;
+        color: white;
+      }
+    }
+
+    .header-text {
+      flex: 1;
+
+      .form-title {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .form-subtitle {
+        margin: 0.5rem 0 0 0;
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 400;
+      }
+    }
+  }
+
+  // 📝 CONTENIDO DEL FORMULARIO
+  .form-content-premium {
+    padding: 2rem !important;
+
+    .form-section {
+      margin-bottom: 2rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 1.5rem 0;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--border-color);
+
+        mat-icon {
+          font-size: 1.5rem;
+          width: 1.5rem;
+          height: 1.5rem;
+          color: var(--accent-blue);
+        }
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+
+        .half-width {
+          grid-column: span 1;
+        }
+
+        .full-width {
+          grid-column: span 1;
+        }
+
+        // Grid de 2 columnas en pantallas grandes
+        @media (min-width: 768px) {
+          grid-template-columns: repeat(2, 1fr);
+
+          .full-width {
+            grid-column: span 2;
+          }
+        }
+      }
+    }
+
+    // 🎨 ESTILOS DE FORM FIELDS
+    .mat-mdc-form-field {
+      width: 100%;
+
+      &.mat-form-field-appearance-outline {
+        .mat-mdc-text-field-wrapper {
+          background: var(--glass-bg);
+          border: 1px solid var(--glass-border);
+          border-radius: 12px;
+          backdrop-filter: var(--glass-blur);
+          transition: all 0.3s ease;
+
+          &:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          }
+        }
+
+        &.mat-focused {
+          .mat-mdc-text-field-wrapper {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+          }
+        }
+
+        .mat-mdc-form-field-icon-prefix {
+          mat-icon {
+            color: var(--text-secondary);
+            margin-right: 0.5rem;
+          }
+        }
+
+        &.mat-focused .mat-mdc-form-field-icon-prefix mat-icon {
+          color: var(--accent-blue);
+        }
+
+        // Input text styling
+        input {
+          color: var(--text-primary);
+          font-weight: 500;
+          font-size: 0.95rem;
+          caret-color: var(--accent-blue);
+        }
+
+        // Label styling
+        .mat-mdc-form-field-label {
+          color: var(--text-secondary);
+          font-weight: 500;
+        }
+
+        // Hint styling
+        .mat-mdc-form-field-hint {
+          color: var(--text-muted);
+          font-size: 0.75rem;
+        }
+
+        // Error styling
+        .mat-mdc-form-field-error {
+          color: var(--accent-red);
+          font-weight: 500;
+          font-size: 0.75rem;
+        }
+      }
+
+      // Toggle password button
+      .toggle-password {
+        color: var(--text-secondary);
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: var(--accent-blue);
+        }
+      }
+    }
+
+    // 🎨 SELECT STYLING
+    .mat-mdc-select {
+      .mat-mdc-select-trigger {
+        .mat-mdc-select-value {
+          color: var(--text-primary);
+          font-weight: 500;
+
+          mat-icon {
+            margin-right: 0.5rem;
+            vertical-align: middle;
+          }
+        }
+
+        .mat-mdc-select-arrow-wrapper {
+          .mat-mdc-select-arrow {
+            color: var(--text-secondary);
+          }
+        }
+      }
+
+      &.mat-focused {
+        .mat-mdc-select-trigger .mat-mdc-select-arrow {
+          color: var(--accent-blue);
+        }
+      }
+    }
+
+    // 💡 INFO BANNER
+    .info-banner {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      margin-top: 2rem;
+
+      mat-icon {
+        font-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        color: var(--accent-blue);
+        flex-shrink: 0;
+      }
+
+      p {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  // 🔘 FOOTER CON ACCIONES
+  .form-actions-premium {
+    padding: 1.5rem 2rem !important;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+
+    .cancel-btn {
+      border-radius: 12px;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      background: transparent;
+      transition: all 0.3s ease;
+
+      &:hover:not(:disabled) {
+        background: var(--card-hover);
+        color: var(--accent-red);
+        border-color: var(--accent-red);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+      }
+
+      mat-icon {
+        margin-right: 0.5rem;
+      }
+    }
+
+    .submit-btn {
+      border-radius: 12px;
+      padding: 0.75rem 2rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, #1e40af 100%);
+      color: white;
+      border: none;
+      box-shadow: var(--shadow-md);
+      transition: all 0.3s ease;
+      position: relative;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+      }
+
+      &:disabled {
+        background: var(--text-muted);
+        color: var(--text-secondary);
+        transform: none;
+        box-shadow: none;
+      }
+
+      .btn-spinner {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        --mdc-circular-progress-active-indicator-color: white;
+      }
+
+      mat-icon {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+}
+
+// 🎬 ANIMACIÓN
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 📱 RESPONSIVE
+@media (max-width: 768px) {
+  .create-user-form-premium {
+    .form-header-premium {
+      padding: 1.5rem;
+      flex-direction: column;
+      text-align: center;
+
+      .header-icon {
+        width: 56px;
+        height: 56px;
+      }
+
+      .header-text {
+        .form-title {
+          font-size: 1.5rem;
+        }
+      }
+    }
+
+    .form-content-premium {
+      padding: 1.5rem !important;
+    }
+
+    .form-actions-premium {
+      flex-direction: column;
+      gap: 0.75rem;
+
+      .cancel-btn,
+      .submit-btn {
+        width: 100%;
+      }
+    }
+  }
+}

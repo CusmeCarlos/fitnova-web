@@ -367,31 +367,50 @@
     </div>
   </mat-card>
 
-  <!-- 🚨 FORMULARIO DE CREAR USUARIO (Modal o Expansible) -->
-  <mat-card *ngIf="showCreateUserForm" class="create-user-form">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon>person_add</mat-icon>
-        Crear Nuevo Usuario
-      </mat-card-title>
-    </mat-card-header>
-    
-    <mat-card-content>
-      <form [formGroup]="createUserForm" (ngSubmit)="createUser()">
-        <div class="form-row">
-          <mat-form-field appearance="outline">
+  <!-- ✨ FORMULARIO PREMIUM DE CREAR USUARIO -->
+<mat-card *ngIf="showCreateUserForm" class="create-user-form-premium">
+  <!-- Header Premium con Icono -->
+  <div class="form-header-premium">
+    <div class="header-icon">
+      <mat-icon>person_add</mat-icon>
+    </div>
+    <div class="header-text">
+      <h2 class="form-title">Crear Nuevo Usuario</h2>
+      <p class="form-subtitle">Complete la información del nuevo miembro</p>
+    </div>
+  </div>
+  
+  <mat-card-content class="form-content-premium">
+    <form [formGroup]="createUserForm" (ngSubmit)="createUser()">
+      
+      <!-- SECCIÓN: Información Personal -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <mat-icon>badge</mat-icon>
+          Información Personal
+        </h3>
+        
+        <div class="form-grid">
+          <!-- Nombre Completo -->
+          <mat-form-field appearance="outline" class="full-width">
             <mat-label>Nombre completo</mat-label>
+            <mat-icon matPrefix>person</mat-icon>
             <input matInput 
                    formControlName="displayName" 
-                   placeholder="Ej: Juan Pérez"
+                   placeholder="Ej: Juan Pérez García"
                    required>
             <mat-error *ngIf="createUserForm.get('displayName')?.hasError('required')">
               El nombre es requerido
             </mat-error>
+            <mat-error *ngIf="createUserForm.get('displayName')?.hasError('minlength')">
+              Mínimo 2 caracteres
+            </mat-error>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Email</mat-label>
+          <!-- Email -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Correo electrónico</mat-label>
+            <mat-icon matPrefix>email</mat-icon>
             <input matInput 
                    type="email"
                    formControlName="email" 
@@ -404,11 +423,67 @@
               Ingresa un email válido
             </mat-error>
           </mat-form-field>
-        </div>
 
-        <div class="form-row">
-          <mat-form-field appearance="outline">
+          <!-- ✅ NUEVO: Teléfono -->
+          <mat-form-field appearance="outline" class="half-width">
+            <mat-label>Teléfono de contacto</mat-label>
+            <mat-icon matPrefix>phone</mat-icon>
+            <input matInput 
+                   type="tel"
+                   formControlName="phoneNumber" 
+                   placeholder="0987654321"
+                   maxlength="10"
+                   required>
+            <mat-hint>10 dígitos sin espacios</mat-hint>
+            <mat-error *ngIf="createUserForm.get('phoneNumber')?.hasError('required')">
+              El teléfono es requerido
+            </mat-error>
+            <mat-error *ngIf="createUserForm.get('phoneNumber')?.hasError('pattern')">
+              Debe contener exactamente 10 dígitos
+            </mat-error>
+          </mat-form-field>
+
+          <!-- ✅ NUEVO: Género -->
+          <mat-form-field appearance="outline" class="half-width">
+            <mat-label>Género</mat-label>
+            <mat-icon matPrefix>wc</mat-icon>
+            <mat-select formControlName="gender" required>
+              <mat-option value="male">
+                <mat-icon>male</mat-icon>
+                Masculino
+              </mat-option>
+              <mat-option value="female">
+                <mat-icon>female</mat-icon>
+                Femenino
+              </mat-option>
+              <mat-option value="other">
+                <mat-icon>transgender</mat-icon>
+                Otro
+              </mat-option>
+              <mat-option value="prefer-not-to-say">
+                <mat-icon>help_outline</mat-icon>
+                Prefiero no decir
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="createUserForm.get('gender')?.hasError('required')">
+              Selecciona un género
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- SECCIÓN: Credenciales y Asignación -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <mat-icon>security</mat-icon>
+          Credenciales de Acceso
+        </h3>
+        
+        <div class="form-grid">
+          <!-- Contraseña Temporal -->
+          <mat-form-field appearance="outline" class="half-width">
             <mat-label>Contraseña temporal</mat-label>
+            <mat-icon matPrefix>lock</mat-icon>
             <input matInput 
                    [type]="hidePassword ? 'password' : 'text'"
                    formControlName="password" 
@@ -417,9 +492,11 @@
             <button mat-icon-button 
                     matSuffix 
                     (click)="hidePassword = !hidePassword"
-                    type="button">
+                    type="button"
+                    class="toggle-password">
               <mat-icon>{{hidePassword ? 'visibility' : 'visibility_off'}}</mat-icon>
             </button>
+            <mat-hint>El usuario podrá cambiarla después</mat-hint>
             <mat-error *ngIf="createUserForm.get('password')?.hasError('required')">
               La contraseña es requerida
             </mat-error>
@@ -428,20 +505,35 @@
             </mat-error>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" *ngIf="currentUser?.role === 'admin'">
+          <!-- Asignar Entrenador (solo admin) -->
+          <mat-form-field appearance="outline" 
+                          class="half-width" 
+                          *ngIf="currentUser?.role === 'admin'">
             <mat-label>Asignar entrenador</mat-label>
+            <mat-icon matPrefix>fitness_center</mat-icon>
             <mat-select formControlName="assignedTrainer">
-              <mat-option value="">Sin asignar</mat-option>
+              <mat-option value="">
+                <mat-icon>remove_circle_outline</mat-icon>
+                Sin asignar
+              </mat-option>
               <mat-option *ngFor="let trainer of availableTrainers" 
                          [value]="trainer.uid">
+                <mat-icon>person</mat-icon>
                 {{trainer.displayName}}
               </mat-option>
             </mat-select>
+            <mat-hint>Opcional: puedes asignarlo después</mat-hint>
           </mat-form-field>
         </div>
-      </form>
-    </mat-card-content>
+      </div>
 
+      <!-- Info Premium -->
+      <div class="info-banner">
+        <mat-icon>info</mat-icon>
+        <p>Después de crear el usuario, serás redirigido automáticamente para asignar una membresía.</p>
+      </div>
+    </form>
+  </mat-card-content>
     <mat-card-actions align="end">
       <button mat-button 
               type="button" 

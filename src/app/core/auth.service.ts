@@ -425,6 +425,8 @@ async getCurrentUserAsync(): Promise<User | null> {
     email: string;
     password: string;
     displayName: string;
+    phoneNumber?: string;
+    gender?: string;
     role: 'user';
     assignedTrainer?: string;
   }): Promise<{ success: boolean; userId?: string; error?: string }> {
@@ -442,12 +444,16 @@ async getCurrentUserAsync(): Promise<User | null> {
         email: userData.email,
         password: userData.password,
         displayName: userData.displayName,
+        phoneNumber: userData.phoneNumber,
+        gender: userData.gender,
         assignedTrainer: currentUser.role === 'trainer' ? currentUser.uid : userData.assignedTrainer
       };
   
       console.log('📡 Llamando Cloud Function con datos:', {
         email: functionData.email,
         displayName: functionData.displayName,
+        phoneNumber: functionData.phoneNumber,
+        gender: functionData.gender,
         assignedTrainer: functionData.assignedTrainer,
         callerRole: currentUser.role
       });
