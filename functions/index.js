@@ -1,7 +1,8 @@
 // functions/index.js
-// 🚀 CLOUD FUNCTIONS FITNOVA - CON EMAIL DE VERIFICACIÓN CORREGIDO
+// 🚀 CLOUD FUNCTIONS FITNOVA - CON EMAIL DE VERIFICACIÓN Y SINCRONIZACIÓN
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -75,11 +76,11 @@ exports.createMobileUser = onCall(async (request) => {
       emailVerified: false
     });
 
-    // 🔧 CONFIGURACIÓN CORREGIDA - Para que funcione la verificación
+    // 🔧 CONFIGURACIÓN - Firebase maneja la verificación
     const actionCodeSettings = {
-      // URL donde llegará después de verificar (tu página de confirmación)
+      // URL donde llegará después de verificar
       url: 'https://fitnova-app.web.app/email-verified',
-      // ⚠️ IMPORTANTE: Debe ser false para que funcione en web
+      // handleCodeInApp false = Firebase maneja la verificación automáticamente
       handleCodeInApp: false
     };
 
@@ -349,33 +350,101 @@ exports.createMobileUser = onCall(async (request) => {
   }
 });
 
-exports.syncEmailVerification = onCall(async (request) => {
+// 🔥 TRIGGER: SINCRONIZAR EMAIL CUANDO SE ACTUALIZA lastActiveAt
+// Se ejecuta automáticamente cuando el usuario hace login
+exports.syncEmailOnLogin = onDocumentWritten('users/{userId}', async (event) => {
   try {
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'Usuario no autenticado');
+    const beforeData = event.data?.before?.data();
+    const afterData = event.data?.after?.data();
+
+    // Solo procesar si se actualizó lastActiveAt (indicador de login)
+    const beforeActiveAt = beforeData?.lastActiveAt?.toMillis() || 0;
+    const afterActiveAt = afterData?.lastActiveAt?.toMillis() || 0;
+
+    if (afterActiveAt <= beforeActiveAt) {
+      // No hubo actualización de lastActiveAt, ignorar
+      return null;
     }
 
-    const uid = request.auth.uid;
-    
-    // Obtener el usuario de Firebase Auth
-    const userRecord = await auth.getUser(uid);
-    
-    // Actualizar en Firestore
-    await db.doc(`users/${uid}`).update({
-      emailVerified: userRecord.emailVerified,
-      updatedAt: FieldValue.serverTimestamp()
-    });
+    const uid = event.params.userId;
+    console.log(`🔍 Login detectado para usuario: ${uid}`);
 
-    console.log(`✅ Email verificado sincronizado para usuario: ${uid}`);
-    
-    return {
-      success: true,
-      emailVerified: userRecord.emailVerified,
-      email: userRecord.email
-    };
+    // Obtener el estado real de emailVerified desde Auth
+    const userRecord = await auth.getUser(uid);
+
+    // Si el email está verificado en Auth pero no en Firestore, sincronizar
+    if (userRecord.emailVerified && !afterData?.emailVerified) {
+      await db.doc(`users/${uid}`).update({
+        emailVerified: true,
+        updatedAt: FieldValue.serverTimestamp()
+      });
+
+      console.log(`✅ emailVerified sincronizado automáticamente para: ${uid}`);
+    }
+
+    return null;
+  } catch (error) {
+    console.error('❌ Error en syncEmailOnLogin:', error);
+    return null;
+  }
+});
+
+// 🔥 FUNCIÓN CALLABLE: SINCRONIZAR ESTADO DE EMAIL MANUALMENTE
+// Se puede llamar desde la app para forzar la sincronización
+exports.checkEmailVerification = onCall(async (request) => {
+  try {
+    // Obtener UID del parámetro o del usuario autenticado
+    let uid = request.data?.uid;
+
+    if (!uid && request.auth) {
+      uid = request.auth.uid;
+    }
+
+    if (!uid) {
+      throw new HttpsError('invalid-argument', 'UID de usuario requerido');
+    }
+
+    console.log(`🔍 Verificando email para UID: ${uid}`);
+
+    // Obtener datos de Firebase Auth (la fuente de verdad)
+    const userRecord = await auth.getUser(uid);
+
+    // Solo actualizar si el email está verificado en Auth
+    if (userRecord.emailVerified) {
+      // Actualizar Firestore con el estado real de Auth
+      await db.doc(`users/${uid}`).update({
+        emailVerified: true,
+        updatedAt: FieldValue.serverTimestamp()
+      });
+
+      console.log(`✅ Email verificado y sincronizado en Firestore para: ${uid}`);
+
+      return {
+        success: true,
+        emailVerified: true,
+        message: 'Email verificado exitosamente'
+      };
+    } else {
+      console.log(`⏳ Email aún no verificado en Auth para: ${uid}`);
+
+      return {
+        success: false,
+        emailVerified: false,
+        message: 'Email aún no verificado'
+      };
+    }
 
   } catch (error) {
-    console.error('❌ Error al sincronizar verificación:', error);
+    console.error('❌ Error al verificar email:', error);
+
+    if (error instanceof HttpsError) throw error;
+
+    // Manejar error de usuario no encontrado
+    if (error.code === 'auth/user-not-found') {
+      throw new HttpsError('not-found', 'Usuario no encontrado');
+    }
+
     throw new HttpsError('internal', error.message);
   }
 });
+

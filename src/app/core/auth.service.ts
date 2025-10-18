@@ -71,21 +71,24 @@ export class AuthService {
   async login(email: string, password: string): Promise<void> {
     try {
       console.log('🔐 Iniciando login web para:', email);
-      
+
       const userCredential = await this.afAuth.signInWithEmailAndPassword(email, password);
-      
+
       if (userCredential.user) {
+        // Sincronizar estado de email verificado desde Auth a Firestore
+        await this.syncEmailVerificationStatus(userCredential.user.uid);
+
         // Verificar rol antes de navegar
         const db = firebase.firestore();
         const userDoc = await db.doc(`users/${userCredential.user.uid}`).get();
-        
+
         if (userDoc.exists) {
           const userData = userDoc.data() as User;
-          
+
           if (this.isWebAllowedRole(userData.role)) {
             await this.showSuccessMessage('¡Bienvenido a FitNova Web!');
             console.log('✅ Login web exitoso para:', email);
-            
+
             // ✅ CAMBIO: Navegar a dashboard en lugar de tabs
             this.router.navigate(['/dashboard/overview']);
           } else {
@@ -101,6 +104,18 @@ export class AuthService {
       console.error('❌ Error en login web:', error);
       await this.showErrorMessage(this.getErrorMessage(error));
       throw error;
+    }
+  }
+
+  // 🔄 SINCRONIZAR ESTADO DE EMAIL VERIFICADO
+  private async syncEmailVerificationStatus(uid: string): Promise<void> {
+    try {
+      const checkEmailVerification = firebase.functions().httpsCallable('checkEmailVerification');
+      const result = await checkEmailVerification({ uid });
+      console.log('✅ Estado de email verificado sincronizado para UID:', uid, result.data);
+    } catch (error) {
+      console.warn('⚠️ No se pudo sincronizar el estado de email verificado:', error);
+      // No lanzamos error porque esto no debe bloquear el login
     }
   }
 
