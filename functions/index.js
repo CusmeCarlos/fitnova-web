@@ -448,3 +448,91 @@ exports.checkEmailVerification = onCall(async (request) => {
   }
 });
 
+// 🔐 FUNCIÓN: ACTUALIZAR CONTRASEÑA DE USUARIO
+// Para sistema de recuperación de contraseña
+exports.updateUserPassword = onCall(async (request) => {
+  try {
+    console.log('🔒 Iniciando actualización de contraseña');
+
+    const { userId, newPassword } = request.data;
+
+    // Validar datos de entrada
+    if (!userId || !newPassword) {
+      throw new HttpsError('invalid-argument', 'userId y newPassword son requeridos');
+    }
+
+    // Validar que la contraseña tenga al menos 8 caracteres
+    if (newPassword.length < 8) {
+      throw new HttpsError('invalid-argument', 'La contraseña debe tener al menos 8 caracteres');
+    }
+
+    // Validar requisitos de seguridad de la contraseña
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasLowerCase = /[a-z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      throw new HttpsError(
+        'invalid-argument',
+        'La contraseña debe contener mayúsculas, minúsculas, números y caracteres especiales'
+      );
+    }
+
+    console.log('✅ Validación de contraseña exitosa');
+
+    // Actualizar la contraseña del usuario en Firebase Auth
+    await auth.updateUser(userId, {
+      password: newPassword
+    });
+
+    console.log('✅ Contraseña actualizada en Firebase Auth');
+
+    // Registrar el cambio de contraseña en Firestore
+    await db.doc(`users/${userId}`).update({
+      passwordChangedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+
+    console.log('✅ Registro de cambio de contraseña guardado en Firestore');
+
+    // Registrar en auditoría
+    await db.collection('auditLogs').add({
+      userId: userId,
+      action: 'PASSWORD_RESET',
+      timestamp: FieldValue.serverTimestamp(),
+      method: 'verification_code',
+      ipAddress: request.rawRequest?.ip || 'unknown',
+      userAgent: request.rawRequest?.headers['user-agent'] || 'unknown'
+    });
+
+    console.log('✅ Registro de auditoría creado');
+
+    return {
+      success: true,
+      message: 'Contraseña actualizada exitosamente'
+    };
+
+  } catch (error) {
+    console.error('❌ Error al actualizar contraseña:', error);
+
+    // Si es un error de Firebase Admin
+    if (error.code) {
+      if (error.code === 'auth/user-not-found') {
+        throw new HttpsError('not-found', 'Usuario no encontrado');
+      }
+      if (error.code === 'auth/invalid-password') {
+        throw new HttpsError('invalid-argument', 'La contraseña no cumple con los requisitos de Firebase');
+      }
+    }
+
+    // Si ya es un HttpsError, re-lanzarlo
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+
+    // Error genérico
+    throw new HttpsError('internal', 'Error al actualizar la contraseña: ' + error.message);
+  }
+});
+

@@ -403,7 +403,7 @@ async getCurrentUserAsync(): Promise<User | null> {
     return error?.message || 'Error desconocido';
   }
 
-  // ✅ RESET PASSWORD
+  // ✅ RESET PASSWORD (Método original - mantener por compatibilidad)
   async resetPassword(email: string): Promise<void> {
     try {
       await this.afAuth.sendPasswordResetEmail(email);
@@ -411,6 +411,276 @@ async getCurrentUserAsync(): Promise<User | null> {
     } catch (error: any) {
       console.error('Error en reset password:', error);
       await this.showErrorMessage(this.getErrorMessage(error));
+      throw error;
+    }
+  }
+
+  // 🔐 MÉTODOS DE RECUPERACIÓN DE CONTRASEÑA CON CÓDIGO DE VERIFICACIÓN
+
+  /**
+   * Envía un código de verificación al correo del usuario para recuperación de contraseña
+   * @param email Correo electrónico del usuario
+   */
+  async sendPasswordResetCode(email: string): Promise<void> {
+    try {
+      console.log('📧 Enviando código de verificación a:', email);
+
+      // Verificar que el usuario existe
+      const db = firebase.firestore();
+      const usersSnapshot = await db.collection('users')
+        .where('email', '==', email)
+        .limit(1)
+        .get();
+
+      if (usersSnapshot.empty) {
+        throw { code: 'auth/user-not-found' };
+      }
+
+      // Generar código de 6 dígitos
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // Guardar el código en Firestore con expiración de 10 minutos
+      const userDoc = usersSnapshot.docs[0];
+      const userId = userDoc.id;
+
+      await db.collection('passwordResetCodes').doc(userId).set({
+        email: email,
+        code: verificationCode,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        expiresAt: firebase.firestore.Timestamp.fromDate(new Date(Date.now() + 10 * 60 * 1000)), // 10 minutos
+        used: false
+      });
+
+      // Enviar email con el código usando la extensión de Firebase
+      await db.collection('mail').add({
+        to: email,
+        message: {
+          subject: 'Código de Recuperación de Contraseña - FitNova',
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                .code { background: white; border: 2px dashed #667eea; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; margin: 20px 0; color: #667eea; }
+                .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+                .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Recuperación de Contraseña</h1>
+                  <p>FitNova</p>
+                </div>
+                <div class="content">
+                  <p>Hola,</p>
+                  <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en FitNova.</p>
+                  <p>Tu código de verificación es:</p>
+                  <div class="code">${verificationCode}</div>
+                  <div class="warning">
+                    <strong>⚠️ Importante:</strong>
+                    <ul>
+                      <li>Este código expira en <strong>10 minutos</strong></li>
+                      <li>Solo puedes usarlo una vez</li>
+                      <li>Si no solicitaste este código, ignora este correo</li>
+                    </ul>
+                  </div>
+                  <p>Ingresa este código en la aplicación para continuar con el proceso de recuperación.</p>
+                </div>
+                <div class="footer">
+                  <p>Este es un correo automático, por favor no respondas.</p>
+                  <p>&copy; ${new Date().getFullYear()} FitNova. Todos los derechos reservados.</p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `
+        }
+      });
+
+      console.log('✅ Código de verificación enviado exitosamente');
+    } catch (error: any) {
+      console.error('❌ Error al enviar código de verificación:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verifica el código de recuperación ingresado por el usuario
+   * @param email Correo electrónico del usuario
+   * @param code Código de verificación de 6 dígitos
+   * @returns true si el código es válido, false en caso contrario
+   */
+  async verifyPasswordResetCode(email: string, code: string): Promise<boolean> {
+    try {
+      console.log('🔍 Verificando código para:', email);
+
+      const db = firebase.firestore();
+
+      // Buscar el usuario por email
+      const usersSnapshot = await db.collection('users')
+        .where('email', '==', email)
+        .limit(1)
+        .get();
+
+      if (usersSnapshot.empty) {
+        throw { code: 'auth/user-not-found' };
+      }
+
+      const userId = usersSnapshot.docs[0].id;
+
+      // Obtener el código almacenado
+      const codeDoc = await db.collection('passwordResetCodes').doc(userId).get();
+
+      if (!codeDoc.exists) {
+        console.error('❌ No existe código para este usuario');
+        return false;
+      }
+
+      const codeData = codeDoc.data();
+
+      // Verificar que el código no haya sido usado
+      if (codeData?.['used']) {
+        console.error('❌ El código ya fue utilizado');
+        return false;
+      }
+
+      // Verificar que el código no haya expirado
+      const expiresAt = codeData?.['expiresAt']?.toDate();
+      if (!expiresAt || expiresAt < new Date()) {
+        console.error('❌ El código ha expirado');
+        return false;
+      }
+
+      // Verificar que el código coincida
+      if (codeData?.['code'] !== code) {
+        console.error('❌ El código no coincide');
+        return false;
+      }
+
+      console.log('✅ Código verificado exitosamente');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error al verificar código:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Confirma el restablecimiento de contraseña con el código verificado
+   * @param email Correo electrónico del usuario
+   * @param code Código de verificación
+   * @param newPassword Nueva contraseña
+   */
+  async confirmPasswordReset(email: string, code: string, newPassword: string): Promise<void> {
+    try {
+      console.log('🔒 Restableciendo contraseña para:', email);
+
+      // Verificar el código nuevamente
+      const isValid = await this.verifyPasswordResetCode(email, code);
+
+      if (!isValid) {
+        throw { code: 'auth/invalid-action-code' };
+      }
+
+      const db = firebase.firestore();
+
+      // Buscar el usuario
+      const usersSnapshot = await db.collection('users')
+        .where('email', '==', email)
+        .limit(1)
+        .get();
+
+      if (usersSnapshot.empty) {
+        throw { code: 'auth/user-not-found' };
+      }
+
+      const userId = usersSnapshot.docs[0].id;
+
+      // Marcar el código como usado
+      await db.collection('passwordResetCodes').doc(userId).update({
+        used: true,
+        usedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Actualizar la contraseña usando Firebase Admin via Cloud Function
+      const updatePasswordFunction = firebase.functions().httpsCallable('updateUserPassword');
+
+      try {
+        const result = await updatePasswordFunction({
+          userId: userId,
+          newPassword: newPassword
+        });
+
+        if (result.data?.success) {
+          console.log('✅ Contraseña actualizada exitosamente');
+
+          // Enviar email de confirmación
+          await db.collection('mail').add({
+            to: email,
+            message: {
+              subject: 'Contraseña Actualizada - FitNova',
+              html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="utf-8">
+                  <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                    .success { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; }
+                    .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <div class="header">
+                      <h1>✅ Contraseña Actualizada</h1>
+                      <p>FitNova</p>
+                    </div>
+                    <div class="content">
+                      <div class="success">
+                        <strong>Tu contraseña ha sido actualizada exitosamente</strong>
+                      </div>
+                      <p>Tu contraseña de FitNova ha sido cambiada correctamente el ${new Date().toLocaleString('es-ES')}.</p>
+                      <p>Si no realizaste este cambio, por favor contacta inmediatamente a nuestro equipo de soporte.</p>
+                      <p>Ya puedes iniciar sesión con tu nueva contraseña.</p>
+                    </div>
+                    <div class="footer">
+                      <p>Este es un correo automático, por favor no respondas.</p>
+                      <p>&copy; ${new Date().getFullYear()} FitNova. Todos los derechos reservados.</p>
+                    </div>
+                  </div>
+                </body>
+                </html>
+              `
+            }
+          });
+        } else {
+          throw new Error('No se pudo actualizar la contraseña');
+        }
+      } catch (error: any) {
+        // Si la Cloud Function no existe, intentar con el método tradicional
+        if (error.code === 'functions/not-found') {
+          console.warn('⚠️ Cloud Function no encontrada, usando método alternativo');
+
+          // Usar el método tradicional de Firebase (enviar email de reset)
+          await this.afAuth.sendPasswordResetEmail(email);
+          throw new Error('Por favor, utiliza el enlace enviado a tu correo para restablecer tu contraseña');
+        }
+        throw error;
+      }
+
+      console.log('✅ Proceso de restablecimiento completado');
+    } catch (error: any) {
+      console.error('❌ Error al restablecer contraseña:', error);
       throw error;
     }
   }

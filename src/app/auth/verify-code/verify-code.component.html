@@ -1,0 +1,78 @@
+<div class="verify-code-container">
+  <mat-card class="verify-code-card">
+    <mat-card-header>
+      <div class="header-content">
+        <mat-icon class="header-icon">verified_user</mat-icon>
+        <h1>Verificar Código</h1>
+        <p class="subtitle">
+          Ingresa el código de 6 dígitos que enviamos a<br />
+          <strong>{{ email }}</strong>
+        </p>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="verifyCodeForm" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" class="full-width code-field">
+          <mat-label>Código de Verificación</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="code"
+            placeholder="000000"
+            maxlength="6"
+            inputmode="numeric"
+            (input)="onCodeInput($event)"
+            class="code-input"
+          />
+          <mat-icon matPrefix>lock</mat-icon>
+          <mat-error *ngIf="verifyCodeForm.get('code')?.invalid">
+            {{ getErrorMessage('code') }}
+          </mat-error>
+        </mat-form-field>
+
+        <div class="actions">
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            class="submit-button"
+            [disabled]="isLoading || verifyCodeForm.invalid"
+          >
+            <mat-spinner
+              *ngIf="isLoading"
+              diameter="20"
+              class="button-spinner"
+            ></mat-spinner>
+            <span *ngIf="!isLoading">Verificar Código</span>
+            <span *ngIf="isLoading">Verificando...</span>
+          </button>
+
+          <div class="resend-container">
+            <button
+              mat-button
+              type="button"
+              class="resend-button"
+              (click)="resendCode()"
+              [disabled]="isLoading || resendCooldown > 0"
+            >
+              <mat-icon>refresh</mat-icon>
+              <span *ngIf="resendCooldown === 0">Reenviar código</span>
+              <span *ngIf="resendCooldown > 0">Reenviar en {{ resendCooldown }}s</span>
+            </button>
+          </div>
+
+          <a
+            mat-button
+            routerLink="/auth/forgot-password"
+            class="back-link"
+            [disabled]="isLoading"
+          >
+            <mat-icon>arrow_back</mat-icon>
+            Cambiar correo electrónico
+          </a>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
