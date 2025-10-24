@@ -3,6 +3,7 @@
 
 import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
+import { AngularFireFunctions } from '@angular/fire/compat/functions';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 import 'firebase/compat/functions';
@@ -20,6 +21,7 @@ export class AuthService {
 
   constructor(
     private afAuth: AngularFireAuth,
+    private fns: AngularFireFunctions,
     private router: Router,
     private snackBar: MatSnackBar // ✅ CAMBIO: Material SnackBar
   ) {
@@ -831,6 +833,172 @@ async getCurrentUserAsync(): Promise<User | null> {
       return {
         success: false,
         error: errorMessage
+      };
+    }
+  }
+
+  // 🔐 MÉTODOS DE REGISTRO DE ADMINISTRADORES
+
+  /**
+   * Verifica si el registro de administradores está disponible (máximo 2)
+   * @returns Objeto con información de disponibilidad
+   */
+  async checkAdminRegistrationAvailable(): Promise<{ canRegister: boolean; currentAdmins: number; maxAdmins: number }> {
+    try {
+      console.log('🔍 Verificando disponibilidad de registro de administradores...');
+
+      const checkFunction = this.fns.httpsCallable('checkAdminRegistrationAvailable');
+      const result = await checkFunction({}).toPromise();
+
+      if (result) {
+        console.log('✅ Estado de registro de admins:', result);
+        return {
+          canRegister: result.canRegister,
+          currentAdmins: result.currentAdmins,
+          maxAdmins: 2
+        };
+      }
+
+      throw new Error('No se pudo verificar la disponibilidad');
+    } catch (error: any) {
+      console.error('❌ Error verificando disponibilidad de registro:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Registra un nuevo administrador (máximo 2 en total)
+   * @param adminData Datos del administrador a registrar
+   */
+  async registerInitialAdmin(adminData: {
+    email: string;
+    password: string;
+    displayName: string;
+  }): Promise<{ success: boolean; adminNumber?: number }> {
+    try {
+      console.log('👤 Registrando nuevo administrador:', adminData.email);
+
+      const registerFunction = this.fns.httpsCallable('registerInitialAdmin');
+      const result = await registerFunction({
+        email: adminData.email,
+        password: adminData.password,
+        displayName: adminData.displayName
+      }).toPromise();
+
+      if (result?.success) {
+        console.log('✅ Administrador registrado exitosamente:', result);
+        await this.showSuccessMessage(`Administrador ${adminData.displayName} registrado exitosamente`);
+
+        return {
+          success: true,
+          adminNumber: result.adminNumber
+        };
+      }
+
+      throw new Error('No se pudo registrar el administrador');
+    } catch (error: any) {
+      console.error('❌ Error registrando administrador:', error);
+
+      let errorMessage = 'Error al registrar el administrador';
+
+      if (error.code) {
+        switch (error.code) {
+          case 'functions/already-exists':
+            errorMessage = 'Ya existe una cuenta con este correo electrónico';
+            break;
+          case 'functions/permission-denied':
+            errorMessage = 'Ya se alcanzó el límite máximo de 2 administradores';
+            break;
+          case 'functions/invalid-argument':
+            errorMessage = error.message || 'Datos inválidos';
+            break;
+          case 'functions/internal':
+            errorMessage = 'Error interno del servidor. Intenta nuevamente';
+            break;
+          default:
+            errorMessage = error.message || 'Error desconocido';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      await this.showErrorMessage(errorMessage);
+
+      return {
+        success: false
+      };
+    }
+  }
+
+  /**
+   * Verifica el email de un administrador usando el código enviado
+   * @param email Email del usuario administrador
+   * @param code Código de verificación de 6 dígitos
+   */
+  async verifyAdminEmail(email: string, code: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      console.log('📧 Verificando email de administrador:', email);
+
+      // Primero buscar el userId por email
+      const db = firebase.firestore();
+      const usersSnapshot = await db.collection('users')
+        .where('email', '==', email)
+        .where('role', '==', 'admin')
+        .limit(1)
+        .get();
+
+      if (usersSnapshot.empty) {
+        throw new Error('Usuario administrador no encontrado');
+      }
+
+      const userId = usersSnapshot.docs[0].id;
+      console.log('✅ Usuario encontrado:', userId);
+
+      const verifyFunction = this.fns.httpsCallable('verifyAdminEmail');
+      const result = await verifyFunction({
+        userId: userId,
+        code: code
+      }).toPromise();
+
+      if (result?.success) {
+        console.log('✅ Email de administrador verificado:', result);
+        await this.showSuccessMessage(result.message || 'Email verificado exitosamente');
+
+        return {
+          success: true,
+          message: result.message
+        };
+      }
+
+      throw new Error('No se pudo verificar el email');
+    } catch (error: any) {
+      console.error('❌ Error verificando email de administrador:', error);
+
+      let errorMessage = 'Error al verificar el email';
+
+      if (error.code) {
+        switch (error.code) {
+          case 'functions/not-found':
+            errorMessage = 'Código de verificación no encontrado';
+            break;
+          case 'functions/failed-precondition':
+            errorMessage = error.message || 'El código ha expirado o ya fue usado';
+            break;
+          case 'functions/invalid-argument':
+            errorMessage = 'Código de verificación incorrecto';
+            break;
+          default:
+            errorMessage = error.message || 'Error al verificar el email';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      await this.showErrorMessage(errorMessage);
+
+      return {
+        success: false,
+        message: errorMessage
       };
     }
   }

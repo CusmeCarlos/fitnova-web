@@ -5,7 +5,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { setGlobalOptions } = require('firebase-functions/v2');
 
 // Configurar región
@@ -445,6 +445,428 @@ exports.checkEmailVerification = onCall(async (request) => {
     }
 
     throw new HttpsError('internal', error.message);
+  }
+});
+
+// 🔐 FUNCIÓN: VERIFICAR SI SE PUEDEN REGISTRAR MÁS ADMINS
+// Limita el registro de administradores a solo 2
+exports.checkAdminRegistrationAvailable = onCall(async (request) => {
+  try {
+    console.log('🔍 Verificando disponibilidad de registro de admin');
+
+    // Contar cuántos admins ACTIVOS hay actualmente
+    const adminsSnapshot = await db.collection('users')
+      .where('role', '==', 'admin')
+      .where('isActive', '==', true)
+      .get();
+
+    const adminCount = adminsSnapshot.size;
+    const maxAdmins = 2;
+    const availableSlots = maxAdmins - adminCount;
+
+    console.log(`📊 Administradores activos encontrados: ${adminCount}/${maxAdmins}`);
+
+    // Log detallado de cada admin encontrado
+    adminsSnapshot.forEach(doc => {
+      const data = doc.data();
+      console.log(`   - Admin: ${data.email} (isActive: ${data.isActive}, role: ${data.role})`);
+    });
+
+    return {
+      success: true,
+      canRegister: adminCount < maxAdmins,
+      currentAdmins: adminCount,
+      maxAdmins: maxAdmins,
+      availableSlots: availableSlots,
+      message: adminCount < maxAdmins
+        ? `Puedes registrar ${availableSlots} administrador(es) más`
+        : 'Límite de administradores alcanzado'
+    };
+
+  } catch (error) {
+    console.error('❌ Error al verificar disponibilidad de admin:', error);
+    throw new HttpsError('internal', 'Error al verificar disponibilidad: ' + error.message);
+  }
+});
+
+// 🔐 FUNCIÓN: REGISTRAR ADMINISTRADOR INICIAL
+// Solo permite registrar hasta 2 administradores
+exports.registerInitialAdmin = onCall(async (request) => {
+  try {
+    console.log('👤 Iniciando registro de administrador inicial');
+
+    const { email, password, displayName } = request.data;
+
+    // Validar datos
+    if (!email || !password || !displayName) {
+      throw new HttpsError('invalid-argument', 'Email, contraseña y nombre son requeridos');
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new HttpsError('invalid-argument', 'Formato de email inválido');
+    }
+
+    // Validar contraseña
+    if (password.length < 8) {
+      throw new HttpsError('invalid-argument', 'La contraseña debe tener al menos 8 caracteres');
+    }
+
+    // Verificar que no se haya alcanzado el límite de admins
+    const adminsSnapshot = await db.collection('users')
+      .where('role', '==', 'admin')
+      .where('isActive', '==', true)
+      .get();
+
+    const adminCount = adminsSnapshot.size;
+    const maxAdmins = 2;
+
+    if (adminCount >= maxAdmins) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Límite de administradores alcanzado (${maxAdmins}/${maxAdmins}). No se pueden registrar más administradores.`
+      );
+    }
+
+    console.log(`✅ Registro permitido: ${adminCount}/${maxAdmins} admins`);
+
+    // Crear usuario en Firebase Auth (sin verificar)
+    const userRecord = await auth.createUser({
+      email: email,
+      password: password,
+      displayName: displayName,
+      emailVerified: false // Requiere verificación por código
+    });
+
+    console.log('✅ Usuario creado en Firebase Auth:', userRecord.uid);
+
+    // Generar código de verificación de 6 dígitos
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('📧 Código de verificación generado');
+
+    // Guardar código de verificación en Firestore
+    await db.collection('emailVerificationCodes').doc(userRecord.uid).set({
+      email: email,
+      code: verificationCode,
+      createdAt: FieldValue.serverTimestamp(),
+      expiresAt: Timestamp.fromDate(new Date(Date.now() + 10 * 60 * 1000)), // 10 minutos
+      used: false,
+      type: 'admin_registration'
+    });
+
+    console.log('✅ Código de verificación guardado');
+
+    // Crear documento del administrador en Firestore
+    await db.doc(`users/${userRecord.uid}`).set({
+      uid: userRecord.uid,
+      email: email,
+      displayName: displayName,
+      role: 'admin',
+      status: 'pending_verification', // Pendiente de verificación
+      isActive: false, // Se activará al verificar
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      lastActiveAt: FieldValue.serverTimestamp(),
+      emailVerified: false,
+      isInitialAdmin: true,
+      adminNumber: adminCount + 1, // 1 o 2
+      createdBy: 'system',
+      profileImageUrl: null
+    });
+
+    console.log('✅ Administrador registrado en Firestore');
+
+    // Enviar email con código de verificación
+    await db.collection('mail').add({
+      to: email,
+      message: {
+        subject: 'Verificación de Cuenta de Administrador - FitNova',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+              .code { background: white; border: 2px dashed #3b82f6; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; margin: 20px 0; color: #3b82f6; }
+              .admin-badge { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 12px 20px; border-radius: 25px; display: inline-block; margin: 15px 0; font-weight: bold; }
+              .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🛡️ Verificación de Administrador</h1>
+                <p>FitNova</p>
+              </div>
+              <div class="content">
+                <div class="admin-badge">
+                  👤 ADMINISTRADOR ${adminCount + 1}/2
+                </div>
+                <p>Hola <strong>${displayName}</strong>,</p>
+                <p>¡Bienvenido al equipo de administradores de FitNova!</p>
+                <p>Para completar tu registro como administrador, por favor verifica tu correo electrónico ingresando el siguiente código:</p>
+                <div class="code">${verificationCode}</div>
+                <div class="warning">
+                  <strong>⚠️ Importante:</strong>
+                  <ul>
+                    <li>Este código expira en <strong>10 minutos</strong></li>
+                    <li>Solo puedes usarlo una vez</li>
+                    <li>Es necesario para activar tu cuenta de administrador</li>
+                    <li>Si no solicitaste este registro, ignora este correo</li>
+                  </ul>
+                </div>
+                <p><strong>Privilegios de Administrador:</strong></p>
+                <ul>
+                  <li>✅ Acceso completo al dashboard web</li>
+                  <li>✅ Gestión de entrenadores y usuarios</li>
+                  <li>✅ Configuración del sistema</li>
+                  <li>✅ Administración de equipamiento y membresías</li>
+                </ul>
+              </div>
+              <div class="footer">
+                <p>Este es un correo automático, por favor no respondas.</p>
+                <p>&copy; ${new Date().getFullYear()} FitNova. Todos los derechos reservados.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      }
+    });
+
+    console.log('📧 Email de verificación enviado');
+
+    // Crear perfil básico
+    await db.doc(`profiles/${userRecord.uid}`).set({
+      userId: userRecord.uid,
+      personalInfo: {
+        displayName: displayName,
+        email: email
+      },
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+
+    // Registrar en auditoría
+    await db.collection('auditLogs').add({
+      userId: userRecord.uid,
+      action: 'ADMIN_REGISTRATION',
+      adminNumber: adminCount + 1,
+      timestamp: FieldValue.serverTimestamp(),
+      method: 'initial_setup',
+      details: `Administrador ${adminCount + 1} de ${maxAdmins} registrado`
+    });
+
+    console.log(`🎉 Administrador ${adminCount + 1}/${maxAdmins} registrado exitosamente`);
+
+    return {
+      success: true,
+      userId: userRecord.uid,
+      adminNumber: adminCount + 1,
+      message: `Administrador ${adminCount + 1} de ${maxAdmins} registrado exitosamente. Verifica tu correo.`,
+      remainingSlots: maxAdmins - (adminCount + 1),
+      requiresVerification: true
+    };
+
+  } catch (error) {
+    console.error('❌ Error al registrar administrador:', error);
+
+    if (error instanceof HttpsError) throw error;
+
+    if (error.code) {
+      switch (error.code) {
+        case 'auth/email-already-exists':
+          throw new HttpsError('already-exists', 'Ya existe una cuenta con este email');
+        case 'auth/invalid-email':
+          throw new HttpsError('invalid-argument', 'Formato de email inválido');
+        case 'auth/weak-password':
+          throw new HttpsError('invalid-argument', 'La contraseña es muy débil');
+        default:
+          throw new HttpsError('internal', `Error: ${error.message}`);
+      }
+    }
+
+    throw new HttpsError('internal', error.message);
+  }
+});
+
+// 🔐 FUNCIÓN: VERIFICAR EMAIL DE ADMINISTRADOR
+// Verifica el código de email para administradores y activa la cuenta
+exports.verifyAdminEmail = onCall(async (request) => {
+  try {
+    console.log('📧 Verificando email de administrador');
+
+    const { userId, code } = request.data;
+
+    // Validar datos
+    if (!userId || !code) {
+      throw new HttpsError('invalid-argument', 'UserID y código son requeridos');
+    }
+
+    // Obtener el código de verificación de Firestore
+    const codeDoc = await db.collection('emailVerificationCodes').doc(userId).get();
+
+    if (!codeDoc.exists) {
+      throw new HttpsError('not-found', 'Código de verificación no encontrado');
+    }
+
+    const codeData = codeDoc.data();
+
+    // Verificar que el código no haya sido usado
+    if (codeData.used) {
+      throw new HttpsError('failed-precondition', 'Este código ya ha sido utilizado');
+    }
+
+    // Verificar que el código no haya expirado
+    const expiresAt = codeData.expiresAt.toDate();
+    if (expiresAt < new Date()) {
+      throw new HttpsError('failed-precondition', 'El código ha expirado. Solicita uno nuevo.');
+    }
+
+    // Verificar que el código coincida
+    if (codeData.code !== code) {
+      throw new HttpsError('invalid-argument', 'Código de verificación incorrecto');
+    }
+
+    console.log('✅ Código verificado correctamente');
+
+    // Actualizar el usuario en Firebase Auth
+    await auth.updateUser(userId, {
+      emailVerified: true
+    });
+
+    console.log('✅ Usuario verificado en Firebase Auth');
+
+    // Actualizar el documento del usuario en Firestore
+    await db.doc(`users/${userId}`).update({
+      emailVerified: true,
+      status: 'active',
+      isActive: true,
+      updatedAt: FieldValue.serverTimestamp(),
+      verifiedAt: FieldValue.serverTimestamp()
+    });
+
+    console.log('✅ Usuario activado en Firestore');
+
+    // Marcar el código como usado
+    await db.collection('emailVerificationCodes').doc(userId).update({
+      used: true,
+      usedAt: FieldValue.serverTimestamp()
+    });
+
+    // Obtener datos del usuario
+    const userDoc = await db.doc(`users/${userId}`).get();
+    const userData = userDoc.data();
+
+    // Registrar en auditoría
+    await db.collection('auditLogs').add({
+      userId: userId,
+      action: 'ADMIN_EMAIL_VERIFIED',
+      adminNumber: userData.adminNumber,
+      timestamp: FieldValue.serverTimestamp(),
+      method: 'email_verification',
+      details: `Administrador ${userData.adminNumber} verificó su email`
+    });
+
+    // Enviar email de bienvenida
+    await db.collection('mail').add({
+      to: userData.email,
+      message: {
+        subject: '✅ Cuenta de Administrador Activada - FitNova',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+              .success { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; }
+              .admin-badge { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 12px 20px; border-radius: 25px; display: inline-block; margin: 15px 0; font-weight: bold; }
+              .button { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0; font-weight: bold; }
+              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🎉 ¡Cuenta Activada!</h1>
+                <p>FitNova</p>
+              </div>
+              <div class="content">
+                <div class="admin-badge">
+                  🛡️ ADMINISTRADOR ${userData.adminNumber}/2
+                </div>
+                <div class="success">
+                  <strong>✅ Tu cuenta de administrador ha sido verificada exitosamente</strong>
+                </div>
+                <p>Hola <strong>${userData.displayName}</strong>,</p>
+                <p>¡Bienvenido oficialmente al equipo de administradores de FitNova!</p>
+                <p>Tu cuenta ha sido activada y ahora tienes acceso completo al dashboard administrativo.</p>
+
+                <h3>🔑 Tus credenciales de acceso:</h3>
+                <ul>
+                  <li><strong>Email:</strong> ${userData.email}</li>
+                  <li><strong>Rol:</strong> Administrador</li>
+                  <li><strong>Estado:</strong> Activo</li>
+                </ul>
+
+                <h3>📊 Acceso al Dashboard:</h3>
+                <p>Ya puedes iniciar sesión en el dashboard administrativo de FitNova:</p>
+                <a href="https://fitnova-web.web.app/auth/login" class="button">
+                  Iniciar Sesión en Dashboard
+                </a>
+
+                <h3>🛡️ Privilegios de Administrador:</h3>
+                <ul>
+                  <li>✅ Gestión completa de usuarios y entrenadores</li>
+                  <li>✅ Administración de equipamiento y membresías</li>
+                  <li>✅ Configuración del sistema</li>
+                  <li>✅ Acceso a estadísticas y reportes</li>
+                  <li>✅ Control de alertas y notificaciones</li>
+                </ul>
+
+                <p>Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos.</p>
+              </div>
+              <div class="footer">
+                <p>Este es un correo automático, por favor no respondas.</p>
+                <p>&copy; ${new Date().getFullYear()} FitNova. Todos los derechos reservados.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      }
+    });
+
+    console.log('🎉 Administrador verificado y activado exitosamente');
+
+    return {
+      success: true,
+      message: 'Email verificado exitosamente. Tu cuenta de administrador está activa.',
+      userData: {
+        uid: userId,
+        email: userData.email,
+        displayName: userData.displayName,
+        role: userData.role,
+        adminNumber: userData.adminNumber
+      }
+    };
+
+  } catch (error) {
+    console.error('❌ Error al verificar email de administrador:', error);
+
+    if (error instanceof HttpsError) throw error;
+
+    throw new HttpsError('internal', error.message || 'Error al verificar email');
   }
 });
 

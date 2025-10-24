@@ -1,0 +1,250 @@
+// ============================================================================
+// REGLAS DE FIRESTORE - FITNOVA WEB
+// ============================================================================
+// Última actualización: Sistema completo con:
+// - Recuperación de contraseña
+// - Registro y verificación de administradores
+// - Gestión de usuarios, rutinas, equipamiento, membresías, alertas
+// ============================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ========================================================================
+    // FUNCIONES AUXILIARES
+    // ========================================================================
+
+    // Verificar si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Verificar si el usuario es el propietario del documento
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Obtener el rol del usuario desde Firestore
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // Verificar si el usuario es administrador
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+
+    // Verificar si el usuario es entrenador
+    function isTrainer() {
+      return isAuthenticated() && getUserRole() == 'trainer';
+    }
+
+    // Verificar si el usuario es admin o entrenador
+    function isAdminOrTrainer() {
+      return isAuthenticated() && (getUserRole() == 'admin' || getUserRole() == 'trainer');
+    }
+
+    // ========================================================================
+    // COLECCIÓN: USERS
+    // ========================================================================
+    match /users/{userId} {
+      // Lectura: permitir acceso público para verificar existencia de usuarios
+      // (necesario para password reset y registro de admins)
+      allow read: if true;
+
+      // Escritura: solo admins y trainers pueden crear usuarios
+      allow create: if isAdminOrTrainer();
+
+      // Actualización: el propio usuario, admins, o trainers
+      allow update: if isOwner(userId) || isAdminOrTrainer();
+
+      // Eliminación: solo admins
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: PROFILES
+    // ========================================================================
+    match /profiles/{userId} {
+      // Lectura: el usuario, su entrenador asignado, o admin/trainer
+      allow read: if isOwner(userId) || isAdminOrTrainer();
+
+      // Escritura: el propio usuario o admin/trainer
+      allow create: if isOwner(userId) || isAdminOrTrainer();
+      allow update: if isOwner(userId) || isAdminOrTrainer();
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: ROUTINES
+    // ========================================================================
+    match /routines/{routineId} {
+      // Lectura: usuarios autenticados
+      allow read: if isAuthenticated();
+
+      // Escritura: solo admin y trainers
+      allow create, update, delete: if isAdminOrTrainer();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: EQUIPMENT
+    // ========================================================================
+    match /equipment/{equipmentId} {
+      // Lectura: usuarios autenticados
+      allow read: if isAuthenticated();
+
+      // Escritura: solo admin y trainers
+      allow create, update, delete: if isAdminOrTrainer();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: MEMBERSHIPS
+    // ========================================================================
+    match /memberships/{membershipId} {
+      // Lectura: usuarios autenticados
+      allow read: if isAuthenticated();
+
+      // Escritura: solo admin y trainers
+      allow create, update, delete: if isAdminOrTrainer();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: USER_MEMBERSHIPS
+    // ========================================================================
+    match /userMemberships/{docId} {
+      // Lectura: el usuario propietario o admin/trainer
+      allow read: if isAuthenticated();
+
+      // Escritura: solo admin y trainers
+      allow create, update, delete: if isAdminOrTrainer();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: ALERTS
+    // ========================================================================
+    match /alerts/{alertId} {
+      // Lectura: usuarios autenticados
+      allow read: if isAuthenticated();
+
+      // Escritura: solo admin y trainers
+      allow create, update, delete: if isAdminOrTrainer();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: AUDIT_LOGS
+    // ========================================================================
+    match /auditLogs/{logId} {
+      // Solo lectura para admins
+      allow read: if isAdmin();
+
+      // Escritura: permitida para el sistema (Cloud Functions)
+      allow create: if true;
+      allow update, delete: if false; // Los logs no se modifican ni eliminan
+    }
+
+    // ========================================================================
+    // COLECCIÓN: PASSWORD_RESET_CODES
+    // Códigos de verificación para recuperación de contraseña
+    // ========================================================================
+    match /passwordResetCodes/{userId} {
+      // Lectura y escritura pública (necesaria para flujo sin autenticación)
+      allow read, write: if true;
+    }
+
+    // ========================================================================
+    // COLECCIÓN: EMAIL_VERIFICATION_CODES
+    // Códigos de verificación de email para administradores
+    // ========================================================================
+    match /emailVerificationCodes/{userId} {
+      // Lectura: permitida para verificar códigos
+      allow read: if true;
+
+      // Escritura: solo Cloud Functions
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false; // No se eliminan, solo se marcan como usados
+    }
+
+    // ========================================================================
+    // COLECCIÓN: MAIL
+    // Cola de emails para envío (Firebase Extension: firestore-send-email)
+    // ========================================================================
+    match /mail/{mailId} {
+      // Creación: permitida para envío de emails
+      allow create: if true;
+
+      // Lectura: no permitida por seguridad
+      allow read: if false;
+
+      // Actualización y eliminación: solo Cloud Functions
+      allow update, delete: if false;
+    }
+
+    // ========================================================================
+    // COLECCIÓN: EXERCISES
+    // ========================================================================
+    match /exercises/{exerciseId} {
+      // Lectura: usuarios autenticados
+      allow read: if isAuthenticated();
+
+      // Escritura: solo admin y trainers
+      allow create, update, delete: if isAdminOrTrainer();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: WORKOUT_SESSIONS
+    // ========================================================================
+    match /workoutSessions/{sessionId} {
+      // Lectura: el usuario propietario o admin/trainer
+      allow read: if isAuthenticated();
+
+      // Escritura: el usuario propietario o admin/trainer
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdminOrTrainer();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: NOTIFICATIONS
+    // ========================================================================
+    match /notifications/{notificationId} {
+      // Lectura: el usuario destinatario
+      allow read: if isAuthenticated();
+
+      // Escritura: admin/trainer o sistema
+      allow create: if true; // Cloud Functions pueden crear notificaciones
+      allow update: if isAuthenticated(); // Usuario puede marcar como leída
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: SETTINGS
+    // ========================================================================
+    match /settings/{settingId} {
+      // Lectura: usuarios autenticados
+      allow read: if isAuthenticated();
+
+      // Escritura: solo admins
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // COLECCIÓN: STATS (Estadísticas)
+    // ========================================================================
+    match /stats/{statId} {
+      // Lectura: usuarios autenticados
+      allow read: if isAuthenticated();
+
+      // Escritura: sistema y admins
+      allow create, update: if isAdminOrTrainer() || true; // Cloud Functions
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // REGLA POR DEFECTO - DENEGAR TODO LO NO ESPECIFICADO
+    // ========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

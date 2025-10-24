@@ -33,6 +33,8 @@ export class VerifyCodeComponent implements OnInit {
   verifyCodeForm: FormGroup;
   isLoading = false;
   email = '';
+  verificationType: 'password' | 'admin' = 'password'; // Tipo de verificación
+  userId = ''; // Para verificación de admin
   resendCooldown = 0;
   resendTimer: any;
 
@@ -49,9 +51,12 @@ export class VerifyCodeComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Obtener el email de los parámetros de la URL
+    // Obtener los parámetros de la URL
     this.route.queryParams.subscribe(params => {
       this.email = params['email'] || '';
+      this.verificationType = params['type'] || 'password';
+      this.userId = params['userId'] || '';
+
       if (!this.email) {
         this.snackBar.open('Sesión inválida. Por favor, inicia el proceso nuevamente.', 'Cerrar', {
           duration: 5000,
@@ -59,9 +64,19 @@ export class VerifyCodeComponent implements OnInit {
           verticalPosition: 'top',
           panelClass: ['error-snackbar']
         });
-        this.router.navigate(['/auth/forgot-password']);
+
+        // Redirigir según el tipo
+        if (this.verificationType === 'admin') {
+          this.router.navigate(['/auth/login']);
+        } else {
+          this.router.navigate(['/auth/forgot-password']);
+        }
       }
     });
+  }
+
+  isAdminVerification(): boolean {
+    return this.verificationType === 'admin';
   }
 
   ngOnDestroy(): void {
@@ -76,28 +91,12 @@ export class VerifyCodeComponent implements OnInit {
       const code = this.verifyCodeForm.get('code')?.value;
 
       try {
-        // Verificar el código
-        const isValid = await this.authService.verifyPasswordResetCode(this.email, code);
-
-        if (isValid) {
-          this.snackBar.open('Código verificado correctamente', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'center',
-            verticalPosition: 'top',
-            panelClass: ['success-snackbar']
-          });
-
-          // Navegar a la página de nueva contraseña
-          this.router.navigate(['/auth/reset-password'], {
-            queryParams: { email: this.email, code }
-          });
+        if (this.verificationType === 'admin') {
+          // Verificación de email para administrador
+          await this.verifyAdminCode(code);
         } else {
-          this.snackBar.open('Código inválido o expirado', 'Cerrar', {
-            duration: 5000,
-            horizontalPosition: 'center',
-            verticalPosition: 'top',
-            panelClass: ['error-snackbar']
-          });
+          // Verificación de código para password reset
+          await this.verifyPasswordCode(code);
         }
       } catch (error: any) {
         console.error('Error al verificar código:', error);
@@ -121,6 +120,50 @@ export class VerifyCodeComponent implements OnInit {
       }
     } else {
       this.verifyCodeForm.markAllAsTouched();
+    }
+  }
+
+  private async verifyPasswordCode(code: string): Promise<void> {
+    const isValid = await this.authService.verifyPasswordResetCode(this.email, code);
+
+    if (isValid) {
+      this.snackBar.open('Código verificado correctamente', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['success-snackbar']
+      });
+
+      // Navegar a la página de nueva contraseña
+      this.router.navigate(['/auth/reset-password'], {
+        queryParams: { email: this.email, code }
+      });
+    } else {
+      this.snackBar.open('Código inválido o expirado', 'Cerrar', {
+        duration: 5000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['error-snackbar']
+      });
+    }
+  }
+
+  private async verifyAdminCode(code: string): Promise<void> {
+    // Primero necesitamos obtener el userId del email
+    const result = await this.authService.verifyAdminEmail(this.email, code);
+
+    if (result.success) {
+      this.snackBar.open('¡Cuenta de administrador verificada! Ya puedes iniciar sesión.', 'Cerrar', {
+        duration: 5000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['success-snackbar']
+      });
+
+      // Redirigir al login después de 2 segundos
+      setTimeout(() => {
+        this.router.navigate(['/auth/login']);
+      }, 2000);
     }
   }
 

@@ -152,12 +152,132 @@
         </button>
       </form>
 
+      <!-- Admin Registration Section -->
+      <div class="admin-section" *ngIf="!isLoadingAdminCheck">
+        <!-- Show registration button if available -->
+        <div *ngIf="canRegisterAdmin && !showAdminRegister" class="admin-register-btn-container">
+          <button
+            mat-stroked-button
+            type="button"
+            class="admin-register-btn"
+            (click)="toggleAdminRegister()">
+            <mat-icon>admin_panel_settings</mat-icon>
+            Registrar Administrador ({{ currentAdmins }}/{{ maxAdmins }})
+          </button>
+        </div>
+
+        <!-- Admin Registration Form -->
+        <div *ngIf="showAdminRegister" class="admin-register-form">
+          <div class="admin-form-header">
+            <div class="admin-badge-icon">
+              <mat-icon>shield</mat-icon>
+            </div>
+            <h3>Registro de Administrador</h3>
+            <div class="admin-counter">
+              <span class="counter-badge">{{ currentAdmins + 1 }}/{{ maxAdmins }}</span>
+              <span class="counter-text">Administrador {{ currentAdmins + 1 }}</span>
+            </div>
+          </div>
+
+          <form [formGroup]="adminRegisterForm" (ngSubmit)="onRegisterAdmin()">
+            <!-- Display Name -->
+            <div class="form-group">
+              <mat-form-field appearance="outline" class="premium-field">
+                <mat-label>Nombre Completo</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  formControlName="displayName"
+                  placeholder="Carlos Cusme"
+                  autocomplete="name">
+                <mat-icon matPrefix>person</mat-icon>
+                <mat-error *ngIf="adminDisplayName?.invalid && adminDisplayName?.touched">
+                  <span *ngIf="adminDisplayName?.hasError('required')">El nombre es requerido</span>
+                  <span *ngIf="adminDisplayName?.hasError('minlength')">Mínimo 3 caracteres</span>
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <mat-form-field appearance="outline" class="premium-field">
+                <mat-label>Correo Electrónico</mat-label>
+                <input
+                  matInput
+                  type="email"
+                  formControlName="email"
+                  placeholder="admin@fitnova.com"
+                  autocomplete="email">
+                <mat-icon matPrefix>email</mat-icon>
+                <mat-error *ngIf="adminEmail?.invalid && adminEmail?.touched">
+                  <span *ngIf="adminEmail?.hasError('required')">El correo es requerido</span>
+                  <span *ngIf="adminEmail?.hasError('email')">Ingresa un correo válido</span>
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+              <mat-form-field appearance="outline" class="premium-field">
+                <mat-label>Contraseña</mat-label>
+                <input
+                  matInput
+                  [type]="hideAdminPassword ? 'password' : 'text'"
+                  formControlName="password"
+                  placeholder="••••••••"
+                  autocomplete="new-password">
+                <mat-icon matPrefix>lock</mat-icon>
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="toggleAdminPasswordVisibility()"
+                  class="password-toggle">
+                  <mat-icon>{{hideAdminPassword ? 'visibility' : 'visibility_off'}}</mat-icon>
+                </button>
+                <mat-error *ngIf="adminPassword?.invalid && adminPassword?.touched">
+                  <span *ngIf="adminPassword?.hasError('required')">La contraseña es requerida</span>
+                  <span *ngIf="adminPassword?.hasError('minlength')">Mínimo 8 caracteres</span>
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="admin-form-actions">
+              <button
+                mat-flat-button
+                type="submit"
+                class="admin-submit-btn"
+                [disabled]="isRegisteringAdmin || adminRegisterForm.invalid">
+                <span *ngIf="!isRegisteringAdmin" class="btn-content">
+                  <mat-icon>how_to_reg</mat-icon>
+                  Registrar Administrador
+                </span>
+                <mat-spinner *ngIf="isRegisteringAdmin" diameter="24" class="login-spinner"></mat-spinner>
+              </button>
+
+              <button
+                mat-stroked-button
+                type="button"
+                class="admin-cancel-btn"
+                (click)="toggleAdminRegister()"
+                [disabled]="isRegisteringAdmin">
+                <mat-icon>close</mat-icon>
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Max admins reached message -->
+        <div *ngIf="!canRegisterAdmin" class="admin-limit-message">
+          <mat-icon>info</mat-icon>
+          <span>Se alcanzó el límite máximo de {{ maxAdmins }} administradores</span>
+        </div>
+      </div>
+
       <!-- Footer -->
       <div class="login-footer">
-        <p class="help-text">
-          ¿Necesitas ayuda? 
-          <a href="mailto:soporte@fitnova.com">Contacta soporte</a>
-        </p>
         <div class="version-info">
           <span>FitNova Dashboard v1.0.0</span>
           <span class="developer">Por Carlos Cusme</span>

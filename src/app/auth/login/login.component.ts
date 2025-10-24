@@ -40,10 +40,20 @@ import { MatRippleModule } from '@angular/material/core';
 })
 export class LoginComponent implements OnInit, OnDestroy {
   loginForm!: FormGroup;
+  adminRegisterForm!: FormGroup;
   isLoading = false;
   hidePassword = true;
   isFormAnimated = false;
   private subscriptions = new Subscription();
+
+  // Admin registration
+  showAdminRegister = false;
+  canRegisterAdmin = false;
+  currentAdmins = 0;
+  maxAdmins = 2;
+  isLoadingAdminCheck = true;
+  isRegisteringAdmin = false;
+  hideAdminPassword = true;
 
   constructor(
     private fb: FormBuilder,
@@ -52,6 +62,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar
   ) {
     this.initializeForm();
+    this.initializeAdminRegisterForm();
   }
 
   ngOnInit(): void {
@@ -68,6 +79,9 @@ export class LoginComponent implements OnInit, OnDestroy {
       }
     });
     this.subscriptions.add(userSub);
+
+    // Verificar disponibilidad de registro de admin
+    this.checkAdminRegistrationAvailability();
   }
 
   ngOnDestroy(): void {
@@ -79,6 +93,91 @@ export class LoginComponent implements OnInit, OnDestroy {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
+  }
+
+  private initializeAdminRegisterForm(): void {
+    this.adminRegisterForm = this.fb.group({
+      displayName: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]]
+    });
+  }
+
+  async checkAdminRegistrationAvailability(): Promise<void> {
+    try {
+      this.isLoadingAdminCheck = true;
+      const result = await this.auth.checkAdminRegistrationAvailable();
+
+      this.canRegisterAdmin = result.canRegister;
+      this.currentAdmins = result.currentAdmins;
+      this.maxAdmins = result.maxAdmins;
+
+      console.log('📊 Admin registration status:', result);
+    } catch (error) {
+      console.error('❌ Error checking admin registration:', error);
+      this.canRegisterAdmin = false;
+    } finally {
+      this.isLoadingAdminCheck = false;
+    }
+  }
+
+  toggleAdminRegister(): void {
+    this.showAdminRegister = !this.showAdminRegister;
+    if (this.showAdminRegister) {
+      this.adminRegisterForm.reset();
+    }
+  }
+
+  async onRegisterAdmin(): Promise<void> {
+    if (this.adminRegisterForm.invalid) {
+      this.markFormGroupTouched(this.adminRegisterForm);
+      this.showError('Por favor completa todos los campos correctamente');
+      return;
+    }
+
+    this.isRegisteringAdmin = true;
+    const { displayName, email, password } = this.adminRegisterForm.value;
+
+    try {
+      const result = await this.auth.registerInitialAdmin({
+        displayName,
+        email,
+        password
+      });
+
+      if (result.success) {
+        this.showSuccess(`¡Administrador ${displayName} registrado! Verifica tu correo para activar la cuenta.`);
+
+        // Cerrar el formulario de registro
+        this.showAdminRegister = false;
+        this.adminRegisterForm.reset();
+
+        // Actualizar disponibilidad (no incrementa porque está pendiente de verificación)
+        await this.checkAdminRegistrationAvailability();
+
+        // Redirigir a verificación con el tipo 'admin'
+        setTimeout(() => {
+          this.router.navigate(['/auth/verify-code'], {
+            queryParams: {
+              email: email,
+              type: 'admin',
+              userId: result.adminNumber
+            }
+          });
+        }, 2000);
+      } else {
+        this.showError('No se pudo registrar el administrador');
+      }
+    } catch (error: any) {
+      console.error('Error registering admin:', error);
+      // El error ya se muestra en el AuthService
+    } finally {
+      this.isRegisteringAdmin = false;
+    }
+  }
+
+  toggleAdminPasswordVisibility(): void {
+    this.hideAdminPassword = !this.hideAdminPassword;
   }
 
   async onLogin(): Promise<void> {
@@ -111,9 +210,9 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.hidePassword = !this.hidePassword;
   }
 
-  private markFormGroupTouched(): void {
-    Object.keys(this.loginForm.controls).forEach(key => {
-      this.loginForm.get(key)?.markAsTouched();
+  private markFormGroupTouched(formGroup: FormGroup = this.loginForm): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      formGroup.get(key)?.markAsTouched();
     });
   }
 
@@ -138,4 +237,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   // Getters para validación en template
   get email() { return this.loginForm.get('email'); }
   get password() { return this.loginForm.get('password'); }
+
+  get adminDisplayName() { return this.adminRegisterForm.get('displayName'); }
+  get adminEmail() { return this.adminRegisterForm.get('email'); }
+  get adminPassword() { return this.adminRegisterForm.get('password'); }
 }
