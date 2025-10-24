@@ -1002,4 +1002,154 @@ async getCurrentUserAsync(): Promise<User | null> {
       };
     }
   }
+
+  // ================================================================================
+  // 🏋️ MÉTODOS PARA ENTRENADORES (TRAINERS)
+  // ================================================================================
+
+  /**
+   * Registra un nuevo entrenador (solo administradores)
+   * @param trainerData Datos del entrenador a registrar
+   */
+  async registerTrainer(trainerData: {
+    email: string;
+    password: string;
+    displayName: string;
+    phoneNumber?: string;
+    specialization?: string;
+  }): Promise<{ success: boolean; userId?: string; message?: string }> {
+    try {
+      console.log('👤 Registrando nuevo entrenador:', trainerData.email);
+
+      const registerFunction = this.fns.httpsCallable('registerTrainer');
+      const result = await registerFunction({
+        email: trainerData.email,
+        password: trainerData.password,
+        displayName: trainerData.displayName,
+        phoneNumber: trainerData.phoneNumber || null,
+        specialization: trainerData.specialization || null
+      }).toPromise();
+
+      if (result?.success) {
+        console.log('✅ Entrenador registrado exitosamente:', result);
+        await this.showSuccessMessage(`Entrenador ${trainerData.displayName} registrado exitosamente`);
+
+        return {
+          success: true,
+          userId: result.userId,
+          message: result.message
+        };
+      }
+
+      throw new Error('No se pudo registrar el entrenador');
+    } catch (error: any) {
+      console.error('❌ Error registrando entrenador:', error);
+
+      let errorMessage = 'Error al registrar el entrenador';
+
+      if (error.code) {
+        switch (error.code) {
+          case 'functions/already-exists':
+            errorMessage = 'Ya existe una cuenta con este correo electrónico';
+            break;
+          case 'functions/permission-denied':
+            errorMessage = 'No tienes permisos para registrar entrenadores';
+            break;
+          case 'functions/invalid-argument':
+            errorMessage = error.message || 'Datos inválidos';
+            break;
+          case 'functions/unauthenticated':
+            errorMessage = 'Debes iniciar sesión como administrador';
+            break;
+          case 'functions/internal':
+            errorMessage = 'Error interno del servidor. Intenta nuevamente';
+            break;
+          default:
+            errorMessage = error.message || 'Error desconocido';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      await this.showErrorMessage(errorMessage);
+
+      return {
+        success: false,
+        message: errorMessage
+      };
+    }
+  }
+
+  /**
+   * Verifica el email de un entrenador usando el código enviado
+   * @param email Email del entrenador
+   * @param code Código de verificación de 6 dígitos
+   */
+  async verifyTrainerEmail(email: string, code: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      console.log('📧 Verificando email de entrenador:', email);
+
+      // Primero buscar el userId por email
+      const db = firebase.firestore();
+      const usersSnapshot = await db.collection('users')
+        .where('email', '==', email)
+        .where('role', '==', 'trainer')
+        .limit(1)
+        .get();
+
+      if (usersSnapshot.empty) {
+        throw new Error('Usuario entrenador no encontrado');
+      }
+
+      const userId = usersSnapshot.docs[0].id;
+      console.log('✅ Usuario encontrado:', userId);
+
+      const verifyFunction = this.fns.httpsCallable('verifyTrainerEmail');
+      const result = await verifyFunction({
+        userId: userId,
+        code: code
+      }).toPromise();
+
+      if (result?.success) {
+        console.log('✅ Email de entrenador verificado:', result);
+        await this.showSuccessMessage(result.message || 'Email verificado exitosamente');
+
+        return {
+          success: true,
+          message: result.message
+        };
+      }
+
+      throw new Error('No se pudo verificar el email');
+    } catch (error: any) {
+      console.error('❌ Error verificando email de entrenador:', error);
+
+      let errorMessage = 'Error al verificar el email';
+
+      if (error.code) {
+        switch (error.code) {
+          case 'functions/not-found':
+            errorMessage = 'Código de verificación no encontrado';
+            break;
+          case 'functions/failed-precondition':
+            errorMessage = error.message || 'El código ha expirado o ya fue usado';
+            break;
+          case 'functions/invalid-argument':
+            errorMessage = 'Código de verificación incorrecto';
+            break;
+          default:
+            errorMessage = error.message || 'Error al verificar el email';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      await this.showErrorMessage(errorMessage);
+
+      return {
+        success: false,
+        message: errorMessage
+      };
+    }
+  }
 }

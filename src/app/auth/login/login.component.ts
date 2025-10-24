@@ -41,6 +41,7 @@ import { MatRippleModule } from '@angular/material/core';
 export class LoginComponent implements OnInit, OnDestroy {
   loginForm!: FormGroup;
   adminRegisterForm!: FormGroup;
+  trainerRegisterForm!: FormGroup;
   isLoading = false;
   hidePassword = true;
   isFormAnimated = false;
@@ -55,6 +56,11 @@ export class LoginComponent implements OnInit, OnDestroy {
   isRegisteringAdmin = false;
   hideAdminPassword = true;
 
+  // Trainer registration
+  showTrainerRegister = false;
+  isRegisteringTrainer = false;
+  hideTrainerPassword = true;
+
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
@@ -63,6 +69,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   ) {
     this.initializeForm();
     this.initializeAdminRegisterForm();
+    this.initializeTrainerRegisterForm();
   }
 
   ngOnInit(): void {
@@ -100,6 +107,16 @@ export class LoginComponent implements OnInit, OnDestroy {
       displayName: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]]
+    });
+  }
+
+  private initializeTrainerRegisterForm(): void {
+    this.trainerRegisterForm = this.fb.group({
+      displayName: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      phoneNumber: ['', [Validators.pattern(/^[0-9]{10}$/)]],
+      specialization: ['']
     });
   }
 
@@ -180,6 +197,68 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.hideAdminPassword = !this.hideAdminPassword;
   }
 
+  // ================================================================================
+  // 🏋️ TRAINER REGISTRATION METHODS
+  // ================================================================================
+
+  toggleTrainerRegister(): void {
+    this.showTrainerRegister = !this.showTrainerRegister;
+    if (this.showTrainerRegister) {
+      this.trainerRegisterForm.reset();
+    }
+  }
+
+  async onRegisterTrainer(): Promise<void> {
+    if (this.trainerRegisterForm.invalid) {
+      this.markFormGroupTouched(this.trainerRegisterForm);
+      this.showError('Por favor completa todos los campos correctamente');
+      return;
+    }
+
+    this.isRegisteringTrainer = true;
+    const { displayName, email, password, phoneNumber, specialization } = this.trainerRegisterForm.value;
+
+    try {
+      const result = await this.auth.registerTrainer({
+        displayName,
+        email,
+        password,
+        phoneNumber: phoneNumber || undefined,
+        specialization: specialization || undefined
+      });
+
+      if (result.success) {
+        this.showSuccess(`¡Entrenador ${displayName} registrado! Se envió un código de verificación al correo.`);
+
+        // Cerrar el formulario de registro
+        this.showTrainerRegister = false;
+        this.trainerRegisterForm.reset();
+
+        // Redirigir a verificación con el tipo 'trainer'
+        setTimeout(() => {
+          this.router.navigate(['/auth/verify-code'], {
+            queryParams: {
+              email: email,
+              type: 'trainer',
+              userId: result.userId
+            }
+          });
+        }, 2000);
+      } else {
+        this.showError(result.message || 'No se pudo registrar el entrenador');
+      }
+    } catch (error: any) {
+      console.error('Error registering trainer:', error);
+      // El error ya se muestra en el AuthService
+    } finally {
+      this.isRegisteringTrainer = false;
+    }
+  }
+
+  toggleTrainerPasswordVisibility(): void {
+    this.hideTrainerPassword = !this.hideTrainerPassword;
+  }
+
   async onLogin(): Promise<void> {
     if (this.loginForm.invalid) {
       this.markFormGroupTouched();
@@ -241,4 +320,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   get adminDisplayName() { return this.adminRegisterForm.get('displayName'); }
   get adminEmail() { return this.adminRegisterForm.get('email'); }
   get adminPassword() { return this.adminRegisterForm.get('password'); }
+
+  get trainerDisplayName() { return this.trainerRegisterForm.get('displayName'); }
+  get trainerEmail() { return this.trainerRegisterForm.get('email'); }
+  get trainerPassword() { return this.trainerRegisterForm.get('password'); }
+  get trainerPhoneNumber() { return this.trainerRegisterForm.get('phoneNumber'); }
+  get trainerSpecialization() { return this.trainerRegisterForm.get('specialization'); }
 }

@@ -11,63 +11,121 @@
 
     <!-- Gym Animation -->
     <div class="gym-animation">
-      <!-- Logo Principal CENTRADO -->
-      <div class="logo-main">
-        <div class="logo-circle">
-          <mat-icon class="logo-icon">fitness_center</mat-icon>
+      <div class="content-wrapper">
+        <!-- Hero Content -->
+        <div class="hero-content">
+          <div class="logo-badge">
+            <mat-icon>fitness_center</mat-icon>
+          </div>
+          <h1 class="brand-title">FitNova</h1>
+          <p class="brand-subtitle">Sistema de Entrenamiento Inteligente</p>
+          <p class="brand-description">Sistema de gestión de entrenamiento con análisis biomecánico mediante IA</p>
         </div>
-        <h1 class="brand-name">FitNova</h1>
-        <p class="brand-tagline">Entrena con Inteligencia Artificial</p>
-      </div>
 
-      <!-- PESA 1 - ESQUINA SUPERIOR IZQUIERDA -->
-      <div class="weight-1">
-        <mat-icon>fitness_center</mat-icon>
-      </div>
+        <!-- Premium Illustration -->
+        <div class="illustration-container">
+          <svg viewBox="0 0 400 400" class="training-illustration">
+            <!-- Definición de gradientes -->
+            <defs>
+              <linearGradient id="headGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+              </linearGradient>
+              <linearGradient id="torsoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+              </linearGradient>
+              <linearGradient id="legGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+              </linearGradient>
+              <linearGradient id="armGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:1" />
+              </linearGradient>
+            </defs>
 
-      <!-- PESA 2 - ESQUINA SUPERIOR DERECHA -->
-      <div class="weight-2">
-        <mat-icon>sports_gymnastics</mat-icon>
-      </div>
+            <!-- Círculos decorativos de fondo -->
+            <circle cx="200" cy="200" r="180" class="circle-bg circle-1"/>
+            <circle cx="200" cy="200" r="140" class="circle-bg circle-2"/>
+            <circle cx="200" cy="200" r="100" class="circle-bg circle-3"/>
 
-      <!-- PESA 3 - ESQUINA INFERIOR IZQUIERDA -->
-      <div class="weight-3">
-        <mat-icon>self_improvement</mat-icon>
-      </div>
+            <!-- Persona entrenando (figura estilizada) -->
+            <g class="person-training">
+              <!-- Piernas -->
+              <path d="M 180 280 L 170 350" class="leg" stroke-width="12" stroke-linecap="round"/>
+              <path d="M 220 280 L 230 350" class="leg" stroke-width="12" stroke-linecap="round"/>
 
-      <!-- PERSONA ENTRENANDO - LADO DERECHO -->
-      <div class="trainer-figure">
-        <div class="trainer-body">
-          <mat-icon class="trainer-icon">directions_run</mat-icon>
+              <!-- Torso -->
+              <ellipse cx="200" cy="220" rx="35" ry="60" class="torso"/>
+
+              <!-- Cabeza -->
+              <circle cx="200" cy="160" r="25" class="head"/>
+
+              <!-- Brazo izquierdo con pesa -->
+              <g class="arm-left">
+                <path d="M 165 200 L 120 180" class="arm" stroke-width="10" stroke-linecap="round"/>
+                <!-- Pesa izquierda -->
+                <g class="dumbbell">
+                  <rect x="100" y="170" width="8" height="20" rx="2" class="weight-plate"/>
+                  <rect x="108" y="175" width="12" height="10" rx="1" class="weight-bar"/>
+                  <rect x="120" y="170" width="8" height="20" rx="2" class="weight-plate"/>
+                </g>
+              </g>
+
+              <!-- Brazo derecho con pesa -->
+              <g class="arm-right">
+                <path d="M 235 200 L 280 180" class="arm" stroke-width="10" stroke-linecap="round"/>
+                <!-- Pesa derecha -->
+                <g class="dumbbell">
+                  <rect x="272" y="170" width="8" height="20" rx="2" class="weight-plate"/>
+                  <rect x="280" y="175" width="12" height="10" rx="1" class="weight-bar"/>
+                  <rect x="292" y="170" width="8" height="20" rx="2" class="weight-plate"/>
+                </g>
+              </g>
+            </g>
+
+            <!-- Partículas de energía -->
+            <circle cx="150" cy="150" r="4" class="energy-particle particle-1"/>
+            <circle cx="250" cy="160" r="3" class="energy-particle particle-2"/>
+            <circle cx="180" cy="120" r="3" class="energy-particle particle-3"/>
+            <circle cx="220" cy="130" r="4" class="energy-particle particle-4"/>
+            <circle cx="160" cy="250" r="3" class="energy-particle particle-5"/>
+            <circle cx="240" cy="260" r="4" class="energy-particle particle-6"/>
+          </svg>
         </div>
-        <div class="trainer-shadow"></div>
-      </div>
 
-      <!-- STAT CARD 1 - IZQUIERDA CENTRO -->
-      <div class="stat-card-1">
-        <mat-icon>trending_up</mat-icon>
-        <span>+50% Fuerza</span>
-      </div>
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <mat-icon>psychology</mat-icon>
+            </div>
+            <div class="stat-content">
+              <h4>Análisis IA</h4>
+              <p>Evaluación postural</p>
+            </div>
+          </div>
 
-      <!-- STAT CARD 2 - DERECHA INFERIOR -->
-      <div class="stat-card-2">
-        <mat-icon>psychology</mat-icon>
-        <span>IA Personal</span>
-      </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <mat-icon>show_chart</mat-icon>
+            </div>
+            <div class="stat-content">
+              <h4>Seguimiento</h4>
+              <p>Progreso detallado</p>
+            </div>
+          </div>
 
-      <!-- Features List en la parte inferior -->
-      <div class="features-list">
-        <div class="feature-item">
-          <mat-icon>check_circle</mat-icon>
-          <span>Rutinas generadas por IA</span>
-        </div>
-        <div class="feature-item">
-          <mat-icon>check_circle</mat-icon>
-          <span>Análisis postural en tiempo real</span>
-        </div>
-        <div class="feature-item">
-          <mat-icon>check_circle</mat-icon>
-          <span>Dashboard para entrenadores</span>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <mat-icon>assessment</mat-icon>
+            </div>
+            <div class="stat-content">
+              <h4>Dashboard</h4>
+              <p>Métricas en tiempo real</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -78,8 +136,8 @@
     <div class="login-card" [class.animated]="isFormAnimated">
       <!-- Header -->
       <div class="login-header">
-        <h2>¡Bienvenido de vuelta!</h2>
-        <p>Accede a tu panel de entrenador</p>
+        <h2>Acceso al Sistema</h2>
+        <p>Panel de Administración & Entrenadores FitNova</p>
       </div>
 
       <!-- Formulario -->
@@ -92,7 +150,7 @@
               matInput 
               type="email"
               formControlName="email"
-              placeholder="entrenador@fitnova.com"
+              placeholder="admin@fitnova.com"
               autocomplete="email">
             <mat-icon matPrefix>email</mat-icon>
             <mat-error *ngIf="email?.invalid && email?.touched">
@@ -279,8 +337,8 @@
       <!-- Footer -->
       <div class="login-footer">
         <div class="version-info">
-          <span>FitNova Dashboard v1.0.0</span>
-          <span class="developer">Por Carlos Cusme</span>
+          <span>FitNova v1.0 - Proyecto de Tesis</span>
+          <span class="developer">Desarrollado por Carlos Cusme</span>
         </div>
       </div>
     </div>

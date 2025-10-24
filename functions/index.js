@@ -958,3 +958,404 @@ exports.updateUserPassword = onCall(async (request) => {
   }
 });
 
+// ================================================================================
+// 🏋️ FUNCIONES PARA ENTRENADORES (TRAINERS)
+// ================================================================================
+
+// 🔐 FUNCIÓN: REGISTRAR ENTRENADOR
+// Los administradores pueden registrar nuevos entrenadores
+exports.registerTrainer = onCall(async (request) => {
+  try {
+    console.log('👤 Iniciando registro de entrenador');
+
+    // Verificar que el usuario esté autenticado y sea admin
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Usuario no autenticado');
+    }
+
+    const callerUid = request.auth.uid;
+    const callerDoc = await db.doc(`users/${callerUid}`).get();
+
+    if (!callerDoc.exists) {
+      throw new HttpsError('not-found', 'Usuario no encontrado');
+    }
+
+    const callerData = callerDoc.data();
+    if (callerData.role !== 'admin') {
+      throw new HttpsError('permission-denied', 'Solo los administradores pueden registrar entrenadores');
+    }
+
+    const { email, password, displayName, phoneNumber, specialization } = request.data;
+
+    // Validar datos
+    if (!email || !password || !displayName) {
+      throw new HttpsError('invalid-argument', 'Email, contraseña y nombre son requeridos');
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new HttpsError('invalid-argument', 'Formato de email inválido');
+    }
+
+    // Validar contraseña
+    if (password.length < 6) {
+      throw new HttpsError('invalid-argument', 'La contraseña debe tener al menos 6 caracteres');
+    }
+
+    // Validar teléfono (opcional)
+    if (phoneNumber && !/^[0-9]{10}$/.test(phoneNumber)) {
+      throw new HttpsError('invalid-argument', 'El teléfono debe tener exactamente 10 dígitos');
+    }
+
+    console.log(`✅ Registro iniciado por admin: ${callerData.displayName}`);
+
+    // Crear usuario en Firebase Auth (sin verificar)
+    const userRecord = await auth.createUser({
+      email: email,
+      password: password,
+      displayName: displayName,
+      emailVerified: false // Requiere verificación por código
+    });
+
+    console.log('✅ Usuario creado en Firebase Auth:', userRecord.uid);
+
+    // Generar código de verificación de 6 dígitos
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('📧 Código de verificación generado');
+
+    // Guardar código de verificación en Firestore
+    await db.collection('emailVerificationCodes').doc(userRecord.uid).set({
+      email: email,
+      code: verificationCode,
+      createdAt: FieldValue.serverTimestamp(),
+      expiresAt: Timestamp.fromDate(new Date(Date.now() + 10 * 60 * 1000)), // 10 minutos
+      used: false,
+      type: 'trainer_registration',
+      userId: userRecord.uid
+    });
+
+    // Enviar email con código de verificación
+    await db.collection('mail').add({
+      to: email,
+      from: 'FitNova <noreplyfitnovaapp@gmail.com>',
+      replyTo: 'noreplyfitnovaapp@gmail.com',
+      message: {
+        subject: '🏋️ Verifica tu cuenta de Entrenador - FitNova',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+              .code-box { background: white; border: 3px dashed #3b82f6; padding: 20px; text-align: center; margin: 20px 0; border-radius: 10px; }
+              .code { font-size: 32px; font-weight: bold; color: #3b82f6; letter-spacing: 8px; font-family: 'Courier New', monospace; }
+              .info { background: #e3f2fd; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; }
+              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🏋️ ¡Bienvenido a FitNova!</h1>
+                <p>Registro de Entrenador</p>
+              </div>
+              <div class="content">
+                <p>Hola <strong>${displayName}</strong>,</p>
+                <p>Has sido registrado como <strong>Entrenador</strong> en FitNova por el administrador <strong>${callerData.displayName}</strong>.</p>
+                <p>Para activar tu cuenta, necesitas verificar tu correo electrónico usando el siguiente código:</p>
+
+                <div class="code-box">
+                  <div style="font-size: 14px; color: #666; margin-bottom: 10px;">Tu código de verificación:</div>
+                  <div class="code">${verificationCode}</div>
+                  <div style="font-size: 12px; color: #999; margin-top: 10px;">Válido por 10 minutos</div>
+                </div>
+
+                <div class="info">
+                  <strong>📋 Información de tu cuenta:</strong>
+                  <ul>
+                    <li><strong>Email:</strong> ${email}</li>
+                    <li><strong>Rol:</strong> Entrenador</li>
+                    <li><strong>Especialización:</strong> ${specialization || 'General'}</li>
+                  </ul>
+                </div>
+
+                <h3>📱 Próximos pasos:</h3>
+                <ol>
+                  <li>Ingresa el código de 6 dígitos en la pantalla de verificación</li>
+                  <li>Tu cuenta será activada automáticamente</li>
+                  <li>Podrás acceder al dashboard de entrenadores</li>
+                </ol>
+
+                <p><strong>⚠️ Importante:</strong> Este código expira en 10 minutos. Si no lo usas, tendrás que solicitar uno nuevo.</p>
+                <p>Si no solicitaste esta cuenta, puedes ignorar este mensaje.</p>
+              </div>
+              <div class="footer">
+                <p>Este es un correo automático, por favor no respondas.</p>
+                <p>&copy; ${new Date().getFullYear()} FitNova. Todos los derechos reservados.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      }
+    });
+
+    console.log('📧 Email de verificación enviado');
+
+    // Crear documento del entrenador en Firestore (pendiente de verificación)
+    await db.doc(`users/${userRecord.uid}`).set({
+      uid: userRecord.uid,
+      email: email,
+      displayName: displayName,
+      phoneNumber: phoneNumber || null,
+      specialization: specialization || null,
+      role: 'trainer',
+      status: 'pending', // Pendiente hasta verificar email
+      isActive: false, // No activo hasta verificar
+      emailVerified: false,
+      createdBy: callerData.displayName,
+      createdByUid: callerUid,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      profileImageUrl: null,
+      // Stats iniciales para entrenadores
+      stats: {
+        totalClients: 0,
+        activeClients: 0,
+        totalWorkouts: 0,
+        totalSessions: 0
+      }
+    });
+
+    // Crear perfil del entrenador
+    await db.doc(`profiles/${userRecord.uid}`).set({
+      userId: userRecord.uid,
+      personalInfo: {
+        displayName: displayName,
+        email: email,
+        phoneNumber: phoneNumber || null
+      },
+      professionalInfo: {
+        specialization: specialization || null,
+        certifications: [],
+        experience: null,
+        bio: null
+      },
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+
+    // Registrar en auditoría
+    await db.collection('auditLogs').add({
+      userId: userRecord.uid,
+      action: 'TRAINER_REGISTRATION',
+      performedBy: callerUid,
+      performedByName: callerData.displayName,
+      timestamp: FieldValue.serverTimestamp(),
+      details: `Entrenador ${displayName} registrado por ${callerData.displayName}`
+    });
+
+    console.log(`🎉 Entrenador registrado exitosamente: ${displayName}`);
+
+    return {
+      success: true,
+      userId: userRecord.uid,
+      message: `Entrenador registrado exitosamente. Se envió un código de verificación a ${email}`,
+      requiresVerification: true,
+      trainerData: {
+        uid: userRecord.uid,
+        email: email,
+        displayName: displayName,
+        role: 'trainer',
+        status: 'pending'
+      }
+    };
+
+  } catch (error) {
+    console.error('❌ Error al registrar entrenador:', error);
+
+    if (error instanceof HttpsError) throw error;
+
+    if (error.code) {
+      switch (error.code) {
+        case 'auth/email-already-exists':
+          throw new HttpsError('already-exists', 'Ya existe una cuenta con este email');
+        case 'auth/invalid-email':
+          throw new HttpsError('invalid-argument', 'Formato de email inválido');
+        case 'auth/weak-password':
+          throw new HttpsError('invalid-argument', 'La contraseña es muy débil');
+        default:
+          throw new HttpsError('internal', `Error: ${error.message}`);
+      }
+    }
+
+    throw new HttpsError('internal', error.message);
+  }
+});
+
+// 🔐 FUNCIÓN: VERIFICAR EMAIL DE ENTRENADOR
+// Verifica el código de email para entrenadores y activa la cuenta
+exports.verifyTrainerEmail = onCall(async (request) => {
+  try {
+    console.log('📧 Verificando email de entrenador');
+
+    const { userId, code } = request.data;
+
+    // Validar datos
+    if (!userId || !code) {
+      throw new HttpsError('invalid-argument', 'UserID y código son requeridos');
+    }
+
+    // Obtener el código de verificación de Firestore
+    const codeDoc = await db.collection('emailVerificationCodes').doc(userId).get();
+
+    if (!codeDoc.exists) {
+      throw new HttpsError('not-found', 'Código de verificación no encontrado');
+    }
+
+    const codeData = codeDoc.data();
+
+    // Verificar que el código no haya sido usado
+    if (codeData.used) {
+      throw new HttpsError('failed-precondition', 'Este código ya ha sido utilizado');
+    }
+
+    // Verificar que el código no haya expirado
+    const expiresAt = codeData.expiresAt.toDate();
+    if (expiresAt < new Date()) {
+      throw new HttpsError('failed-precondition', 'El código ha expirado. Solicita uno nuevo.');
+    }
+
+    // Verificar que el código coincida
+    if (codeData.code !== code) {
+      throw new HttpsError('invalid-argument', 'Código de verificación incorrecto');
+    }
+
+    console.log('✅ Código verificado correctamente');
+
+    // Actualizar el usuario en Firebase Auth
+    await auth.updateUser(userId, {
+      emailVerified: true
+    });
+
+    // Obtener datos del usuario
+    const userDoc = await db.doc(`users/${userId}`).get();
+    const userData = userDoc.data();
+
+    // Actualizar el documento del usuario en Firestore
+    await db.doc(`users/${userId}`).update({
+      emailVerified: true,
+      status: 'active',
+      isActive: true,
+      verifiedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+
+    // Marcar el código como usado
+    await db.collection('emailVerificationCodes').doc(userId).update({
+      used: true,
+      usedAt: FieldValue.serverTimestamp()
+    });
+
+    console.log('✅ Entrenador verificado en Auth y Firestore');
+
+    // Enviar email de confirmación
+    await db.collection('mail').add({
+      to: userData.email,
+      from: 'FitNova <noreplyfitnovaapp@gmail.com>',
+      replyTo: 'noreplyfitnovaapp@gmail.com',
+      message: {
+        subject: '✅ Cuenta de Entrenador Activada - FitNova',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+              .success { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; }
+              .button { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0; font-weight: bold; }
+              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🎉 ¡Cuenta Activada!</h1>
+                <p>FitNova - Panel de Entrenadores</p>
+              </div>
+              <div class="content">
+                <div class="success">
+                  <strong>✅ Tu cuenta de entrenador ha sido verificada exitosamente</strong>
+                </div>
+                <p>Hola <strong>${userData.displayName}</strong>,</p>
+                <p>¡Bienvenido oficialmente al equipo de entrenadores de FitNova!</p>
+                <p>Tu cuenta ha sido activada y ahora tienes acceso completo al dashboard de entrenadores.</p>
+
+                <h3>🔑 Tus credenciales de acceso:</h3>
+                <ul>
+                  <li><strong>Email:</strong> ${userData.email}</li>
+                  <li><strong>Rol:</strong> Entrenador</li>
+                  <li><strong>Especialización:</strong> ${userData.specialization || 'General'}</li>
+                  <li><strong>Estado:</strong> Activo</li>
+                </ul>
+
+                <h3>📊 Acceso al Dashboard:</h3>
+                <p>Ya puedes iniciar sesión en el dashboard de entrenadores de FitNova:</p>
+                <a href="https://fitnova-web.web.app/auth/login" class="button">
+                  Iniciar Sesión
+                </a>
+
+                <h3>🏋️ Como Entrenador puedes:</h3>
+                <ul>
+                  <li>✅ Gestionar tus clientes asignados</li>
+                  <li>✅ Crear y asignar rutinas personalizadas</li>
+                  <li>✅ Monitorear el progreso de tus clientes</li>
+                  <li>✅ Ver análisis biomecánicos de ejercicios</li>
+                  <li>✅ Recibir alertas de rendimiento</li>
+                </ul>
+
+                <p>Si tienes alguna pregunta o necesitas ayuda, no dudes en contactar al administrador.</p>
+              </div>
+              <div class="footer">
+                <p>Este es un correo automático, por favor no respondas.</p>
+                <p>&copy; ${new Date().getFullYear()} FitNova. Todos los derechos reservados.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      }
+    });
+
+    console.log('🎉 Entrenador verificado y activado exitosamente');
+
+    return {
+      success: true,
+      message: 'Email verificado exitosamente. Tu cuenta de entrenador está activa.',
+      userData: {
+        uid: userId,
+        email: userData.email,
+        displayName: userData.displayName,
+        role: userData.role,
+        specialization: userData.specialization
+      }
+    };
+
+  } catch (error) {
+    console.error('❌ Error al verificar email de entrenador:', error);
+
+    if (error instanceof HttpsError) throw error;
+
+    throw new HttpsError('internal', error.message || 'Error al verificar email');
+  }
+});
+
