@@ -1015,8 +1015,12 @@ async getCurrentUserAsync(): Promise<User | null> {
     email: string;
     password: string;
     displayName: string;
-    phoneNumber?: string;
+    phoneNumber: string;
+    gender: string;
     specialization?: string;
+    certifications?: string;
+    experience?: number;
+    availability?: string;
   }): Promise<{ success: boolean; userId?: string; message?: string }> {
     try {
       console.log('👤 Registrando nuevo entrenador:', trainerData.email);
@@ -1026,8 +1030,12 @@ async getCurrentUserAsync(): Promise<User | null> {
         email: trainerData.email,
         password: trainerData.password,
         displayName: trainerData.displayName,
-        phoneNumber: trainerData.phoneNumber || null,
-        specialization: trainerData.specialization || null
+        phoneNumber: trainerData.phoneNumber,
+        gender: trainerData.gender,
+        specialization: trainerData.specialization || null,
+        certifications: trainerData.certifications || null,
+        experience: trainerData.experience || null,
+        availability: trainerData.availability || null
       }).toPromise();
 
       if (result?.success) {

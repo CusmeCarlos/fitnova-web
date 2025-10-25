@@ -985,11 +985,21 @@ exports.registerTrainer = onCall(async (request) => {
       throw new HttpsError('permission-denied', 'Solo los administradores pueden registrar entrenadores');
     }
 
-    const { email, password, displayName, phoneNumber, specialization } = request.data;
+    const {
+      email,
+      password,
+      displayName,
+      phoneNumber,
+      gender,
+      specialization,
+      certifications,
+      experience,
+      availability
+    } = request.data;
 
-    // Validar datos
-    if (!email || !password || !displayName) {
-      throw new HttpsError('invalid-argument', 'Email, contraseña y nombre son requeridos');
+    // Validar datos requeridos
+    if (!email || !password || !displayName || !phoneNumber || !gender) {
+      throw new HttpsError('invalid-argument', 'Email, contraseña, nombre, teléfono y género son requeridos');
     }
 
     // Validar formato de email
@@ -1003,9 +1013,15 @@ exports.registerTrainer = onCall(async (request) => {
       throw new HttpsError('invalid-argument', 'La contraseña debe tener al menos 6 caracteres');
     }
 
-    // Validar teléfono (opcional)
-    if (phoneNumber && !/^[0-9]{10}$/.test(phoneNumber)) {
+    // Validar teléfono (requerido)
+    if (!/^[0-9]{10}$/.test(phoneNumber)) {
       throw new HttpsError('invalid-argument', 'El teléfono debe tener exactamente 10 dígitos');
+    }
+
+    // Validar género (requerido)
+    const validGenders = ['male', 'female', 'other', 'prefer-not-to-say'];
+    if (!validGenders.includes(gender)) {
+      throw new HttpsError('invalid-argument', 'Género no válido');
     }
 
     console.log(`✅ Registro iniciado por admin: ${callerData.displayName}`);
@@ -1020,83 +1036,88 @@ exports.registerTrainer = onCall(async (request) => {
 
     console.log('✅ Usuario creado en Firebase Auth:', userRecord.uid);
 
-    // Generar código de verificación de 6 dígitos
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log('📧 Código de verificación generado');
+    // 🔧 CONFIGURACIÓN - Firebase maneja la verificación automáticamente
+    const actionCodeSettings = {
+      url: 'https://fitnova-app.web.app/email-verified',
+      handleCodeInApp: false
+    };
 
-    // Guardar código de verificación en Firestore
-    await db.collection('emailVerificationCodes').doc(userRecord.uid).set({
-      email: email,
-      code: verificationCode,
-      createdAt: FieldValue.serverTimestamp(),
-      expiresAt: Timestamp.fromDate(new Date(Date.now() + 10 * 60 * 1000)), // 10 minutos
-      used: false,
-      type: 'trainer_registration',
-      userId: userRecord.uid
-    });
+    const verificationLink = await auth.generateEmailVerificationLink(email, actionCodeSettings);
+    console.log('🔗 Link de verificación generado:', verificationLink);
 
-    // Enviar email con código de verificación
+    // Enviar email con link de verificación
     await db.collection('mail').add({
       to: email,
       from: 'FitNova <noreplyfitnovaapp@gmail.com>',
       replyTo: 'noreplyfitnovaapp@gmail.com',
       message: {
         subject: '🏋️ Verifica tu cuenta de Entrenador - FitNova',
+        text: `Hola ${displayName}, por favor verifica tu correo visitando: ${verificationLink}`,
         html: `
           <!DOCTYPE html>
           <html>
           <head>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-              .code-box { background: white; border: 3px dashed #3b82f6; padding: 20px; text-align: center; margin: 20px 0; border-radius: 10px; }
-              .code { font-size: 32px; font-weight: bold; color: #3b82f6; letter-spacing: 8px; font-family: 'Courier New', monospace; }
-              .info { background: #e3f2fd; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; }
-              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
-            </style>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
           </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h1>🏋️ ¡Bienvenido a FitNova!</h1>
-                <p>Registro de Entrenador</p>
+          <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+            <div style="background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+              <!-- Header con tema verde para entrenador -->
+              <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 32px; font-weight: 700;">🏋️ FitNova</h1>
+                <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Cuenta de Entrenador</p>
               </div>
-              <div class="content">
-                <p>Hola <strong>${displayName}</strong>,</p>
-                <p>Has sido registrado como <strong>Entrenador</strong> en FitNova por el administrador <strong>${callerData.displayName}</strong>.</p>
-                <p>Para activar tu cuenta, necesitas verificar tu correo electrónico usando el siguiente código:</p>
 
-                <div class="code-box">
-                  <div style="font-size: 14px; color: #666; margin-bottom: 10px;">Tu código de verificación:</div>
-                  <div class="code">${verificationCode}</div>
-                  <div style="font-size: 12px; color: #999; margin-top: 10px;">Válido por 10 minutos</div>
+              <!-- Content -->
+              <div style="padding: 40px 30px;">
+                <h2 style="color: #333; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">
+                  ¡Hola ${displayName}! 💪
+                </h2>
+
+                <p style="color: #666; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                  Has sido registrado como <strong>Entrenador</strong> en FitNova por el administrador <strong>${callerData.displayName}</strong>.
+                </p>
+
+                <p style="color: #666; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                  Para activar tu cuenta y comenzar a gestionar tus clientes, necesitas verificar tu dirección de correo electrónico.
+                </p>
+
+                <!-- Botón de verificación -->
+                <div style="text-align: center; margin: 40px 0;">
+                  <a href="${verificationLink}"
+                     style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 30px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: all 0.3s ease;">
+                    ✅ Verificar Mi Cuenta
+                  </a>
                 </div>
 
-                <div class="info">
-                  <strong>📋 Información de tu cuenta:</strong>
-                  <ul>
-                    <li><strong>Email:</strong> ${email}</li>
-                    <li><strong>Rol:</strong> Entrenador</li>
-                    <li><strong>Especialización:</strong> ${specialization || 'General'}</li>
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%); border-left: 4px solid #10b981; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                  <p style="margin: 0 0 15px 0; color: #333; font-weight: 600;">📋 Información de tu cuenta:</p>
+                  <ul style="margin: 0; padding-left: 20px; color: #666;">
+                    <li style="margin: 8px 0;"><strong>Email:</strong> ${email}</li>
+                    <li style="margin: 8px 0;"><strong>Rol:</strong> Entrenador</li>
+                    <li style="margin: 8px 0;"><strong>Especialización:</strong> ${specialization || 'General'}</li>
+                    <li style="margin: 8px 0;"><strong>Registrado por:</strong> ${callerData.displayName}</li>
                   </ul>
                 </div>
 
-                <h3>📱 Próximos pasos:</h3>
-                <ol>
-                  <li>Ingresa el código de 6 dígitos en la pantalla de verificación</li>
-                  <li>Tu cuenta será activada automáticamente</li>
-                  <li>Podrás acceder al dashboard de entrenadores</li>
-                </ol>
+                <p style="color: #999; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0;">
+                  Si no puedes hacer clic en el botón, copia y pega este enlace en tu navegador:<br>
+                  <a href="${verificationLink}" style="color: #10b981; word-break: break-all;">${verificationLink}</a>
+                </p>
 
-                <p><strong>⚠️ Importante:</strong> Este código expira en 10 minutos. Si no lo usas, tendrás que solicitar uno nuevo.</p>
-                <p>Si no solicitaste esta cuenta, puedes ignorar este mensaje.</p>
+                <p style="color: #999; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
+                  Si no solicitaste esta cuenta, puedes ignorar este mensaje de forma segura.
+                </p>
               </div>
-              <div class="footer">
-                <p>Este es un correo automático, por favor no respondas.</p>
-                <p>&copy; ${new Date().getFullYear()} FitNova. Todos los derechos reservados.</p>
+
+              <!-- Footer -->
+              <div style="background: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e9ecef;">
+                <p style="margin: 0; color: #6c757d; font-size: 14px;">
+                  Este es un correo automático, por favor no respondas.
+                </p>
+                <p style="margin: 10px 0 0 0; color: #6c757d; font-size: 12px;">
+                  &copy; ${new Date().getFullYear()} FitNova. Todos los derechos reservados.
+                </p>
               </div>
             </div>
           </body>
@@ -1112,7 +1133,8 @@ exports.registerTrainer = onCall(async (request) => {
       uid: userRecord.uid,
       email: email,
       displayName: displayName,
-      phoneNumber: phoneNumber || null,
+      phoneNumber: phoneNumber,
+      gender: gender,
       specialization: specialization || null,
       role: 'trainer',
       status: 'pending', // Pendiente hasta verificar email
@@ -1138,12 +1160,14 @@ exports.registerTrainer = onCall(async (request) => {
       personalInfo: {
         displayName: displayName,
         email: email,
-        phoneNumber: phoneNumber || null
+        phoneNumber: phoneNumber,
+        gender: gender
       },
       professionalInfo: {
         specialization: specialization || null,
-        certifications: [],
-        experience: null,
+        certifications: certifications || null,
+        experience: experience || null,
+        availability: availability || null,
         bio: null
       },
       createdAt: FieldValue.serverTimestamp(),
@@ -1165,7 +1189,7 @@ exports.registerTrainer = onCall(async (request) => {
     return {
       success: true,
       userId: userRecord.uid,
-      message: `Entrenador registrado exitosamente. Se envió un código de verificación a ${email}`,
+      message: `Entrenador registrado exitosamente. Se envió un link de verificación a ${email}`,
       requiresVerification: true,
       trainerData: {
         uid: userRecord.uid,

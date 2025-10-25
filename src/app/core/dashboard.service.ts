@@ -253,8 +253,8 @@ export class DashboardService {
     const totalWorkoutsAllTime = allUsers.reduce((sum, u) => sum + (u.totalWorkouts || 0), 0);
     const totalHoursAllTime = allUsers.reduce((sum, u) => sum + (u.totalHours || 0), 0);
     
-    const averageAccuracyGlobal = allUsers.length > 0 ? 
-      allUsers.reduce((sum, u) => sum + (u.averageAccuracy || 0), 0) / allUsers.length : 0;
+    const averageAccuracyGlobal = allUsers.length > 0 ?
+    Math.round(allUsers.reduce((sum, u) => sum + (u.averageAccuracy || 0), 0) / allUsers.length) : 0;
 
     const todayAlerts = allAlerts.filter(a => a.processedAt >= today);
     const recentAlertsGlobal = allAlerts.slice(0, 20);
@@ -285,7 +285,7 @@ export class DashboardService {
       activeUsersToday,
       totalWorkoutsToday: todayAlerts.length,
       totalWorkoutsAllTime,
-      averageAccuracyGlobal: Math.round(averageAccuracyGlobal),
+      averageAccuracyGlobal: averageAccuracyGlobal,
       totalHoursAllTime,
       criticalErrorsToday: todayAlerts.length,
       mostCommonErrorGlobal,

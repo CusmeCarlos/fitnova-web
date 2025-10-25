@@ -576,8 +576,9 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
   }
 
   formatPercentage(value: number): string {
-    return `${Math.round(value)}%`;
-  }
+  console.log('🔍 Formateando precisión:', value, '→', Math.round(value || 0));
+  return `${Math.round(value || 0)}%`;
+}
 
   getErrorTypeLabel(errorType: string): string {
     const errorLabels: { [key: string]: string } = {

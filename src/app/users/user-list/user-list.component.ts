@@ -112,6 +112,12 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
   showCreateUserForm = false;
   hidePassword = true;
 
+  // Formulario de entrenador
+  createTrainerForm: FormGroup;
+  showCreateTrainerForm = false;
+  hideTrainerPassword = true;
+  isCreatingTrainer = false;
+
   // Filtros y búsqueda
   searchTerm = '';
   statusFilter = '';
@@ -136,6 +142,7 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
     private dialog: MatDialog
   ) {
     this.createUserForm = this.initCreateUserForm();
+    this.createTrainerForm = this.initCreateTrainerForm();
     this.setupDisplayedColumns();
   }
 
@@ -190,6 +197,20 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
       phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]], // ✅ NUEVO
       gender: ['', Validators.required], // ✅ NUEVO
       assignedTrainer: ['']
+    });
+  }
+
+  private initCreateTrainerForm(): FormGroup {
+    return this.fb.group({
+      displayName: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
+      gender: ['', [Validators.required]],
+      specialization: [''],
+      certifications: [''],
+      experience: ['', [Validators.min(0), Validators.max(50)]],
+      availability: ['']
     });
   }
 
@@ -292,7 +313,7 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
       const trainersSnapshot = await this.db
         .collection('users')
         .where('role', '==', 'trainer')
-        .where('isActive', '==', true)
+        .where('emailVerified', '==', true)
         .get();
 
       this.availableTrainers = trainersSnapshot.docs.map(doc => ({
@@ -301,7 +322,7 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
         email: doc.data()['email'] || 'Sin email'
       }));
 
-      console.log('👨‍💼 Entrenadores cargados:', this.availableTrainers.length);
+      console.log('👨‍💼 Entrenadores cargados:', this.availableTrainers.length, this.availableTrainers);
     } catch (error) {
       console.error('❌ Error cargando entrenadores:', error);
     }
@@ -671,6 +692,9 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
   }
   toggleCreateUserForm(): void {
     this.showCreateUserForm = !this.showCreateUserForm;
+    if (this.showCreateUserForm) {
+      this.showCreateTrainerForm = false; // Cerrar formulario de entrenador si está abierto
+    }
     if (!this.showCreateUserForm) {
       this.createUserForm.reset();
     }
@@ -679,6 +703,95 @@ export class UserListComponent implements OnInit, OnDestroy, AfterViewInit {
   cancelCreateUser(): void {
     this.showCreateUserForm = false;
     this.createUserForm.reset();
+  }
+
+  // ===============================================================================
+  // 👨‍🏫 ACCIONES DE ENTRENADOR
+  // ===============================================================================
+  toggleCreateTrainerForm(): void {
+    this.showCreateTrainerForm = !this.showCreateTrainerForm;
+    if (this.showCreateTrainerForm) {
+      this.showCreateUserForm = false; // Cerrar formulario de usuario si está abierto
+    }
+    if (!this.showCreateTrainerForm) {
+      this.createTrainerForm.reset();
+    }
+  }
+
+  cancelCreateTrainer(): void {
+    this.showCreateTrainerForm = false;
+    this.createTrainerForm.reset();
+  }
+
+  async createTrainer(): Promise<void> {
+    if (this.createTrainerForm.invalid) {
+      this.markFormGroupTouched(this.createTrainerForm);
+      this.showErrorMessage('Por favor completa todos los campos requeridos');
+      return;
+    }
+
+    const formData = this.createTrainerForm.value;
+    this.isCreatingTrainer = true;
+
+    try {
+      console.log('👨‍🏫 Iniciando creación de entrenador:', formData.email);
+      console.log('📋 Datos del formulario:', formData);
+
+      // Preparar datos del entrenador
+      const trainerData: any = {
+        email: formData.email,
+        password: formData.password,
+        displayName: formData.displayName,
+        phoneNumber: formData.phoneNumber,
+        gender: formData.gender
+      };
+
+      console.log('📦 Datos a enviar:', trainerData);
+
+      // Agregar campos opcionales si están completos
+      if (formData.specialization) {
+        trainerData.specialization = formData.specialization;
+      }
+      if (formData.certifications) {
+        trainerData.certifications = formData.certifications;
+      }
+      if (formData.experience) {
+        trainerData.experience = parseInt(formData.experience);
+      }
+      if (formData.availability) {
+        trainerData.availability = formData.availability;
+      }
+
+      const result = await this.auth.registerTrainer(trainerData);
+
+      if (result.success && result.userId) {
+        console.log('✅ Entrenador creado exitosamente. UID:', result.userId);
+
+        // Limpiar formulario
+        this.createTrainerForm.reset();
+        this.showCreateTrainerForm = false;
+
+        // Recargar datos
+        setTimeout(() => {
+          this.loadUsersData();
+          this.loadAvailableTrainers();
+          this.loadMetrics();
+        }, 100);
+
+        this.showSuccessMessage(
+          `Entrenador ${formData.displayName} creado exitosamente. Se ha enviado un correo de verificación.`
+        );
+
+      } else {
+        throw new Error(result.message || 'Error desconocido al crear entrenador');
+      }
+
+    } catch (error: any) {
+      console.error('❌ Error en createTrainer():', error);
+      this.showErrorMessage(error.message || 'Error creando entrenador');
+    } finally {
+      this.isCreatingTrainer = false;
+    }
   }
 
   async updateAssignedTrainer(user: UserTableData, newTrainerId: string): Promise<void> {

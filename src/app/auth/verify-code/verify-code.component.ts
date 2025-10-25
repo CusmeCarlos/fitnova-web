@@ -33,8 +33,8 @@ export class VerifyCodeComponent implements OnInit {
   verifyCodeForm: FormGroup;
   isLoading = false;
   email = '';
-  verificationType: 'password' | 'admin' = 'password'; // Tipo de verificación
-  userId = ''; // Para verificación de admin
+  verificationType: 'password' | 'admin' | 'trainer' = 'password'; // Tipo de verificación
+  userId = ''; // Para verificación de admin/trainer
   resendCooldown = 0;
   resendTimer: any;
 
@@ -66,7 +66,7 @@ export class VerifyCodeComponent implements OnInit {
         });
 
         // Redirigir según el tipo
-        if (this.verificationType === 'admin') {
+        if (this.verificationType === 'admin' || this.verificationType === 'trainer') {
           this.router.navigate(['/auth/login']);
         } else {
           this.router.navigate(['/auth/forgot-password']);
@@ -94,6 +94,9 @@ export class VerifyCodeComponent implements OnInit {
         if (this.verificationType === 'admin') {
           // Verificación de email para administrador
           await this.verifyAdminCode(code);
+        } else if (this.verificationType === 'trainer') {
+          // Verificación de email para entrenador
+          await this.verifyTrainerCode(code);
         } else {
           // Verificación de código para password reset
           await this.verifyPasswordCode(code);
@@ -154,6 +157,24 @@ export class VerifyCodeComponent implements OnInit {
 
     if (result.success) {
       this.snackBar.open('¡Cuenta de administrador verificada! Ya puedes iniciar sesión.', 'Cerrar', {
+        duration: 5000,
+        horizontalPosition: 'center',
+        verticalPosition: 'top',
+        panelClass: ['success-snackbar']
+      });
+
+      // Redirigir al login después de 2 segundos
+      setTimeout(() => {
+        this.router.navigate(['/auth/login']);
+      }, 2000);
+    }
+  }
+
+  private async verifyTrainerCode(code: string): Promise<void> {
+    const result = await this.authService.verifyTrainerEmail(this.email, code);
+
+    if (result.success) {
+      this.snackBar.open('¡Cuenta de entrenador verificada! Ya puedes iniciar sesión.', 'Cerrar', {
         duration: 5000,
         horizontalPosition: 'center',
         verticalPosition: 'top',

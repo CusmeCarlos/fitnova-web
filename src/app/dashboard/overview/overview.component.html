@@ -70,7 +70,8 @@
               <mat-icon>target</mat-icon>
             </div>
           </div>
-          <div class="metric-value">{{globalMetrics.averageAccuracyGlobal}}%</div>
+          <div class="metric-value">{{formatPercentage(globalMetrics.averageAccuracyGlobal)}}</div>
+
           <div class="metric-change positive">
             <mat-icon class="change-icon">trending_up</mat-icon>
             <span>Mejorando</span>
@@ -248,7 +249,8 @@
                 <mat-icon>track_changes</mat-icon>
                 <span class="metric-label">Precisión</span>
               </div>
-              <div class="metric-value">{{selectedUserMetrics.accuracy}}%</div>
+              <div class="metric-value">{{formatPercentage(selectedUserMetrics.accuracy)}}</div>
+
             </mat-card-content>
           </mat-card>
 
