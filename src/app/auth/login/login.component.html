@@ -22,77 +22,16 @@
           <p class="brand-description">Sistema de gestión de entrenamiento con análisis biomecánico mediante IA</p>
         </div>
 
-        <!-- Premium Illustration -->
+        <!-- Premium Illustration - Animated GIF -->
         <div class="illustration-container">
-          <svg viewBox="0 0 400 400" class="training-illustration">
-            <!-- Definición de gradientes -->
-            <defs>
-              <linearGradient id="headGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
-              </linearGradient>
-              <linearGradient id="torsoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
-              </linearGradient>
-              <linearGradient id="legGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
-              </linearGradient>
-              <linearGradient id="armGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:1" />
-              </linearGradient>
-            </defs>
-
-            <!-- Círculos decorativos de fondo -->
-            <circle cx="200" cy="200" r="180" class="circle-bg circle-1"/>
-            <circle cx="200" cy="200" r="140" class="circle-bg circle-2"/>
-            <circle cx="200" cy="200" r="100" class="circle-bg circle-3"/>
-
-            <!-- Persona entrenando (figura estilizada) -->
-            <g class="person-training">
-              <!-- Piernas -->
-              <path d="M 180 280 L 170 350" class="leg" stroke-width="12" stroke-linecap="round"/>
-              <path d="M 220 280 L 230 350" class="leg" stroke-width="12" stroke-linecap="round"/>
-
-              <!-- Torso -->
-              <ellipse cx="200" cy="220" rx="35" ry="60" class="torso"/>
-
-              <!-- Cabeza -->
-              <circle cx="200" cy="160" r="25" class="head"/>
-
-              <!-- Brazo izquierdo con pesa -->
-              <g class="arm-left">
-                <path d="M 165 200 L 120 180" class="arm" stroke-width="10" stroke-linecap="round"/>
-                <!-- Pesa izquierda -->
-                <g class="dumbbell">
-                  <rect x="100" y="170" width="8" height="20" rx="2" class="weight-plate"/>
-                  <rect x="108" y="175" width="12" height="10" rx="1" class="weight-bar"/>
-                  <rect x="120" y="170" width="8" height="20" rx="2" class="weight-plate"/>
-                </g>
-              </g>
-
-              <!-- Brazo derecho con pesa -->
-              <g class="arm-right">
-                <path d="M 235 200 L 280 180" class="arm" stroke-width="10" stroke-linecap="round"/>
-                <!-- Pesa derecha -->
-                <g class="dumbbell">
-                  <rect x="272" y="170" width="8" height="20" rx="2" class="weight-plate"/>
-                  <rect x="280" y="175" width="12" height="10" rx="1" class="weight-bar"/>
-                  <rect x="292" y="170" width="8" height="20" rx="2" class="weight-plate"/>
-                </g>
-              </g>
-            </g>
-
-            <!-- Partículas de energía -->
-            <circle cx="150" cy="150" r="4" class="energy-particle particle-1"/>
-            <circle cx="250" cy="160" r="3" class="energy-particle particle-2"/>
-            <circle cx="180" cy="120" r="3" class="energy-particle particle-3"/>
-            <circle cx="220" cy="130" r="4" class="energy-particle particle-4"/>
-            <circle cx="160" cy="250" r="3" class="energy-particle particle-5"/>
-            <circle cx="240" cy="260" r="4" class="energy-particle particle-6"/>
-          </svg>
+          <div class="gif-wrapper">
+            <img
+              src="gym-animation.gif"
+              alt="Entrenamiento con pesas animado"
+              class="gym-animation-gif"
+              loading="lazy">
+            <div class="color-overlay"></div>
+          </div>
         </div>
 
         <!-- Stats Cards -->
@@ -337,8 +276,8 @@
       <!-- Footer -->
       <div class="login-footer">
         <div class="version-info">
-          <span>FitNova v1.0 - Proyecto de Tesis</span>
-          <span class="developer">Desarrollado por Carlos Cusme</span>
+          <span>FitNova v1.0 </span>
+          <span class="developer">by Carlos Cusme</span>
         </div>
       </div>
     </div>

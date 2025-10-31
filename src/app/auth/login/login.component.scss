@@ -71,27 +71,28 @@
   overflow: hidden;
 
   .content-wrapper {
-    max-width: 600px;
+    max-width: 700px;
     width: 100%;
     animation: fadeInUp 1s ease-out;
     display: flex;
     flex-direction: column;
     justify-content: center;
     height: 100%;
+    padding: 2rem 3rem;
   }
 
-  // Hero Content
+  // Hero Content - Aumentado
   .hero-content {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
 
     .logo-badge {
-      width: 70px;
-      height: 70px;
-      margin: 0 auto 1rem;
+      width: 90px;
+      height: 90px;
+      margin: 0 auto 1.5rem;
       background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(99, 102, 241, 0.2));
       border: 2px solid rgba(59, 130, 246, 0.4);
-      border-radius: 18px;
+      border-radius: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -102,18 +103,18 @@
       animation: floatBadge 3s ease-in-out infinite;
 
       mat-icon {
-        font-size: 36px;
-        width: 36px;
-        height: 36px;
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
         color: #60a5fa;
         filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.6));
       }
     }
 
     .brand-title {
-      font-size: 3.5rem;
+      font-size: 5rem;
       font-weight: 900;
-      margin: 0 0 0.75rem;
+      margin: 0 0 1rem;
       background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -123,128 +124,266 @@
     }
 
     .brand-subtitle {
-      font-size: 1.25rem;
+      font-size: 1.6rem;
       font-weight: 600;
       color: #60a5fa;
-      margin: 0 0 0.5rem;
+      margin: 0 0 0.75rem;
       letter-spacing: 0.5px;
     }
 
     .brand-description {
-      font-size: 0.95rem;
+      font-size: 1.1rem;
       color: #94a3b8;
-      max-width: 480px;
+      max-width: 550px;
       margin: 0 auto;
-      line-height: 1.5;
+      line-height: 1.6;
       font-weight: 400;
     }
   }
 
-  // Illustration Container
+  // Illustration Container - GIF Animation with Background Color Change (Aumentado)
   .illustration-container {
-    margin: 1.5rem 0;
+    margin: 3rem 0;
     display: flex;
     justify-content: center;
+    align-items: center;
+
+    .gif-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 24px;
+      overflow: hidden;
+      // Fondo azul que reemplazará el amarillo
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      filter: drop-shadow(0 20px 60px rgba(59, 130, 246, 0.4));
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: scale(1.05);
+        filter: drop-shadow(0 25px 70px rgba(59, 130, 246, 0.5));
+      }
+    }
+
+    .gym-animation-gif {
+      width: 100%;
+      height: auto;
+      display: block;
+      // Filtro específico para cambiar amarillo (#FFD700) a azul (#3b82f6)
+      filter:
+        hue-rotate(190deg)     // Rota el amarillo a azul
+        saturate(0.8)          // Reduce saturación
+        brightness(0.85)       // Ajusta brillo
+        contrast(1.1);         // Aumenta contraste
+    }
+
+    .color-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      // Overlay azul suave
+      background: linear-gradient(135deg,
+        rgba(30, 64, 175, 0.3) 0%,
+        rgba(37, 99, 235, 0.25) 50%,
+        rgba(59, 130, 246, 0.2) 100%
+      );
+      mix-blend-mode: color;
+      pointer-events: none;
+    }
 
     .training-illustration {
       width: 100%;
-      max-width: 320px;
+      max-width: 350px;
       height: auto;
-      filter: drop-shadow(0 10px 40px rgba(59, 130, 246, 0.2));
+      filter: drop-shadow(0 15px 50px rgba(59, 130, 246, 0.25));
 
-      // Círculos de fondo
+      // Círculos de fondo animados
       .circle-bg {
         fill: none;
         stroke-width: 1.5;
         opacity: 0.3;
+        transition: all 0.3s ease;
 
         &.circle-1 {
           stroke: rgba(59, 130, 246, 0.3);
-          animation: rotateCircle 20s linear infinite;
+          animation: rotateCircle 25s linear infinite;
         }
 
         &.circle-2 {
           stroke: rgba(99, 102, 241, 0.4);
-          animation: rotateCircle 15s linear infinite reverse;
+          animation: rotateCircle 20s linear infinite reverse;
         }
 
         &.circle-3 {
           stroke: rgba(59, 130, 246, 0.5);
           animation: pulseCircle 3s ease-in-out infinite;
         }
+
+        &.circle-4 {
+          stroke: rgba(147, 197, 253, 0.4);
+          animation: pulseCircle 2.5s ease-in-out infinite;
+          animation-delay: 1s;
+        }
       }
 
-      // Persona entrenando
+      // Sombra dinámica debajo de la persona
+      .person-shadow {
+        fill: rgba(0, 0, 0, 0.2);
+        animation: shadowPulse 2s ease-in-out infinite;
+      }
+
+      // Persona entrenando con animaciones mejoradas
       .person-training {
+        // Cabeza con movimiento
+        .head-group {
+          animation: headBobSVG 2s ease-in-out infinite;
+          transform-origin: 200px 160px;
+        }
+
         .head {
           fill: url(#headGradient);
-          filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.4));
-          animation: headBobSVG 2s ease-in-out infinite;
-          transform-origin: center;
+          filter: drop-shadow(0 6px 15px rgba(59, 130, 246, 0.5));
+        }
+
+        .eye {
+          animation: blink 4s ease-in-out infinite;
+        }
+
+        .mouth {
+          animation: breathe 2s ease-in-out infinite;
+        }
+
+        // Cuello
+        .neck {
+          fill: url(#armGradient);
+          filter: drop-shadow(0 2px 6px rgba(59, 130, 246, 0.3));
+        }
+
+        // Torso con respiración
+        .torso-group {
+          animation: torsoBreath 2s ease-in-out infinite;
+          transform-origin: 200px 220px;
         }
 
         .torso {
           fill: url(#torsoGradient);
-          filter: drop-shadow(0 6px 16px rgba(59, 130, 246, 0.3));
+          filter: drop-shadow(0 8px 20px rgba(59, 130, 246, 0.4));
         }
 
-        .leg {
-          fill: none;
-          stroke: url(#legGradient);
-          stroke-linecap: round;
-          filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3));
+        // Piernas firmes
+        .legs {
+          .leg {
+            fill: none;
+            stroke: url(#legGradient);
+            stroke-linecap: round;
+            filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3));
+          }
+
+          .leg-left {
+            animation: legStabilize 2s ease-in-out infinite;
+            transform-origin: 185px 280px;
+          }
+
+          .leg-right {
+            animation: legStabilize 2s ease-in-out infinite;
+            transform-origin: 215px 280px;
+            animation-delay: 0.1s;
+          }
         }
 
+        .foot {
+          fill: #1e40af;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        // Brazos con animación de levantamiento realista
         .arm {
           fill: none;
           stroke: url(#armGradient);
           stroke-linecap: round;
+          filter: drop-shadow(0 4px 10px rgba(59, 130, 246, 0.4));
         }
 
+        .shoulder {
+          fill: url(#headGradient);
+          filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.4));
+        }
+
+        // Brazo izquierdo - levantamiento completo
         .arm-left {
-          animation: armLiftSVG 2.5s ease-in-out infinite;
+          animation: armLiftLeftComplete 2s ease-in-out infinite;
           transform-origin: 165px 200px;
         }
 
+        // Brazo derecho - levantamiento completo
         .arm-right {
-          animation: armLiftSVG 2.5s ease-in-out infinite;
+          animation: armLiftRightComplete 2s ease-in-out infinite;
           transform-origin: 235px 200px;
-          animation-delay: 0.3s;
         }
 
+        // Pesas mejoradas con efecto metálico
         .dumbbell {
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+
           .weight-plate {
-            fill: #64748b;
-            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+            fill: url(#dumbbellGradient);
           }
 
           .weight-bar {
             fill: #94a3b8;
           }
         }
+
+        // Pesa izquierda con animación
+        .dumbbell-left {
+          animation: dumbbellShake 2s ease-in-out infinite;
+          transform-origin: 90px 167px;
+        }
+
+        // Pesa derecha con animación
+        .dumbbell-right {
+          animation: dumbbellShake 2s ease-in-out infinite;
+          transform-origin: 310px 167px;
+        }
       }
 
-      // Partículas de energía
+      // Partículas de energía mejoradas
       .energy-particle {
         fill: #60a5fa;
-        filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
+        filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.9));
 
-        &.particle-1 { animation: floatParticle 3s ease-in-out infinite; animation-delay: 0s; }
-        &.particle-2 { animation: floatParticle 3.5s ease-in-out infinite; animation-delay: 0.5s; }
-        &.particle-3 { animation: floatParticle 3s ease-in-out infinite; animation-delay: 1s; }
-        &.particle-4 { animation: floatParticle 3.2s ease-in-out infinite; animation-delay: 1.5s; }
-        &.particle-5 { animation: floatParticle 3.8s ease-in-out infinite; animation-delay: 2s; }
-        &.particle-6 { animation: floatParticle 3.3s ease-in-out infinite; animation-delay: 2.5s; }
+        &.particle-1 { animation: floatParticleEnhanced 3s ease-in-out infinite; animation-delay: 0s; }
+        &.particle-2 { animation: floatParticleEnhanced 3.5s ease-in-out infinite; animation-delay: 0.5s; }
+        &.particle-3 { animation: floatParticleEnhanced 3.2s ease-in-out infinite; animation-delay: 1s; }
+        &.particle-4 { animation: floatParticleEnhanced 3.8s ease-in-out infinite; animation-delay: 1.5s; }
+        &.particle-5 { animation: floatParticleEnhanced 3.3s ease-in-out infinite; animation-delay: 2s; }
+        &.particle-6 { animation: floatParticleEnhanced 3.6s ease-in-out infinite; animation-delay: 2.5s; }
+        &.particle-7 { animation: floatParticleEnhanced 3.4s ease-in-out infinite; animation-delay: 0.8s; }
+        &.particle-8 { animation: floatParticleEnhanced 3.7s ease-in-out infinite; animation-delay: 1.8s; }
+      }
+
+      // Líneas de movimiento
+      .motion-lines {
+        .motion-line {
+          animation: motionLineFlash 2s ease-in-out infinite;
+
+          &.motion-line-1 { animation-delay: 0.3s; }
+          &.motion-line-2 { animation-delay: 0.3s; }
+          &.motion-line-3 { animation-delay: 0.5s; }
+          &.motion-line-4 { animation-delay: 0.5s; }
+        }
       }
     }
   }
 
-  // Stats Grid
+  // Stats Grid - Aumentado
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-top: 1.5rem;
+    gap: 1.5rem;
+    margin-top: 3rem;
 
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
@@ -254,8 +393,8 @@
       background: rgba(59, 130, 246, 0.08);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(59, 130, 246, 0.2);
-      border-radius: 14px;
-      padding: 1.25rem 1rem;
+      border-radius: 18px;
+      padding: 1.75rem 1.25rem;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -276,35 +415,35 @@
       }
 
       .stat-icon {
-        width: 48px;
-        height: 48px;
+        width: 64px;
+        height: 64px;
         background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(99, 102, 241, 0.2));
-        border-radius: 12px;
+        border-radius: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 0.75rem;
+        margin-bottom: 1rem;
         box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
 
         mat-icon {
-          font-size: 24px;
-          width: 24px;
-          height: 24px;
+          font-size: 32px;
+          width: 32px;
+          height: 32px;
           color: #60a5fa;
         }
       }
 
       .stat-content {
         h4 {
-          font-size: 1rem;
+          font-size: 1.15rem;
           font-weight: 700;
           color: #e2e8f0;
-          margin: 0 0 0.25rem;
+          margin: 0 0 0.35rem;
           letter-spacing: 0.3px;
         }
 
         p {
-          font-size: 0.8rem;
+          font-size: 0.95rem;
           color: #94a3b8;
           margin: 0;
           font-weight: 500;
@@ -919,7 +1058,10 @@
   }
 }
 
-// Animaciones para el SVG
+// ================================================================================
+// 🎬 ANIMACIONES MEJORADAS PARA SVG - LEVANTAMIENTO DE PESAS REALISTA
+// ================================================================================
+
 @keyframes floatBadge {
   0%, 100% {
     transform: translateY(0);
@@ -951,24 +1093,163 @@
   }
 }
 
-@keyframes armLiftSVG {
-  0%, 100% {
+// Animación de levantamiento de brazo izquierdo completo
+@keyframes armLiftLeftComplete {
+  0% {
     transform: rotate(0deg);
   }
+  25% {
+    transform: rotate(-35deg);
+  }
   50% {
-    transform: rotate(-20deg);
+    transform: rotate(-50deg);
+  }
+  75% {
+    transform: rotate(-35deg);
+  }
+  100% {
+    transform: rotate(0deg);
   }
 }
 
+// Animación de levantamiento de brazo derecho completo
+@keyframes armLiftRightComplete {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(35deg);
+  }
+  50% {
+    transform: rotate(50deg);
+  }
+  75% {
+    transform: rotate(35deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+// Movimiento de cabeza durante el ejercicio
 @keyframes headBobSVG {
   0%, 100% {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-3px) scale(1.01);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-8px) scale(1.02);
+  }
+  75% {
+    transform: translateY(-3px) scale(1.01);
   }
 }
 
+// Respiración del torso
+@keyframes torsoBreath {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+// Estabilización de piernas
+@keyframes legStabilize {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(1px);
+  }
+}
+
+// Parpadeo de ojos
+@keyframes blink {
+  0%, 48%, 52%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.1);
+  }
+}
+
+// Respiración visible en la boca
+@keyframes breathe {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+// Vibración de las pesas
+@keyframes dumbbellShake {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  25% {
+    transform: rotate(-1deg) translateY(-1px);
+  }
+  50% {
+    transform: rotate(0deg) translateY(-2px);
+  }
+  75% {
+    transform: rotate(1deg) translateY(-1px);
+  }
+}
+
+// Pulso de sombra en el suelo
+@keyframes shadowPulse {
+  0%, 100% {
+    transform: scaleX(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scaleX(0.9);
+    opacity: 0.3;
+  }
+}
+
+// Partículas de energía mejoradas
+@keyframes floatParticleEnhanced {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(0) scale(0.3);
+  }
+  15% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1.2);
+  }
+  85% {
+    opacity: 0.5;
+  }
+}
+
+// Líneas de movimiento
+@keyframes motionLineFlash {
+  0%, 30%, 100% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(-5px);
+  }
+  80% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+
+// Animación original de float particle (por compatibilidad)
 @keyframes floatParticle {
   0%, 100% {
     opacity: 0;
