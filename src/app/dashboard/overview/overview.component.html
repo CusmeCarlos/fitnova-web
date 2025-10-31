@@ -59,22 +59,23 @@
           </div>
         </div>
 
-        <!-- Precisión Promedio -->
-        <div class="metric-card accuracy-card fade-in-up stagger-3">
+        <!-- 🆕 Errores Reducidos Esta Semana -->
+        <div class="metric-card error-reduction-card fade-in-up stagger-3">
           <div class="metric-header">
             <div class="metric-info">
-              <div class="metric-title">Precisión Promedio</div>
-              <div class="metric-subtitle">Todos los usuarios</div>
+              <div class="metric-title">Errores Reducidos</div>
+              <div class="metric-subtitle">Esta semana</div>
             </div>
             <div class="metric-icon">
-              <mat-icon>target</mat-icon>
+              <mat-icon>trending_down</mat-icon>
             </div>
           </div>
-          <div class="metric-value">{{formatPercentage(globalMetrics.averageAccuracyGlobal)}}</div>
-
+          <div class="metric-value">
+            {{globalMetrics.errorReductionMetrics?.totalErrorsReducedThisWeek || 0}}
+          </div>
           <div class="metric-change positive">
-            <mat-icon class="change-icon">trending_up</mat-icon>
-            <span>Mejorando</span>
+            <mat-icon class="change-icon">check_circle</mat-icon>
+            <span>Errores corregidos</span>
           </div>
         </div>
 
@@ -95,6 +96,26 @@
               {{globalMetrics.criticalErrorsToday === 0 ? 'check_circle' : 'warning'}}
             </mat-icon>
             <span>{{globalMetrics.criticalErrorsToday === 0 ? 'Sin errores' : 'Requiere atención'}}</span>
+          </div>
+        </div>
+
+        <!-- 🆕 Ejercicios Mejorados Esta Semana -->
+        <div class="metric-card exercises-improved-card fade-in-up stagger-5">
+          <div class="metric-header">
+            <div class="metric-info">
+              <div class="metric-title">Ejercicios Mejorados</div>
+              <div class="metric-subtitle">Con 2 sesiones esta semana</div>
+            </div>
+            <div class="metric-icon">
+              <mat-icon>psychology</mat-icon>
+            </div>
+          </div>
+          <div class="metric-value">
+            {{globalMetrics.errorReductionMetrics?.totalExercisesImprovedThisWeek || 0}}
+          </div>
+          <div class="metric-change positive">
+            <mat-icon class="change-icon">star</mat-icon>
+            <span>Progreso registrado</span>
           </div>
         </div>
 
@@ -148,17 +169,20 @@
         </h3>
         <a href="#" class="view-all-btn" (click)="navigateToAnalytics()">Ver todo</a>
       </div>
-      
+
       <div class="progress-list">
         <div class="progress-item" *ngFor="let user of allUsers.slice(0, 3)">
           <div class="progress-info">
             <div class="progress-name">{{user.displayName}}</div>
             <div class="progress-detail">{{user.totalWorkouts || 0}} entrenamientos completados</div>
           </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar" [style.width.%]="user.averageAccuracy || 0"></div>
+          <div class="progress-stats">
+            <div class="stat-item">
+              <mat-icon>trending_down</mat-icon>
+              <span class="stat-value">{{user.errorsReduced || 0}}</span>
+              <span class="stat-label">errores reducidos</span>
+            </div>
           </div>
-          <div class="progress-percentage">{{user.averageAccuracy || 0}}%</div>
         </div>
       </div>
     </div>
@@ -173,24 +197,14 @@
         <mat-card-subtitle>Selecciona un usuario para ver sus métricas específicas</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        <mat-form-field appearance="outline" class="user-select">
+        <mat-form-field appearance="outline" class="user-select-field">
           <mat-label>Seleccionar Usuario</mat-label>
-          <mat-select [value]="selectedUserId" 
+          <mat-select [value]="selectedUserId"
                       (selectionChange)="onUserSelected($event.value)"
                       placeholder="Elige un usuario...">
             <mat-option value="">-- Ver métricas globales --</mat-option>
             <mat-option *ngFor="let user of allUsers" [value]="user.uid">
-              <div class="user-option">
-                <span class="user-name">{{user.displayName}}</span>
-                <span class="user-stats">
-                  {{user.totalWorkouts || 0}} entrenamientos · 
-                  {{user.averageAccuracy || 0}}% precisión
-                </span>
-                <mat-chip [color]="getUserStatusColor(user)" class="status-chip">
-                  {{getUserStatusColor(user) === 'primary' ? 'Activo hoy' : 
-                    getUserStatusColor(user) === 'accent' ? 'Reciente' : 'Inactivo'}}
-                </mat-chip>
-              </div>
+              {{user.displayName}} ({{user.totalWorkouts || 0}} entrenamientos)
             </mat-option>
           </mat-select>
         </mat-form-field>
@@ -232,47 +246,39 @@
 
         <!-- Métricas específicas del usuario -->
         <div class="user-metrics-grid">
-          
-          <mat-card class="user-metric-card">
-            <mat-card-content>
-              <div class="metric-header">
-                <mat-icon>fitness_center</mat-icon>
-                <span class="metric-label">Entrenamientos</span>
-              </div>
-              <div class="metric-value">{{selectedUserMetrics.totalWorkouts}}</div>
-            </mat-card-content>
-          </mat-card>
 
-          <mat-card class="user-metric-card">
-            <mat-card-content>
-              <div class="metric-header">
-                <mat-icon>track_changes</mat-icon>
-                <span class="metric-label">Precisión</span>
-              </div>
-              <div class="metric-value">{{formatPercentage(selectedUserMetrics.accuracy)}}</div>
+          <div class="user-metric-card workouts-metric">
+            <div class="metric-icon-wrapper">
+              <mat-icon>fitness_center</mat-icon>
+            </div>
+            <div class="metric-content">
+              <span class="metric-label">Total Entrenamientos</span>
+              <span class="metric-value">{{selectedUserMetrics.totalWorkouts}}</span>
+              <span class="metric-subtitle">Sesiones completadas</span>
+            </div>
+          </div>
 
-            </mat-card-content>
-          </mat-card>
+          <div class="user-metric-card time-metric">
+            <div class="metric-icon-wrapper">
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <div class="metric-content">
+              <span class="metric-label">Tiempo Total</span>
+              <span class="metric-value">{{formatHours(selectedUserMetrics.totalHours)}}</span>
+              <span class="metric-subtitle">Horas de entrenamiento</span>
+            </div>
+          </div>
 
-          <mat-card class="user-metric-card">
-            <mat-card-content>
-              <div class="metric-header">
-                <mat-icon>schedule</mat-icon>
-                <span class="metric-label">Tiempo Total</span>
-              </div>
-              <div class="metric-value">{{formatHours(selectedUserMetrics.totalHours)}}</div>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card class="user-metric-card">
-            <mat-card-content>
-              <div class="metric-header">
-                <mat-icon>warning</mat-icon>
-                <span class="metric-label">Errores Críticos</span>
-              </div>
-              <div class="metric-value">{{selectedUserMetrics.criticalErrorsTotal}}</div>
-            </mat-card-content>
-          </mat-card>
+          <div class="user-metric-card errors-metric">
+            <div class="metric-icon-wrapper">
+              <mat-icon>warning</mat-icon>
+            </div>
+            <div class="metric-content">
+              <span class="metric-label">Errores Críticos</span>
+              <span class="metric-value">{{selectedUserMetrics.criticalErrorsTotal}}</span>
+              <span class="metric-subtitle">Detectados en total</span>
+            </div>
+          </div>
 
         </div>
 
@@ -288,6 +294,172 @@
             <div class="chart-container">
               <canvas #userDetailChart></canvas>
             </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- 🆕 HISTORIAL DE ERRORES SEMANALES -->
+        <mat-card class="weekly-history-card" *ngIf="weeklyHistory">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>calendar_today</mat-icon>
+              Historial de Errores Semanales
+            </mat-card-title>
+            <mat-card-subtitle>Reducción de errores por semana</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+
+            <!-- Semana Actual -->
+            <div class="week-summary current-week">
+              <div class="week-header">
+                <h4>{{weeklyHistory.currentWeek.weekLabel}}</h4>
+                <span class="week-date">
+                  {{weeklyHistory.currentWeek.startDate | date:'dd/MM'}} -
+                  {{weeklyHistory.currentWeek.endDate | date:'dd/MM'}}
+                </span>
+              </div>
+              <div class="week-metrics">
+                <div class="week-metric">
+                  <mat-icon>trending_down</mat-icon>
+                  <div class="metric-info">
+                    <span class="metric-label">Errores Reducidos</span>
+                    <span class="metric-value-large">{{weeklyHistory.currentWeek.totalErrorsReduced}}</span>
+                  </div>
+                </div>
+                <div class="week-metric">
+                  <mat-icon>fitness_center</mat-icon>
+                  <div class="metric-info">
+                    <span class="metric-label">Ejercicios Mejorados</span>
+                    <span class="metric-value-large">{{weeklyHistory.currentWeek.exercisesImproved}}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Semanas Anteriores -->
+            <div class="previous-weeks">
+              <div class="week-summary" *ngFor="let week of weeklyHistory.previousWeeks">
+                <div class="week-header">
+                  <h5>{{week.weekLabel}}</h5>
+                  <span class="week-date-small">
+                    {{week.startDate | date:'dd/MM'}} - {{week.endDate | date:'dd/MM'}}
+                  </span>
+                </div>
+                <div class="week-metrics-compact">
+                  <div class="compact-metric">
+                    <mat-icon>trending_down</mat-icon>
+                    <span>{{week.totalErrorsReduced}} errores</span>
+                  </div>
+                  <div class="compact-metric">
+                    <mat-icon>check_circle</mat-icon>
+                    <span>{{week.exercisesImproved}} mejorados</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </mat-card-content>
+        </mat-card>
+
+        <!-- 🆕 PROGRESO DETALLADO POR EJERCICIO (S1 vs S2) -->
+        <mat-card class="exercise-progress-card" *ngIf="weeklyHistory && weeklyHistory.currentWeek && weeklyHistory.currentWeek.exercises && weeklyHistory.currentWeek.exercises.length > 0">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>timeline</mat-icon>
+              Progreso Detallado por Ejercicio
+            </mat-card-title>
+            <mat-card-subtitle>Comparación Sesión 1 vs Sesión 2 (Semana Actual)</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+
+            <div class="exercise-progress-list">
+              <div class="exercise-item" *ngFor="let exercise of weeklyHistory.currentWeek.exercises">
+
+                <div class="exercise-header">
+                  <h4>{{exercise.exerciseName}}</h4>
+                  <mat-chip [class]="'status-chip ' + exercise.status">
+                    <mat-icon *ngIf="exercise.status === 'improved'">trending_up</mat-icon>
+                    <mat-icon *ngIf="exercise.status === 'worsened'">trending_down</mat-icon>
+                    <mat-icon *ngIf="exercise.status === 'baseline'">info</mat-icon>
+                    {{exercise.status === 'improved' ? 'Mejorado' :
+                      exercise.status === 'worsened' ? 'Empeoró' :
+                      exercise.status === 'baseline' ? 'Línea Base' : 'Pendiente'}}
+                  </mat-chip>
+                </div>
+
+                <div class="sessions-comparison">
+
+                  <!-- Sesión 1 -->
+                  <div class="session-box session-1" *ngIf="exercise.session1">
+                    <div class="session-label">
+                      <mat-icon>looks_one</mat-icon>
+                      <span>Sesión 1</span>
+                    </div>
+                    <div class="error-count">{{exercise.session1.errorsDetected}} errores</div>
+                    <div class="session-date">{{exercise.session1.timestamp | date:'dd/MM HH:mm'}}</div>
+                  </div>
+
+                  <!-- Flecha de comparación -->
+                  <div class="comparison-arrow" *ngIf="exercise.session1 && exercise.session2">
+                    <mat-icon [class]="exercise.errorReduction! > 0 ? 'arrow-positive' : 'arrow-negative'">
+                      {{exercise.errorReduction! > 0 ? 'arrow_forward' : 'arrow_forward'}}
+                    </mat-icon>
+                  </div>
+
+                  <!-- Sesión 2 -->
+                  <div class="session-box session-2" *ngIf="exercise.session2">
+                    <div class="session-label">
+                      <mat-icon>looks_two</mat-icon>
+                      <span>Sesión 2</span>
+                    </div>
+                    <div class="error-count">{{exercise.session2.errorsDetected}} errores</div>
+                    <div class="session-date">{{exercise.session2.timestamp | date:'dd/MM HH:mm'}}</div>
+                  </div>
+
+                  <!-- Mensaje si solo hay S1 -->
+                  <div class="pending-session" *ngIf="exercise.session1 && !exercise.session2">
+                    <mat-icon>schedule</mat-icon>
+                    <span>Esperando segunda sesión...</span>
+                  </div>
+
+                </div>
+
+                <!-- Reducción de errores -->
+                <div class="error-reduction-summary" *ngIf="exercise.errorReduction !== undefined">
+                  <div class="reduction-badge" [class]="exercise.errorReduction > 0 ? 'positive' : 'negative'">
+                    <mat-icon>{{exercise.errorReduction > 0 ? 'remove' : 'add'}}</mat-icon>
+                    <span>
+                      {{exercise.errorReduction > 0 ? '-' : '+'}}{{Math.abs(exercise.errorReduction)}} errores
+                    </span>
+                  </div>
+                  <div class="improvement-percentage" *ngIf="exercise.improvementPercentage">
+                    ({{exercise.improvementPercentage > 0 ? '+' : ''}}{{exercise.improvementPercentage}}% cambio)
+                  </div>
+                </div>
+
+                <!-- Barra de progreso -->
+                <div class="progress-bar-wrapper" *ngIf="exercise.session1 && exercise.session2">
+                  <div class="progress-bar-comparison">
+                    <div class="bar bar-session1"
+                         [style.width.%]="(exercise.session1.errorsDetected / Math.max(exercise.session1.errorsDetected, exercise.session2.errorsDetected)) * 100">
+                    </div>
+                  </div>
+                  <div class="progress-bar-comparison">
+                    <div class="bar bar-session2"
+                         [style.width.%]="(exercise.session2.errorsDetected / Math.max(exercise.session1.errorsDetected, exercise.session2.errorsDetected)) * 100">
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Mensaje si no hay ejercicios -->
+            <div class="empty-state" *ngIf="weeklyHistory && weeklyHistory.currentWeek && weeklyHistory.currentWeek.exercises && weeklyHistory.currentWeek.exercises.length === 0">
+              <mat-icon>fitness_center</mat-icon>
+              <p>Aún no hay ejercicios registrados esta semana</p>
+              <p class="empty-subtitle">Los ejercicios aparecerán aquí después de la primera sesión</p>
+            </div>
+
           </mat-card-content>
         </mat-card>
 
@@ -315,21 +487,6 @@
 
       <!-- Grid de gráficos secundarios -->
       <div class="secondary-charts-grid">
-        
-        <!-- Tendencia de Precisión Global -->
-        <mat-card class="chart-card">
-          <mat-card-header>
-            <mat-card-title>
-              <mat-icon>show_chart</mat-icon>
-              Tendencia de Precisión
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="chart-container">
-              <canvas #globalAccuracyChart></canvas>
-            </div>
-          </mat-card-content>
-        </mat-card>
 
         <!-- Distribución de Errores -->
         <mat-card class="chart-card">
@@ -362,22 +519,28 @@
       </mat-card-header>
       <mat-card-content>
         <div class="top-users-list">
-          <div class="user-rank-item" 
+          <div class="user-rank-item"
                *ngFor="let user of globalMetrics.topActiveUsers; let i = index"
                (click)="onUserSelected(user.uid)">
-            <div class="rank-badge">
-              <mat-icon *ngIf="i === 0" class="gold">emoji_events</mat-icon>
-              <mat-icon *ngIf="i === 1" class="silver">emoji_events</mat-icon>
-              <mat-icon *ngIf="i === 2" class="bronze">emoji_events</mat-icon>
-              <span *ngIf="i > 2" class="rank-number">{{i + 1}}</span>
+            <div class="rank-badge" [class]="'rank-' + (i + 1)">
+              <mat-icon *ngIf="i === 0">emoji_events</mat-icon>
+              <mat-icon *ngIf="i === 1">emoji_events</mat-icon>
+              <mat-icon *ngIf="i === 2">emoji_events</mat-icon>
+              <span *ngIf="i > 2">{{i + 1}}</span>
             </div>
             <div class="user-rank-info">
-              <span class="user-rank-name">{{user.displayName}}</span>
-              <span class="user-rank-stats">
-                {{user.workouts}} entrenamientos · {{user.accuracy}}% precisión
-              </span>
+              <div class="user-rank-header">
+                <span class="user-rank-name">{{user.displayName}}</span>
+                <span class="user-rank-position">#{{i + 1}}</span>
+              </div>
+              <div class="user-rank-stats">
+                <mat-icon>fitness_center</mat-icon>
+                <span>{{user.workouts}} entrenamientos completados</span>
+              </div>
             </div>
-            <mat-icon class="view-icon">chevron_right</mat-icon>
+            <button mat-icon-button class="view-btn">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
           </div>
         </div>
       </mat-card-content>
@@ -393,27 +556,31 @@
           </mat-icon>
           Alertas Recientes
         </mat-card-title>
-        <mat-card-subtitle>Errores críticos de la última semana</mat-card-subtitle>
+        <mat-card-subtitle>Errores críticos detectados en la última semana</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        <div class="alerts-list">
-          <div class="alert-item" *ngFor="let alert of globalMetrics.recentAlertsGlobal.slice(0, 5)">
-            <div class="alert-severity" [class]="'severity-' + alert.severity">
+        <div class="alerts-list-modern">
+          <div class="alert-item-modern" *ngFor="let alert of globalMetrics.recentAlertsGlobal.slice(0, 5)">
+            <div class="alert-icon-wrapper" [class]="'severity-' + alert.severity">
               <mat-icon>warning</mat-icon>
             </div>
-            <div class="alert-info">
-              <span class="alert-user">{{alert.userDisplayName || 'Usuario desconocido'}}</span>
-              <span class="alert-error">{{getErrorTypeLabel(alert.errorType)}}</span>
-              <span class="alert-exercise">{{alert.exercise}}</span>
+            <div class="alert-content">
+              <div class="alert-header">
+                <span class="alert-user-name">{{alert.userDisplayName || 'Usuario desconocido'}}</span>
+                <span class="alert-timestamp">{{alert.processedAt | date:'dd/MM HH:mm'}}</span>
+              </div>
+              <div class="alert-details">
+                <span class="alert-error-type">{{getErrorTypeLabel(alert.errorType)}}</span>
+                <span class="alert-separator">•</span>
+                <span class="alert-exercise-name">{{alert.exercise}}</span>
+              </div>
             </div>
-            <div class="alert-time">
-              {{alert.processedAt | date:'dd/MM HH:mm'}}
-            </div>
+            <mat-icon class="alert-chevron">chevron_right</mat-icon>
           </div>
         </div>
         <div class="alerts-actions">
-          <button mat-raised-button 
-                  color="warn" 
+          <button mat-raised-button
+                  color="warn"
                   (click)="navigateToAlerts()"
                   class="view-all-alerts-btn">
             <mat-icon>visibility</mat-icon>

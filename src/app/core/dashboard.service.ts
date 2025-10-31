@@ -4,9 +4,11 @@
 import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject, combineLatest, map, catchError, of, switchMap, take } from 'rxjs';
 import { AuthService } from './auth.service';
+import { ErrorReductionService } from './error-reduction.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
+import { GlobalErrorReductionMetrics } from '../interfaces/dashboard.interface';
 
 // INTERFACES
 export interface UserStats {
@@ -29,6 +31,7 @@ export interface UserStats {
   totalSeconds?: number;
   lastActiveAt?: Date;
   assignedTrainer?: string;
+  errorsReduced?: number; // 🆕 Errores reducidos esta semana
 }
 
 export interface CriticalAlert {
@@ -64,6 +67,8 @@ export interface GlobalDashboardMetrics {
   recentAlertsGlobal: CriticalAlert[];
   trainerStats?: { trainerId: string; trainerName: string; assignedUsers: number; totalWorkouts: number }[];
   isEmpty: boolean;
+  // 🆕 NUEVAS MÉTRICAS DE REDUCCIÓN DE ERRORES
+  errorReductionMetrics?: GlobalErrorReductionMetrics;
 }
 
 export interface UserDetailMetrics {
@@ -95,7 +100,8 @@ export class DashboardService {
 
   constructor(
     private auth: AuthService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private errorReductionService: ErrorReductionService
   ) {
     this.initializeGlobalService();
   }
@@ -115,7 +121,7 @@ export class DashboardService {
  private loadAllUsersData(currentUser: any): void {
   try {
     console.log(' Iniciando carga de usuarios con listeners tiempo real...');
-    
+
     // SOLO UN LISTENER - Sin loops anidados
     this.db.collection('users')
       .where('role', '==', 'user')
@@ -125,11 +131,11 @@ export class DashboardService {
 
         for (const userDoc of usersSnapshot.docs) {
           const userData = userDoc.data();
-          
+
           // GET directo - NO listener anidado
           const statsDoc = await this.db.collection('userStats').doc(userDoc.id).get();
           const statsData = (statsDoc.exists ? statsDoc.data() : {}) as Record<string, any>;
-          
+
           // Solo log si hay datos importantes (evita 'posiblemente undefined')
           const totalWorkouts = Number(statsData?.['totalWorkouts'] ?? 0);
           if (totalWorkouts > 0) {
@@ -144,13 +150,22 @@ export class DashboardService {
             lastActiveAt = userData['createdAt'].toDate();
           }
 
+          // 🆕 Calcular errores reducidos esta semana
+          let errorsReduced = 0;
+          try {
+            const errorMetrics = await this.errorReductionService.getUserErrorReductionMetrics(userDoc.id, userData['displayName'] || 'Usuario').pipe(take(1)).toPromise();
+            errorsReduced = errorMetrics?.currentWeekSummary?.totalErrorsReduced || 0;
+          } catch (error) {
+            // Si hay error, simplemente usar 0
+          }
+
           const userStats: UserStats = {
             uid: userDoc.id,
             displayName: userData['displayName'] || 'Usuario sin nombre',
             email: userData['email'],
             assignedTrainer: userData['assignedTrainer'],
             lastActiveAt: lastActiveAt || new Date(0),
-            
+
             lastCriticalError: statsData?.['lastCriticalError'] || null,
             totalCriticalErrors: statsData?.['totalCriticalErrors'] || 0,
             lastErrorType: statsData?.['lastErrorType'] || '',
@@ -164,7 +179,8 @@ export class DashboardService {
             weeklyStreak: statsData?.['weeklyStreak'] || 0,
             improvementRate: statsData?.['improvementRate'] || 0,
             lastSessionDurationSeconds: statsData?.['lastSessionDurationSeconds'] || 0,
-            totalSeconds: statsData?.['totalSeconds'] || 0
+            totalSeconds: statsData?.['totalSeconds'] || 0,
+            errorsReduced: errorsReduced // 🆕
           };
 
           allUsersStats.push(userStats);
@@ -172,6 +188,12 @@ export class DashboardService {
 
         console.log(` Cargados ${allUsersStats.length} usuarios para supervisión`);
         this.allUsersStatsSubject.next(allUsersStats);
+
+        // 🆕 Enriquecer alertas después de cargar usuarios
+        const currentAlerts = this.allAlertsSubject.getValue();
+        if (currentAlerts.length > 0) {
+          this.enrichAlertsWithUserNames(currentAlerts);
+        }
       });
 
   } catch (error) {
@@ -227,13 +249,27 @@ export class DashboardService {
       this.allAlertsSubject.asObservable(),
       this.auth.user$
     ]).pipe(
-      map(([allUsers, allAlerts, currentUser]) => {
+      switchMap(([allUsers, allAlerts, currentUser]) => {
         if (allUsers.length === 0 && allAlerts.length === 0) {
           console.log(' Sin datos - Generando métricas globales de ejemplo');
-          return this.getExampleGlobalMetrics();
+          return of(this.getExampleGlobalMetrics());
         }
 
-        return this.calculateGlobalMetrics(allUsers, allAlerts, currentUser);
+        // 🆕 Obtener métricas de reducción de errores
+        const userIds = allUsers.map(u => u.uid);
+        return this.errorReductionService.getGlobalErrorReductionMetrics(userIds).pipe(
+          map(errorMetrics => {
+            const baseMetrics = this.calculateGlobalMetrics(allUsers, allAlerts, currentUser);
+            return {
+              ...baseMetrics,
+              errorReductionMetrics: errorMetrics
+            };
+          }),
+          catchError(error => {
+            console.error('⚠️ Error obteniendo métricas de reducción, usando métricas base:', error);
+            return of(this.calculateGlobalMetrics(allUsers, allAlerts, currentUser));
+          })
+        );
       }),
       catchError(error => {
         console.error(' Error calculando métricas globales:', error);

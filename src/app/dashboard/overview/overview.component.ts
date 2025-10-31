@@ -6,6 +6,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { DashboardService, GlobalDashboardMetrics, UserStats, UserDetailMetrics } from '../../core/dashboard.service';
+import { ErrorReductionService } from '../../core/error-reduction.service';
+import { WeeklyHistory, UserErrorReductionMetrics } from '../../interfaces/dashboard.interface';
 import { User } from '../../interfaces/user.interface';
 import { Subscription } from 'rxjs';
 import { Chart, registerables } from 'chart.js';
@@ -50,7 +52,6 @@ Chart.register(...registerables);
 })
 export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('globalActivityChart', { static: false }) globalActivityChartRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('globalAccuracyChart', { static: false }) globalAccuracyChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('globalErrorsChart', { static: false }) globalErrorsChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('userDetailChart', { static: false }) userDetailChartRef!: ElementRef<HTMLCanvasElement>;
 
@@ -67,9 +68,12 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
   isLoadingUserDetail = false;
   showUserDetail = false;
 
+  // 🆕 REDUCCIÓN DE ERRORES
+  selectedUserErrorMetrics: UserErrorReductionMetrics | null = null;
+  weeklyHistory: WeeklyHistory | null = null;
+
   // ✅ CHARTS
   private globalActivityChart: Chart | null = null;
-  private globalAccuracyChart: Chart | null = null;
   private globalErrorsChart: Chart | null = null;
   private userDetailChart: Chart | null = null;
 
@@ -79,6 +83,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
   constructor(
     private auth: AuthService,
     private dashboardService: DashboardService,
+    private errorReductionService: ErrorReductionService,
     private router: Router,
     private snackBar: MatSnackBar
   ) {}
@@ -173,7 +178,6 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     
     try {
       this.initGlobalActivityChart();
-      this.initGlobalAccuracyChart();
       this.initGlobalErrorsChart();
       console.log('✅ Gráficos globales inicializados correctamente');
     } catch (error) {
@@ -239,59 +243,6 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     }
   }
 
-  // ✅ GRÁFICO DE PRECISIÓN GLOBAL - CORREGIDO
-  private initGlobalAccuracyChart(): void {
-    if (!this.globalAccuracyChartRef?.nativeElement || !this.globalMetrics) return;
-
-    try {
-      const ctx = this.globalAccuracyChartRef.nativeElement.getContext('2d');
-      if (!ctx) return;
-
-      this.globalAccuracyChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: this.globalMetrics.accuracyTrendGlobal.map(day => day.date),
-          datasets: [{
-            label: 'Precisión Promedio (%)',
-            data: this.globalMetrics.accuracyTrendGlobal.map(day => day.accuracy),
-            borderColor: '#4caf50',
-            backgroundColor: 'rgba(76, 175, 80, 0.1)',
-            borderWidth: 3,
-            fill: true,
-            tension: 0.4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 100,
-              grid: { color: 'rgba(0, 0, 0, 0.1)' },
-              ticks: { 
-                color: '#666',
-                callback: function(value) {
-                  return value + '%';
-                }
-              }
-            },
-            x: {
-              grid: { color: 'rgba(0, 0, 0, 0.1)' },
-              ticks: { color: '#666' }
-            }
-          }
-        }
-      });
-
-      console.log('📊 Gráfico de precisión global inicializado');
-    } catch (error) {
-      console.error('❌ Error inicializando gráfico de precisión global:', error);
-    }
-  }
 
   // ✅ GRÁFICO DE ERRORES GLOBALES
   private initGlobalErrorsChart(): void {
@@ -362,8 +313,12 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
       next: (metrics) => {
         console.log('📊 Métricas del usuario cargadas:', metrics);
         this.selectedUserMetrics = metrics;
+
+        // 🆕 Cargar métricas de reducción de errores
+        this.loadUserErrorReductionMetrics(userId, metrics.userInfo.displayName || 'Usuario');
+
         this.isLoadingUserDetail = false;
-        
+
         // Inicializar gráfico del usuario
         setTimeout(() => {
           this.initUserDetailChart();
@@ -379,13 +334,46 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
     this.subscriptions.add(userDetailSub);
   }
 
+  // 🆕 CARGAR MÉTRICAS DE REDUCCIÓN DE ERRORES DEL USUARIO
+  private loadUserErrorReductionMetrics(userId: string, displayName: string): void {
+    console.log(`🔄 Iniciando carga de métricas de reducción para ${displayName} (${userId})`);
+
+    const errorMetricsSub = this.errorReductionService.getUserErrorReductionMetrics(userId, displayName).subscribe({
+      next: (metrics) => {
+        console.log('✅ Métricas de reducción de errores recibidas:', {
+          userId: metrics.userId,
+          displayName: metrics.displayName,
+          totalErrorsReduced: metrics.totalErrorsReducedAllTime,
+          totalExercisesImproved: metrics.totalExercisesImprovedAllTime,
+          currentWeekExercises: metrics.weeklyHistory.currentWeek.exercises.length,
+          previousWeeks: metrics.weeklyHistory.previousWeeks.length
+        });
+
+        this.selectedUserErrorMetrics = metrics;
+        this.weeklyHistory = metrics.weeklyHistory;
+
+        console.log('📊 weeklyHistory asignado:', this.weeklyHistory);
+      },
+      error: (error) => {
+        console.error('⚠️ Error cargando métricas de reducción de errores:', error);
+        // No mostrar error al usuario, simplemente no mostrar la sección
+        this.selectedUserErrorMetrics = null;
+        this.weeklyHistory = null;
+      }
+    });
+
+    this.subscriptions.add(errorMetricsSub);
+  }
+
   // ✅ CORREGIDO: OCULTAR VISTA DETALLADA Y REINICIALIZAR GRÁFICOS GLOBALES
   hideUserDetail(): void {
     console.log('🔙 Ocultando vista detallada y reiniciando vista global...');
-    
+
     this.showUserDetail = false;
     this.selectedUserId = null;
     this.selectedUserMetrics = null;
+    this.selectedUserErrorMetrics = null; // 🆕 Limpiar métricas de error
+    this.weeklyHistory = null; // 🆕 Limpiar historial
     this.destroyUserDetailChart();
 
     // ✅ REINICIALIZAR GRÁFICOS GLOBALES DESPUÉS DE CERRAR DETALLE
@@ -476,10 +464,6 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
         this.globalActivityChart.destroy();
         this.globalActivityChart = null;
       }
-      if (this.globalAccuracyChart) {
-        this.globalAccuracyChart.destroy();
-        this.globalAccuracyChart = null;
-      }
       if (this.globalErrorsChart) {
         this.globalErrorsChart.destroy();
         this.globalErrorsChart = null;
@@ -557,6 +541,8 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy, AfterViewI
   }
 
   // ✅ MÉTODOS AUXILIARES
+  Math = Math; // Exponer Math para usar en template
+
   formatNumber(value: number | undefined): string {
     if (!value || value === 0) return '0';
     return value.toLocaleString('es-ES');
