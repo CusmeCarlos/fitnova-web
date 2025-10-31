@@ -129,7 +129,6 @@ private loadCriticalAlertsSimplified(currentUser: any): void {
     
     this.db.collection('criticalAlerts') // ← VERIFICAR NOMBRE EN FIREBASE
       .orderBy('timestamp', 'desc') // Usar timestamp en lugar de processedAt
-      .limit(100)
       .onSnapshot((snapshot) => {
         const usersMap = this.usersMapSubject.getValue();
         let alerts: AlertDetail[] = [];

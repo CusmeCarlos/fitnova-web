@@ -341,6 +341,30 @@ export class RoutineValidationComponent implements OnInit, OnDestroy {
     }
   }
 
+  async deleteRoutine(routine: AIGeneratedRoutine): Promise<void> {
+    if (!this.currentUser?.uid) {
+      this.showError('No hay usuario autenticado');
+      return;
+    }
+
+    // Confirmación de eliminación
+    const confirmDelete = confirm(`¿Estás seguro de que quieres eliminar permanentemente la rutina "${this.getRoutineName(routine)}"?\n\nEsta acción NO se puede deshacer.`);
+    if (!confirmDelete) return;
+
+    try {
+      const success = await this.routineValidationService.deleteRoutine(routine.id);
+      if (success) {
+        this.showSuccess(`🗑️ Rutina "${this.getRoutineName(routine)}" eliminada exitosamente`);
+        await this.refreshData();
+      } else {
+        this.showError('No se pudo eliminar la rutina');
+      }
+    } catch (error) {
+      console.error('Error eliminando rutina:', error);
+      this.showError('Error al eliminar la rutina');
+    }
+  }
+
   // ===============================================================================
   // 👁️ MODAL DE DETALLES PREMIUM
   // ===============================================================================

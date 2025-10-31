@@ -369,8 +369,16 @@
                 </button>
               </ng-container>
 
+              <!-- Botón eliminar (siempre visible) -->
+              <button mat-mini-fab
+                      class="delete-button"
+                      (click)="deleteRoutine(routine); $event.stopPropagation()"
+                      matTooltip="Eliminar rutina">
+                <mat-icon>delete</mat-icon>
+              </button>
+
               <!-- Botón ver detalles (siempre visible) -->
-              <button mat-raised-button 
+              <button mat-raised-button
                       class="view-details-button"
                       (click)="viewRoutineDetails(routine); $event.stopPropagation()"
                       matTooltip="Ver detalles completos">

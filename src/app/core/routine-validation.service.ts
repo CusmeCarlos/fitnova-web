@@ -439,15 +439,42 @@ private async processQueryResults(snapshot: firebase.firestore.QuerySnapshot, fi
       await this.createUserNotification(action.routineId, 'rejected', action.rejectionReason);
 
       this.showSuccess('Rutina rechazada');
-      
+
       // Recargar rutinas
       await this.loadPendingRoutines();
-      
+
       return true;
 
     } catch (error) {
       console.error('❌ Error rechazando rutina:', error);
       this.showError('Error rechazando rutina');
+      return false;
+    }
+  }
+
+  // ✅ ELIMINAR RUTINA PERMANENTEMENTE
+  async deleteRoutine(routineId: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Eliminando rutina:', routineId);
+
+      const routineRef = await this.findRoutineDocument(routineId);
+      if (!routineRef) {
+        throw new Error('Rutina no encontrada');
+      }
+
+      // Eliminar el documento de Firestore
+      await routineRef.delete();
+
+      this.showSuccess('Rutina eliminada permanentemente');
+
+      // Recargar rutinas
+      await this.loadPendingRoutines();
+
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error eliminando rutina:', error);
+      this.showError('Error eliminando rutina');
       return false;
     }
   }

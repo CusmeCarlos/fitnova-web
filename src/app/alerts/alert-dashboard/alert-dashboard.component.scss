@@ -522,6 +522,148 @@
 }
 
 // ================================================================================
+// 🔍 FILTROS COMPACTOS (NUEVA VERSIÓN)
+// ================================================================================
+.filters-section-compact {
+  margin-bottom: 1.5rem;
+}
+
+.filters-form-compact {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-sm);
+
+  .filters-row {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    flex-wrap: wrap;
+
+    .filter-compact {
+      flex: 0 0 auto;
+      min-width: 140px;
+
+      &.search-filter {
+        flex: 1 1 auto;
+        min-width: 180px;
+      }
+
+      &.date-filter {
+        min-width: 150px;
+      }
+
+      ::ng-deep {
+        .mat-mdc-text-field-wrapper {
+          background: rgba(30, 41, 59, 0.3);
+          border-radius: 10px;
+          padding: 0;
+        }
+
+        .mat-mdc-form-field-infix {
+          padding-top: 0.5rem;
+          padding-bottom: 0.5rem;
+          min-height: 40px;
+        }
+
+        .mat-mdc-form-field-label {
+          color: var(--text-secondary);
+          font-size: 0.875rem;
+        }
+
+        .mat-mdc-select-value,
+        .mat-mdc-input-element {
+          color: var(--text-primary);
+          font-size: 0.875rem;
+        }
+
+        .mat-mdc-select-arrow,
+        mat-icon {
+          color: var(--text-secondary);
+        }
+
+        &:hover .mat-mdc-text-field-wrapper {
+          background: rgba(30, 41, 59, 0.4);
+        }
+
+        &.mat-focused .mat-mdc-text-field-wrapper {
+          background: rgba(59, 130, 246, 0.1);
+          border-color: var(--alert-primary);
+        }
+      }
+    }
+
+    .clear-filters-btn {
+      width: 40px;
+      height: 40px;
+      color: var(--text-secondary);
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        color: var(--alert-danger);
+        background: rgba(239, 68, 68, 0.2);
+        transform: rotate(90deg);
+      }
+
+      mat-icon {
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+
+    .select-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      mat-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
+
+      span {
+        font-size: 0.875rem;
+      }
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .filters-row {
+      .filter-compact {
+        min-width: 120px;
+
+        &.search-filter {
+          flex: 1 1 100%;
+          min-width: 100%;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .filters-row {
+      flex-direction: column;
+      align-items: stretch;
+
+      .filter-compact {
+        width: 100%;
+        min-width: 100%;
+      }
+
+      .clear-filters-btn {
+        width: 100%;
+      }
+    }
+  }
+}
+
+// ================================================================================
 // 📊 GRÁFICOS ULTRA PREMIUM
 // ================================================================================
 .charts-section-premium {

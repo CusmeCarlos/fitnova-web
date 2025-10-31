@@ -102,106 +102,79 @@
         </div>
         <div class="metric-background"></div>
       </div>
-
-      <!-- Card 4: Tiempo Respuesta -->
-      <div class="metric-card-premium response-time">
-        <div class="metric-header">
-          <div class="metric-icon-container">
-            <mat-icon class="metric-icon">timer</mat-icon>
-          </div>
-          <div class="metric-badge info">{{ alertMetrics.responseTime }}m</div>
-        </div>
-        <div class="metric-content">
-          <h3 class="metric-value">{{ alertMetrics.responseTime }}m</h3>
-          <p class="metric-label">Tiempo Promedio</p>
-          <div class="metric-trend positive">
-            <mat-icon>speed</mat-icon>
-            <span>Eficiente</span>
-          </div>
-        </div>
-        <div class="metric-background"></div>
-      </div>
     </div>
 
-    <!-- 🔍 FILTROS ULTRA PREMIUM -->
-    <div class="filters-section-premium">
-      <div class="filters-card-premium">
-        <div class="filters-header">
-          <h2>
-            <mat-icon>filter_list</mat-icon>
-            Filtros Avanzados
-          </h2>
-          <button mat-button class="clear-all-btn" (click)="clearAllFilters()">
+    <!-- 🔍 FILTROS COMPACTOS -->
+    <div class="filters-section-compact">
+      <form [formGroup]="filterForm" class="filters-form-compact">
+        <div class="filters-row">
+
+          <!-- Severidad -->
+          <mat-form-field appearance="outline" class="filter-compact" subscriptSizing="dynamic">
+            <mat-label>Severidad</mat-label>
+            <mat-select formControlName="severity">
+              <mat-option *ngFor="let option of severityOptions" [value]="option.value">
+                <div class="select-option">
+                  <mat-icon [style.color]="option.color">{{ option.icon }}</mat-icon>
+                  <span>{{ option.label }}</span>
+                </div>
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Estado -->
+          <mat-form-field appearance="outline" class="filter-compact" subscriptSizing="dynamic">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="status">
+              <mat-option *ngFor="let option of statusOptions" [value]="option.value">
+                <div class="select-option">
+                  <mat-icon [style.color]="option.color">{{ option.icon }}</mat-icon>
+                  <span>{{ option.label }}</span>
+                </div>
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Tipo de Error -->
+          <mat-form-field appearance="outline" class="filter-compact" subscriptSizing="dynamic">
+            <mat-label>Tipo de Error</mat-label>
+            <mat-select formControlName="errorType">
+              <mat-option value="">Todos los tipos</mat-option>
+              <mat-option *ngFor="let errorType of errorTypes" [value]="errorType">
+                {{ getErrorTypeLabel(errorType) }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Fecha Inicio -->
+          <mat-form-field appearance="outline" class="filter-compact date-filter" subscriptSizing="dynamic">
+            <mat-label>Fecha Inicio</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="dateStart">
+            <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Fecha Fin -->
+          <mat-form-field appearance="outline" class="filter-compact date-filter" subscriptSizing="dynamic">
+            <mat-label>Fecha Fin</mat-label>
+            <input matInput [matDatepicker]="endPicker" formControlName="dateEnd">
+            <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Búsqueda -->
+          <mat-form-field appearance="outline" class="filter-compact search-filter" subscriptSizing="dynamic">
+            <mat-label>Buscar</mat-label>
+            <input matInput placeholder="Usuario o ejercicio..." formControlName="searchTerm">
+            <mat-icon matIconSuffix>search</mat-icon>
+          </mat-form-field>
+
+          <!-- Botón Limpiar -->
+          <button mat-icon-button class="clear-filters-btn" (click)="clearAllFilters()" matTooltip="Limpiar todos los filtros">
             <mat-icon>clear_all</mat-icon>
-            Limpiar Todo
           </button>
         </div>
-        
-        <form [formGroup]="filterForm" class="filters-form">
-          <div class="filters-grid">
-            
-            <!-- Severidad -->
-            <mat-form-field appearance="outline" class="filter-field">
-              <mat-label>Severidad</mat-label>
-              <mat-select formControlName="severity">
-                <mat-option *ngFor="let option of severityOptions" [value]="option.value">
-                  <div class="select-option">
-                    <mat-icon [style.color]="option.color">{{ option.icon }}</mat-icon>
-                    <span>{{ option.label }}</span>
-                  </div>
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <!-- Estado -->
-            <mat-form-field appearance="outline" class="filter-field">
-              <mat-label>Estado</mat-label>
-              <mat-select formControlName="status">
-                <mat-option *ngFor="let option of statusOptions" [value]="option.value">
-                  <div class="select-option">
-                    <mat-icon [style.color]="option.color">{{ option.icon }}</mat-icon>
-                    <span>{{ option.label }}</span>
-                  </div>
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <!-- Tipo de Error -->
-            <mat-form-field appearance="outline" class="filter-field">
-              <mat-label>Tipo de Error</mat-label>
-              <mat-select formControlName="errorType">
-                <mat-option value="">Todos los tipos</mat-option>
-                <mat-option *ngFor="let errorType of errorTypes" [value]="errorType">
-                  {{ getErrorTypeLabel(errorType) }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <!-- Fecha Inicio -->
-            <mat-form-field appearance="outline" class="filter-field">
-              <mat-label>Fecha Inicio</mat-label>
-              <input matInput [matDatepicker]="startPicker" formControlName="dateStart">
-              <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
-              <mat-datepicker #startPicker></mat-datepicker>
-            </mat-form-field>
-
-            <!-- Fecha Fin -->
-            <mat-form-field appearance="outline" class="filter-field">
-              <mat-label>Fecha Fin</mat-label>
-              <input matInput [matDatepicker]="endPicker" formControlName="dateEnd">
-              <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
-              <mat-datepicker #endPicker></mat-datepicker>
-            </mat-form-field>
-
-            <!-- Búsqueda -->
-            <mat-form-field appearance="outline" class="filter-field search-field">
-              <mat-label>Buscar usuario o ejercicio</mat-label>
-              <input matInput placeholder="Ej: María, sentadilla..." formControlName="searchTerm">
-              <mat-icon matSuffix>search</mat-icon>
-            </mat-form-field>
-          </div>
-        </form>
-      </div>
+      </form>
     </div>
 
     <!-- 📊 GRÁFICOS ULTRA PREMIUM -->
