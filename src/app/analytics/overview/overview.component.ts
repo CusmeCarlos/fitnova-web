@@ -11,6 +11,8 @@ import { Chart, registerables } from 'chart.js';
 // ✅ SERVICIOS
 import { AnalyticsService, AnalyticsMetrics, AnalyticsFilter } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
+import { DashboardService } from '../../core/dashboard.service';
+import { ErrorReductionService } from '../../core/error-reduction.service';
 
 // ✅ MATERIAL DESIGN
 import { MatCardModule } from '@angular/material/card';
@@ -58,18 +60,23 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
   
   // ✅ VIEW CHILDREN PARA GRÁFICOS
   @ViewChild('usageChart', { static: false }) usageChartRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('effectivenessChart', { static: false }) effectivenessChartRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('engagementChart', { static: false }) engagementChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('errorTrendChart', { static: false }) errorTrendChartRef!: ElementRef<HTMLCanvasElement>;
 
   // ✅ ESTADO DEL COMPONENTE
   isLoading = true;
   analyticsMetrics: AnalyticsMetrics | null = null;
   filterForm!: FormGroup;
-  
+
+  // ✅ DATOS DE REDUCCIÓN DE ERRORES
+  totalErrorsReduced = 0;
+  totalExercisesImproved = 0;
+  averageErrorReduction = 0;
+  weeklyTrend: Array<{ weekLabel: string; errorsReduced: number }> = [];
+  topUsers: Array<{ displayName: string; totalWorkouts: number; errorsReduced: number }> = [];
+
   // ✅ GRÁFICOS CHART.JS
   private usageChart?: Chart;
-  private effectivenessChart?: Chart;
-  private engagementChart?: Chart;
+  private errorTrendChart?: Chart;
 
   // ✅ SUBSCRIPCIONES
   private subscriptions = new Subscription();
@@ -79,7 +86,9 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
     private auth: AuthService,
     private router: Router,
     private fb: FormBuilder,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dashboardService: DashboardService,
+    private errorReductionService: ErrorReductionService
   ) {
     console.log('📊 AnalyticsOverviewComponent inicializado');
     this.initializeFilterForm();
@@ -88,6 +97,7 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     console.log('🔄 Inicializando Analytics Dashboard...');
     this.loadAnalyticsData();
+    this.loadErrorReductionData();
     this.setupFilterListeners();
   }
 
@@ -143,7 +153,7 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
           console.log('✅ Métricas de analytics cargadas:', metrics);
           this.analyticsMetrics = metrics;
           this.isLoading = false;
-          
+
           // Inicializar gráficos después de cargar datos
           setTimeout(() => {
             this.initializeCharts();
@@ -164,6 +174,58 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.subscriptions.add(analyticsSub);
     this.subscriptions.add(loadingSub);
+  }
+
+  private loadErrorReductionData(): void {
+    console.log('📊 Cargando datos de reducción de errores...');
+
+    const errorReductionSub = this.dashboardService.getGlobalDashboardMetrics().subscribe({
+      next: (dashboardMetrics: any) => {
+        if (dashboardMetrics && dashboardMetrics.errorReductionMetrics) {
+          const metrics = dashboardMetrics.errorReductionMetrics;
+          console.log('✅ Métricas de reducción de errores cargadas:', metrics);
+          console.log('📊 Top usuarios:', metrics.topPerformingUsers);
+
+          // Cargar todas las métricas
+          this.totalErrorsReduced = metrics.totalErrorsReducedThisWeek || 0;
+          this.totalExercisesImproved = metrics.totalExercisesImprovedThisWeek || 0;
+          this.averageErrorReduction = metrics.averageErrorReductionPerUser || 0;
+
+          // Cargar tendencia semanal
+          if (metrics.weeklyTrend && metrics.weeklyTrend.length > 0) {
+            this.weeklyTrend = metrics.weeklyTrend.map((week: any) => ({
+              weekLabel: week.weekLabel,
+              errorsReduced: week.errorsReduced
+            }));
+          }
+
+          // Cargar top usuarios
+          if (metrics.topPerformingUsers && metrics.topPerformingUsers.length > 0) {
+            this.topUsers = metrics.topPerformingUsers.map((user: any) => ({
+              displayName: user.displayName || 'Usuario sin nombre',
+              totalWorkouts: user.exercisesImproved || 0,
+              errorsReduced: user.errorsReduced || 0
+            }));
+            console.log('✅ Top usuarios procesados:', this.topUsers);
+          } else {
+            console.warn('⚠️ No hay usuarios en topPerformingUsers');
+            this.topUsers = [];
+          }
+
+          // Inicializar gráfico de tendencia después de cargar datos
+          setTimeout(() => {
+            this.initErrorTrendChart();
+          }, 200);
+        } else {
+          console.warn('⚠️ No hay errorReductionMetrics en dashboardMetrics');
+        }
+      },
+      error: (error: any) => {
+        console.error('❌ Error cargando datos de reducción de errores:', error);
+      }
+    });
+
+    this.subscriptions.add(errorReductionSub);
   }
 
   private applyFilters(): void {
@@ -210,8 +272,6 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       this.destroyCharts();
       this.initUsageChart();
-      this.initEffectivenessChart();
-      this.initEngagementChart();
       console.log('✅ Gráficos de analytics inicializados');
     } catch (error) {
       console.error('❌ Error inicializando gráficos:', error);
@@ -301,102 +361,37 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  private initEffectivenessChart(): void {
-    if (!this.effectivenessChartRef?.nativeElement || !this.analyticsMetrics) {
-      console.warn('⚠️ No se puede inicializar gráfico de efectividad');
+  private initErrorTrendChart(): void {
+    if (!this.errorTrendChartRef?.nativeElement) {
+      console.warn('⚠️ No se puede inicializar gráfico de tendencia de errores');
       return;
     }
 
-    const ctx = this.effectivenessChartRef.nativeElement.getContext('2d');
-    if (!ctx) return;
-
-    const data = {
-      labels: this.analyticsMetrics.errorTypeDistribution.map(error => error.type),
-      datasets: [{
-        data: this.analyticsMetrics.errorTypeDistribution.map(error => error.count),
-        backgroundColor: [
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(245, 158, 11, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(139, 92, 246, 0.8)',
-          'rgba(236, 72, 153, 0.8)'
-        ],
-        borderColor: [
-          '#ef4444',
-          '#f59e0b',
-          '#3b82f6',
-          '#10b981',
-          '#8b5cf6',
-          '#ec4899'
-        ],
-        borderWidth: 2
-      }]
-    };
-
-    this.effectivenessChart = new Chart(ctx, {
-      type: 'doughnut',
-      data,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: '#f8fafc',
-              font: {
-                size: 11,
-                weight: 'bold'
-              },
-              padding: 12
-            }
-          },
-          title: {
-            display: true,
-            text: 'Distribución de Errores Detectados',
-            color: '#f8fafc',
-            font: {
-              size: 14,
-              weight: 'bold'
-            }
-          }
-        }
-      }
-    });
-  }
-
-  private initEngagementChart(): void {
-    if (!this.engagementChartRef?.nativeElement || !this.analyticsMetrics) {
-      console.warn('⚠️ No se puede inicializar gráfico de engagement');
+    if (!this.weeklyTrend || this.weeklyTrend.length === 0) {
+      console.warn('⚠️ No hay datos de tendencia semanal');
       return;
     }
 
-    const ctx = this.engagementChartRef.nativeElement.getContext('2d');
+    const ctx = this.errorTrendChartRef.nativeElement.getContext('2d');
     if (!ctx) return;
 
     const data = {
-      labels: this.analyticsMetrics.engagementTrend.map(trend => trend.period),
+      labels: this.weeklyTrend.map(week => week.weekLabel),
       datasets: [
         {
-          label: 'Engagement (%)',
-          data: this.analyticsMetrics.engagementTrend.map(trend => trend.engagement),
-          backgroundColor: 'rgba(139, 92, 246, 0.6)',
-          borderColor: '#8b5cf6',
-          borderWidth: 1
-        },
-        {
-          label: 'Retención (%)',
-          data: this.analyticsMetrics.engagementTrend.map(trend => trend.retention),
-          backgroundColor: 'rgba(236, 72, 153, 0.6)',
-          borderColor: '#ec4899',
-          borderWidth: 1
+          label: 'Errores Reducidos',
+          data: this.weeklyTrend.map(week => week.errorsReduced),
+          backgroundColor: 'rgba(16, 185, 129, 0.6)',
+          borderColor: '#10b981',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4
         }
       ]
     };
 
-    this.engagementChart = new Chart(ctx, {
-      type: 'bar',
+    this.errorTrendChart = new Chart(ctx, {
+      type: 'line',
       data,
       options: {
         responsive: true,
@@ -415,7 +410,7 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
           },
           title: {
             display: true,
-            text: 'Tendencia de Engagement y Retención',
+            text: 'Progreso Semanal de Reducción de Errores',
             color: '#f8fafc',
             font: {
               size: 14,
@@ -434,11 +429,10 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
           },
           y: {
             beginAtZero: true,
-            max: 100,
             ticks: {
               color: '#94a3b8',
               callback: function(value) {
-                return value + '%';
+                return value + ' errores';
               }
             },
             grid: {
@@ -453,18 +447,15 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
   private updateCharts(): void {
     if (this.analyticsMetrics) {
       this.initUsageChart();
-      this.initEffectivenessChart();
-      this.initEngagementChart();
     }
   }
 
   private destroyCharts(): void {
     this.destroyChart('usage');
-    this.destroyChart('effectiveness');
-    this.destroyChart('engagement');
+    this.destroyChart('errorTrend');
   }
 
-  private destroyChart(chartType: 'usage' | 'effectiveness' | 'engagement'): void {
+  private destroyChart(chartType: 'usage' | 'errorTrend'): void {
     try {
       switch (chartType) {
         case 'usage':
@@ -473,16 +464,10 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
             this.usageChart = undefined;
           }
           break;
-        case 'effectiveness':
-          if (this.effectivenessChart) {
-            this.effectivenessChart.destroy();
-            this.effectivenessChart = undefined;
-          }
-          break;
-        case 'engagement':
-          if (this.engagementChart) {
-            this.engagementChart.destroy();
-            this.engagementChart = undefined;
+        case 'errorTrend':
+          if (this.errorTrendChart) {
+            this.errorTrendChart.destroy();
+            this.errorTrendChart = undefined;
           }
           break;
       }
@@ -549,6 +534,7 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
   refreshAnalytics(): void {
     console.log('🔄 Refrescando analytics...');
     this.analyticsService.refreshAnalytics();
+    this.loadErrorReductionData();
   }
 
   exportAnalytics(): void {
@@ -568,6 +554,26 @@ export class OverviewComponent implements OnInit, OnDestroy, AfterViewInit {
       userType: 'all',
       trainerAssigned: 'all'
     });
+  }
+
+  // ================================================================================
+  // 📊 MÉTODOS PARA NUEVAS MÉTRICAS
+  // ================================================================================
+
+  getTotalErrorsReduced(): number {
+    return this.totalErrorsReduced;
+  }
+
+  getTotalExercisesImproved(): number {
+    return this.totalExercisesImproved;
+  }
+
+  getAverageErrorReduction(): number {
+    return this.averageErrorReduction;
+  }
+
+  getTopUsers(): Array<{ displayName: string; totalWorkouts: number; errorsReduced: number }> {
+    return this.topUsers;
   }
 
   // ================================================================================

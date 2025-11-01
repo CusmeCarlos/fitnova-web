@@ -2,12 +2,25 @@
 // 💳 ESTILOS ULTRA PREMIUM - EXACTAMENTE COMO EQUIPMENT Y ALERT-DASHBOARD
 
 // ================================================================================
-// 🎨 VARIABLES Y MIXINS
+// 🎨 VARIABLES Y MIXINS - ALINEADAS CON ANALYTICS
 // ================================================================================
-$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-$success-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-$warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-$info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+:host {
+  --analytics-primary: #3b82f6;
+  --analytics-success: #10b981;
+  --analytics-warning: #f59e0b;
+  --analytics-danger: #ef4444;
+  --analytics-purple: #8b5cf6;
+  --analytics-indigo: #6366f1;
+  --gradient-primary: linear-gradient(135deg, var(--analytics-primary) 0%, var(--analytics-indigo) 100%);
+  --gradient-success: linear-gradient(135deg, var(--analytics-success) 0%, #059669 100%);
+  --gradient-warning: linear-gradient(135deg, var(--analytics-warning) 0%, #d97706 100%);
+  --gradient-purple: linear-gradient(135deg, var(--analytics-purple) 0%, #7c3aed 100%);
+}
+
+$primary-gradient: var(--gradient-primary);
+$success-gradient: var(--gradient-success);
+$warning-gradient: var(--gradient-warning);
+$info-gradient: var(--gradient-purple);
 
 @mixin glassmorphism {
   background: rgba(255, 255, 255, 0.05);
@@ -43,9 +56,9 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
     left: 0;
     right: 0;
     bottom: 0;
-    background: 
-      radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+    background:
+      radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
     pointer-events: none;
     z-index: 0;
   }
@@ -75,7 +88,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
 
     &:hover {
       color: #fff;
-      background: rgba(102, 126, 234, 0.1);
+      background: rgba(59, 130, 246, 0.1);
 
       mat-icon {
         transform: translateX(-4px);
@@ -99,7 +112,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
     .page-title {
       font-size: 2.5rem;
       font-weight: 700;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--gradient-primary);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       display: flex;
@@ -111,7 +124,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
         font-size: 2.5rem;
         width: 2.5rem;
         height: 2.5rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--gradient-primary);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
       }
@@ -223,19 +236,19 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
     }
 
     &.primary-card .stat-icon {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--gradient-primary);
     }
 
     &.success-card .stat-icon {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      background: var(--gradient-success);
     }
 
     &.warning-card .stat-icon {
-      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      background: var(--gradient-warning);
     }
 
     &.info-card .stat-icon {
-      background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+      background: var(--gradient-purple);
     }
   }
 }
@@ -265,7 +278,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
         margin: 0;
 
         mat-icon {
-          color: #667eea;
+          color: var(--analytics-primary);
         }
       }
     }
@@ -309,7 +322,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
         .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
         .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
         .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
-          border-color: #667eea !important;
+          border-color: var(--analytics-primary) !important;
         }
 
         input, textarea {
@@ -338,7 +351,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
         font-size: 1.25rem;
 
         mat-icon {
-          color: #667eea;
+          color: var(--analytics-primary);
         }
       }
 
@@ -352,7 +365,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
             .mdc-switch {
               &.mdc-switch--selected {
                 .mdc-switch__track {
-                  background-color: #667eea !important;
+                  background-color: var(--analytics-primary) !important;
                 }
 
                 .mdc-switch__handle::after {
@@ -438,7 +451,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
       }
 
       .mdc-tab-indicator__content--underline {
-        background-color: #667eea;
+        background-color: var(--analytics-primary);
         height: 3px;
         border-radius: 3px 3px 0 0;
       }
@@ -468,6 +481,194 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
       ::ng-deep {
         .mat-mdc-text-field-wrapper {
           background: rgba(255, 255, 255, 0.03);
+        }
+      }
+    }
+  }
+}
+
+// ================================================================================
+// 📊 SECCIÓN DE ANÁLISIS
+// ================================================================================
+.analytics-content {
+  .detailed-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    .metric-detail-card {
+      @include glassmorphism;
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+
+      &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 32px rgba(59, 130, 246, 0.2);
+        border-color: rgba(59, 130, 246, 0.3);
+      }
+
+      mat-card-header {
+        background: rgba(59, 130, 246, 0.08);
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+        mat-icon {
+          color: var(--analytics-primary);
+          font-size: 1.75rem;
+          width: 1.75rem;
+          height: 1.75rem;
+          filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.4));
+        }
+
+        mat-card-title {
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 0.95rem;
+          font-weight: 600;
+          margin: 0;
+          letter-spacing: 0.5px;
+        }
+      }
+
+      mat-card-content {
+        padding: 1.75rem 1.25rem;
+
+        h2 {
+          font-size: 2.5rem;
+          font-weight: 700;
+          background: var(--gradient-primary);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          margin: 0 0 0.5rem 0;
+          line-height: 1;
+        }
+
+        p {
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.875rem;
+          margin: 0;
+          line-height: 1.4;
+        }
+      }
+    }
+  }
+
+  .revenue-chart-card {
+    @include glassmorphism;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    mat-card-header {
+      background: rgba(59, 130, 246, 0.08);
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+      mat-icon {
+        color: var(--analytics-primary);
+        font-size: 2rem;
+        width: 2rem;
+        height: 2rem;
+        filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.4));
+      }
+
+      mat-card-title {
+        color: #fff;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+      }
+    }
+
+    mat-card-content {
+      padding: 2rem 1.5rem;
+    }
+  }
+
+  .revenue-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 1rem;
+    height: 300px;
+    padding: 1rem 0;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+
+    .revenue-bar-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+
+      .revenue-bar-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        position: relative;
+
+        // Línea de referencia en el fondo
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .revenue-bar {
+          width: 70%;
+          background: linear-gradient(to top, var(--analytics-primary), var(--analytics-indigo));
+          border-radius: 8px 8px 0 0;
+          transition: all 0.3s ease;
+          box-shadow: 0 -4px 16px rgba(59, 130, 246, 0.3);
+          position: relative;
+
+          // Asegurar que barras con altura se vean
+          &[style*="height: 0%"] {
+            display: none;
+          }
+
+          &:hover {
+            transform: scaleY(1.05);
+            box-shadow: 0 -8px 24px rgba(59, 130, 246, 0.5);
+            filter: brightness(1.2);
+          }
+        }
+      }
+
+      .revenue-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.875rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+
+      .revenue-value {
+        color: var(--analytics-success);
+        font-size: 1.1rem;
+        font-weight: 700;
+        text-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+        padding: 0.25rem 0.75rem;
+        background: rgba(16, 185, 129, 0.1);
+        border-radius: 8px;
+
+        &:empty::before {
+          content: '$0';
+          color: rgba(255, 255, 255, 0.3);
         }
       }
     }
@@ -536,7 +737,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
       gap: 0.5rem;
 
       .benefit-icon {
-        color: #667eea;
+        color: var(--analytics-primary);
         font-size: 1.25rem;
         width: 1.25rem;
         height: 1.25rem;
@@ -549,7 +750,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
       gap: 0.5rem;
 
       mat-icon {
-        color: #667eea;
+        color: var(--analytics-primary);
       }
     }
 
@@ -632,7 +833,7 @@ $info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
 mat-chip {
   &.type-chip {
     background: rgba(102, 126, 234, 0.2) !important;
-    color: #667eea !important;
+    color: var(--analytics-primary) !important;
     font-weight: 500;
   }
 
@@ -697,7 +898,7 @@ mat-chip {
         margin-bottom: 1rem;
 
         mat-icon {
-          color: #667eea;
+          color: var(--analytics-primary);
           font-size: 1.5rem;
           width: 1.5rem;
           height: 1.5rem;
@@ -728,81 +929,6 @@ mat-chip {
     }
   }
 
-  .revenue-chart-card {
-    @include premium-card;
-
-    mat-card-header {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-
-      mat-icon {
-        color: #667eea;
-        font-size: 1.75rem;
-        width: 1.75rem;
-        height: 1.75rem;
-      }
-
-      mat-card-title {
-        color: #fff;
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin: 0;
-      }
-    }
-
-    .revenue-bars {
-      display: flex;
-      justify-content: space-around;
-      align-items: flex-end;
-      height: 300px;
-      padding: 1rem;
-      gap: 1rem;
-
-      .revenue-bar-item {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-
-        .revenue-bar-container {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
-
-          .revenue-bar {
-            width: 60%;
-            background: linear-gradient(to top, #667eea, #764ba2);
-            border-radius: 8px 8px 0 0;
-            transition: all 0.3s ease;
-            box-shadow: 0 -4px 12px rgba(102, 126, 234, 0.3);
-            min-height: 20px;
-
-            &:hover {
-              transform: scaleY(1.05);
-              box-shadow: 0 -8px 20px rgba(102, 126, 234, 0.5);
-            }
-          }
-        }
-
-        .revenue-label {
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 0.75rem;
-          text-transform: capitalize;
-        }
-
-        .revenue-value {
-          color: #fff;
-          font-weight: 600;
-          font-size: 0.875rem;
-        }
-      }
-    }
-  }
 }
 
 // ================================================================================
@@ -825,7 +951,7 @@ mat-chip {
 
   mat-spinner {
     ::ng-deep circle {
-      stroke: #667eea !important;
+      stroke: var(--analytics-primary) !important;
     }
   }
 
@@ -1060,12 +1186,12 @@ mat-chip {
       }
 
       .mat-calendar-body-selected {
-        background: #667eea;
+        background: var(--analytics-primary);
         color: #fff;
       }
 
       .mat-calendar-body-today:not(.mat-calendar-body-selected) {
-        border-color: #667eea;
+        border-color: var(--analytics-primary);
       }
     }
   }
@@ -1090,11 +1216,11 @@ mat-chip {
   }
   
   .quick-assign-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-primary);
     color: white;
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
   
     mat-card-header {
       background: rgba(255, 255, 255, 0.1);
@@ -1154,7 +1280,7 @@ mat-chip {
     margin-bottom: 1.5rem;
     color: #1976d2;
     font-weight: 500;
-  
+
     mat-icon {
       color: #1976d2;
     }
@@ -1173,31 +1299,31 @@ mat-chip {
     border: 3px solid transparent;
     position: relative;
     overflow: visible;
-  
+
     &:hover:not(.disabled) {
       transform: translateY(-5px);
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
     }
-  
+
     &.selected {
       border-color: #667eea;
       box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
-      
+
       mat-card-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        
+
         mat-card-title {
           color: white;
         }
       }
     }
-  
+
     &.disabled {
       opacity: 0.5;
       cursor: not-allowed;
       filter: grayscale(1);
     }
-  
+
     mat-card-header {
       background: #f5f5f5;
       padding: 1rem;
@@ -1205,42 +1331,51 @@ mat-chip {
       justify-content: space-between;
       align-items: center;
     }
-  
+
     mat-card-title {
       font-size: 1.1rem;
       font-weight: 600;
+      color: #333;
     }
-  
+
+    mat-card-content {
+      color: #333;
+    }
+
     .plan-price {
       font-size: 2rem;
       font-weight: 700;
       color: #667eea;
       margin: 1rem 0 0.5rem 0;
     }
-  
+
     .plan-duration {
-      color: #666;
+      color: #333;
       margin-bottom: 1rem;
     }
-  
+
     .plan-type {
       margin-bottom: 1rem;
+
+      mat-chip {
+        color: #333;
+      }
     }
-  
+
     .plan-benefits {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
       margin-top: 1rem;
     }
-  
+
     .benefit-item {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       font-size: 0.9rem;
-      color: #555;
-  
+      color: #333;
+
       mat-icon {
         color: #4caf50;
         font-size: 1.2rem;
@@ -1263,7 +1398,7 @@ mat-chip {
       align-items: center;
       gap: 0.3rem;
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-  
+
       mat-icon {
         font-size: 1.2rem;
         width: 1.2rem;
@@ -1271,31 +1406,75 @@ mat-chip {
       }
     }
   }
-  
+
   .payment-form {
     margin-top: 2rem;
     padding-top: 2rem;
-  
+
     h3 {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       color: #333;
       margin-bottom: 1.5rem;
-  
+
       mat-icon {
         color: #667eea;
       }
     }
-  
+
     form {
       display: grid;
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
-  
+
     mat-form-field {
       width: 100%;
+
+      ::ng-deep {
+        .mat-mdc-form-field-label {
+          color: #333 !important;
+        }
+
+        .mat-mdc-input-element {
+          color: #333 !important;
+        }
+
+        .mat-mdc-select-value-text {
+          color: #333 !important;
+        }
+
+        .mat-mdc-input-element::placeholder {
+          color: #666 !important;
+        }
+
+        .mat-mdc-select-arrow {
+          color: #333 !important;
+        }
+      }
+    }
+  }
+
+  // Estilos para el dropdown del select (panel de opciones)
+  ::ng-deep .mat-mdc-select-panel {
+    background: white !important;
+
+    .mat-mdc-option {
+      color: #333 !important;
+
+      &:hover {
+        background: #f5f5f5 !important;
+      }
+
+      &.mdc-list-item--selected {
+        background: #e3f2fd !important;
+        color: #1976d2 !important;
+      }
+
+      .mdc-list-item__primary-text {
+        color: #333 !important;
+      }
     }
   }
   
@@ -1304,28 +1483,28 @@ mat-chip {
     border-radius: 12px;
     padding: 1.5rem;
     border-left: 4px solid #667eea;
-  
+
     .summary-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 0.75rem 0;
       border-bottom: 1px solid #e0e0e0;
-  
+
       &:last-child {
         border-bottom: none;
         padding-top: 1rem;
       }
-  
+
       span {
         color: #666;
         font-size: 0.95rem;
       }
-  
+
       strong {
         font-size: 1.1rem;
         color: #333;
-  
+
         &.price {
           color: #667eea;
           font-size: 1.5rem;
@@ -1341,7 +1520,7 @@ mat-chip {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-  
+
     button {
       min-width: 150px;
     }

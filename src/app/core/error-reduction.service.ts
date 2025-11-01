@@ -342,27 +342,58 @@ export class ErrorReductionService {
 
             console.log(`✅ Métricas globales calculadas: ${totalErrorsReduced} errores reducidos, ${totalExercisesImproved} ejercicios mejorados`);
 
-            // Top usuarios
-            const topPerformingUsers = Array.from(userMetrics.entries())
-              .map(([userId, metrics]) => ({
-                userId,
-                displayName: metrics.displayName,
-                errorsReduced: metrics.errorsReduced,
-                exercisesImproved: metrics.exercisesImproved
-              }))
-              .sort((a, b) => b.errorsReduced - a.errorsReduced)
-              .slice(0, 5);
+            // 🆕 Obtener nombres reales de los usuarios desde la colección 'users'
+            const userIdsWithMetrics = Array.from(userMetrics.keys());
 
-            const metrics: GlobalErrorReductionMetrics = {
-              totalErrorsReducedThisWeek: totalErrorsReduced,
-              totalExercisesImprovedThisWeek: totalExercisesImproved,
-              averageErrorReductionPerUser: userIds.length > 0 ?
-                Math.round(totalErrorsReduced / userIds.length) : 0,
-              topPerformingUsers,
-              weeklyTrend: []
-            };
+            if (userIdsWithMetrics.length > 0) {
+              // Consultar la colección users para obtener displayName
+              this.db.collection('users').get().then((usersSnapshot: any) => {
+                if (usersSnapshot) {
+                  usersSnapshot.forEach((userDoc: any) => {
+                    const userId = userDoc.id;
+                    if (userMetrics.has(userId)) {
+                      const userData = userDoc.data();
+                      const displayName = userData?.['displayName'] || 'Usuario sin nombre';
+                      userMetrics.get(userId)!.displayName = displayName;
+                      console.log(`📝 Nombre actualizado para ${userId}: ${displayName}`);
+                    }
+                  });
+                }
 
-            observer.next(metrics);
+                // Top usuarios con nombres reales
+                const topPerformingUsers = Array.from(userMetrics.entries())
+                  .map(([userId, metrics]) => ({
+                    userId,
+                    displayName: metrics.displayName,
+                    errorsReduced: metrics.errorsReduced,
+                    exercisesImproved: metrics.exercisesImproved
+                  }))
+                  .sort((a, b) => b.errorsReduced - a.errorsReduced)
+                  .slice(0, 5);
+
+                const metrics: GlobalErrorReductionMetrics = {
+                  totalErrorsReducedThisWeek: totalErrorsReduced,
+                  totalExercisesImprovedThisWeek: totalExercisesImproved,
+                  averageErrorReductionPerUser: userIds.length > 0 ?
+                    Math.round(totalErrorsReduced / userIds.length) : 0,
+                  topPerformingUsers,
+                  weeklyTrend: []
+                };
+
+                observer.next(metrics);
+              });
+            } else {
+              // Si no hay usuarios con métricas, devolver vacío
+              const metrics: GlobalErrorReductionMetrics = {
+                totalErrorsReducedThisWeek: totalErrorsReduced,
+                totalExercisesImprovedThisWeek: totalExercisesImproved,
+                averageErrorReductionPerUser: 0,
+                topPerformingUsers: [],
+                weeklyTrend: []
+              };
+
+              observer.next(metrics);
+            }
           },
           error => {
             console.error('❌ Error obteniendo métricas globales:', error);

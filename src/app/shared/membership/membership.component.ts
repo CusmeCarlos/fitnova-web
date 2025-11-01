@@ -644,7 +644,9 @@ export class MembershipComponent implements OnInit, OnDestroy {
     if (!this.revenueData || this.revenueData.length === 0) return 0;
     const maxRevenue = Math.max(...this.revenueData.map(d => d.revenue));
     if (maxRevenue === 0) return 0;
-    return (revenue / maxRevenue) * 100;
+    const height = (revenue / maxRevenue) * 100;
+    console.log(`📊 Revenue: $${revenue}, Max: $${maxRevenue}, Height: ${height}%`);
+    return height;
   }
 
   goBack(): void {

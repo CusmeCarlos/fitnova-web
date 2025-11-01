@@ -69,56 +69,56 @@
           </div>
         </div>
   
-        <!-- Métrica 2: Efectividad IA -->
+        <!-- Métrica 2: Errores Reducidos -->
         <div class="metric-card-premium effectiveness-metric">
           <div class="metric-header">
             <div class="metric-icon-container">
-              <mat-icon class="metric-icon">psychology</mat-icon>
+              <mat-icon class="metric-icon">trending_down</mat-icon>
             </div>
-            <div class="metric-badge">{{ formatPercentage(accuracyRate) }}</div>
+            <div class="metric-badge">{{ getTotalErrorsReduced() }}</div>
           </div>
           <div class="metric-content">
-            <h3 class="metric-value">{{ formatPercentage(accuracyRate) }}</h3>
-            <p class="metric-label">Precisión IA</p>
+            <h3 class="metric-value">{{ getTotalErrorsReduced() }}</h3>
+            <p class="metric-label">Errores Reducidos</p>
             <div class="metric-trend positive">
               <mat-icon>check_circle</mat-icon>
-              <span>{{ totalDetections }} detecciones</span>
+              <span>Esta semana</span>
             </div>
           </div>
         </div>
   
-        <!-- Métrica 3: Engagement -->
+        <!-- Métrica 3: Ejercicios Mejorados -->
         <div class="metric-card-premium engagement-metric">
           <div class="metric-header">
             <div class="metric-icon-container">
-              <mat-icon class="metric-icon">schedule</mat-icon>
+              <mat-icon class="metric-icon">fitness_center</mat-icon>
             </div>
-            <div class="metric-badge">{{ formatDuration(averageSessionDuration) }}</div>
+            <div class="metric-badge">{{ getTotalExercisesImproved() }}</div>
           </div>
           <div class="metric-content">
-            <h3 class="metric-value">{{ formatDuration(averageSessionDuration) }}</h3>
-            <p class="metric-label">Duración Promedio</p>
+            <h3 class="metric-value">{{ getTotalExercisesImproved() }}</h3>
+            <p class="metric-label">Ejercicios Mejorados</p>
             <div class="metric-trend positive">
-              <mat-icon>timer</mat-icon>
-              <span>Por sesión de entrenamiento</span>
+              <mat-icon>trending_up</mat-icon>
+              <span>Esta semana</span>
             </div>
           </div>
         </div>
   
-        <!-- Métrica 4: Retención -->
+        <!-- Métrica 4: Promedio de Mejora -->
         <div class="metric-card-premium retention-metric">
           <div class="metric-header">
             <div class="metric-icon-container">
-              <mat-icon class="metric-icon">track_changes</mat-icon>
+              <mat-icon class="metric-icon">show_chart</mat-icon>
             </div>
-            <div class="metric-badge">{{ formatPercentage(userRetentionRate) }}</div>
+            <div class="metric-badge">{{ formatNumber(getAverageErrorReduction()) }}</div>
           </div>
           <div class="metric-content">
-            <h3 class="metric-value">{{ formatPercentage(userRetentionRate) }}</h3>
-            <p class="metric-label">Retención Usuarios</p>
+            <h3 class="metric-value">{{ formatNumber(getAverageErrorReduction()) }}</h3>
+            <p class="metric-label">Promedio Mejora/Usuario</p>
             <div class="metric-trend positive">
-              <mat-icon>group</mat-icon>
-              <span>{{ routinesCompleted }} rutinas completadas</span>
+              <mat-icon>person</mat-icon>
+              <span>Errores reducidos por usuario</span>
             </div>
           </div>
         </div>
@@ -144,35 +144,60 @@
           </div>
         </div>
   
-        <!-- Gráfico 2: Efectividad de Detección IA -->
-        <div class="chart-card-premium effectiveness-chart">
+        <!-- Gráfico 2: Top Usuarios con Mejores Resultados -->
+        <div class="chart-card-premium top-users-chart">
           <div class="chart-header">
             <h4>
-              <mat-icon>psychology</mat-icon>
-              Efectividad de Detección IA
+              <mat-icon>emoji_events</mat-icon>
+              Top Usuarios - Mejores Resultados
             </h4>
             <div class="accuracy-badge">
-              {{ formatPercentage(accuracyRate) }} precisión
+              {{ getTopUsers().length }} usuarios
             </div>
           </div>
-          <div class="chart-container">
-            <canvas #effectivenessChart></canvas>
+          <div class="top-users-list">
+            <div class="top-user-item" *ngFor="let user of getTopUsers(); let i = index">
+              <div class="user-rank" [class]="'rank-' + (i + 1)">
+                <mat-icon *ngIf="i === 0">emoji_events</mat-icon>
+                <mat-icon *ngIf="i === 1">emoji_events</mat-icon>
+                <mat-icon *ngIf="i === 2">emoji_events</mat-icon>
+                <span *ngIf="i > 2">{{ i + 1 }}</span>
+              </div>
+              <div class="user-info">
+                <div class="user-name">{{ user.displayName }}</div>
+                <div class="user-stats">
+                  <span class="stat-item">
+                    <mat-icon>fitness_center</mat-icon>
+                    {{ user.totalWorkouts }} entrenamientos
+                  </span>
+                  <span class="stat-item error-reduction">
+                    <mat-icon>trending_down</mat-icon>
+                    {{ user.errorsReduced }} errores menos
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="empty-message" *ngIf="getTopUsers().length === 0">
+              <mat-icon>info</mat-icon>
+              <p>No hay datos de usuarios disponibles</p>
+            </div>
           </div>
         </div>
   
-        <!-- Gráfico 3: Engagement de Usuarios -->
+        <!-- Gráfico 3: Tendencia de Reducción de Errores -->
         <div class="chart-card-premium engagement-chart">
           <div class="chart-header">
             <h4>
-              <mat-icon>bar_chart</mat-icon>
-              Engagement de Usuarios
+              <mat-icon>trending_down</mat-icon>
+              Tendencia Semanal - Reducción de Errores
             </h4>
             <div class="engagement-badge">
-              {{ correctionsApplied }} correcciones aplicadas
+              Últimas semanas
             </div>
           </div>
           <div class="chart-container">
-            <canvas #engagementChart></canvas>
+            <canvas #errorTrendChart></canvas>
           </div>
         </div>
   
